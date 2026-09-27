@@ -368,17 +368,24 @@
   .quadro-anel { align-items: center; justify-content: center; gap: 8px; }
   /* O anel dimensiona pela ALTURA disponível, e não pela largura: assim ele
      nunca empurra o quadrado para fora do 1:1. */
+  /* `align-self: center` e `width: auto` são o que faz o anel derivar a
+     largura da altura. Sem eles o flex em coluna estica a caixa até a largura
+     toda, o aspect-ratio puxa a altura junto, e o anel vaza do quadrado. */
   .anel {
     position: relative;
-    flex: 1;
+    flex: 0 1 auto;
+    align-self: center;
     min-height: 0;
     height: 100%;
+    width: auto;
     aspect-ratio: 1 / 1;
-    margin: 0 auto;
   }
   .anel svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
   .anel circle { fill: none; stroke-width: 9; }
-  .anel-trilho { stroke: var(--bg); }
+  /* O trilho era da cor do fundo, o que funcionava quando o quadrado tinha
+     fundo próprio. Sem ele, o trilho sumia e só o arco preenchido aparecia —
+     não dava para ver quanto falta. */
+  .anel-trilho { stroke: var(--bg-panel); }
   .anel-fio {
     stroke: var(--blood-bright);
     stroke-linecap: butt;
