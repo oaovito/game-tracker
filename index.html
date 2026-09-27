@@ -439,6 +439,10 @@
   }
   .boss-panel.aberto .boss-num { color: #ede6d8; }
   .boss-panel.aberto::before { border-color: #4a423b; opacity: 1; }
+  /* `display: grid` de uma classe vence o `[hidden]` do navegador, então sem
+     esta linha o atributo não escondia nada — o mesmo tropeço que já houve com
+     section.category. */
+  .boss-lista[hidden] { display: none; }
   .boss-lista {
     padding: 0 12px 12px;
     display: grid;
@@ -1829,12 +1833,15 @@ function renderBossKills() {
     lista.appendChild(card);
   }
 
+  // Fechado, o bloco só informa a contagem. A ressalva não some do produto —
+  // vai para o hover do cabeçalho, como no painel de mortes.
   const semeados = kills.filter((b) => b.semeado).length;
-  nota.textContent =
-    "The game keeps no per-boss kill count — the flags are just done or not done. " +
-    "This counts every time a boss goes from undone to done, which is what happens on each NG+. " +
+  nota.textContent = "";
+  document.getElementById("bossHead").title =
+    "The game keeps no per-boss kill count: the flags are only done or not done. " +
+    "This counts every time a boss goes from undone to done, which is what happens on each NG+." +
     (semeados
-      ? semeados + " were already done when tracking started, so they count as one: a floor, not a total."
+      ? " " + semeados + " were already done when tracking started and count as one, so this is a floor."
       : "");
 }
 
