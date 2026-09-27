@@ -48,8 +48,13 @@
     color: var(--text);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    /* `transparent` numa parada de gradiente é preto transparente, e a
+       interpolação até ele deixa uma faixa cinza visível no meio. Terminar na
+       mesma cor com alfa zero resolve, e o fixed evita emenda ao rolar. */
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(122,31,31,0.18), transparent 60%);
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(122,31,31,0.20), rgba(122,31,31,0) 70%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
   .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
 
@@ -131,14 +136,56 @@
     color: var(--blood-bright);
     line-height: 1;
   }
+  /* O número de mortes sangra: o vermelho escorre de cima para baixo dentro do
+     glifo, e uma gota cai da base de tempos em tempos. Duas animações
+     independentes, para não ficar um pulso só, mecânico. */
   .deaths-count {
+    position: relative;
     font-family: var(--font-display);
     font-size: 2.9rem;
     font-weight: 800;
-    color: var(--text);
     line-height: 1;
     letter-spacing: 0.01em;
     font-variant-numeric: tabular-nums;
+    background-image: linear-gradient(
+      180deg,
+      #7f1d16 0%, #a8321f 26%, #d4462a 42%, #a8321f 58%, #6d1710 100%);
+    background-size: 100% 260%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: escorrer 4.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(168,50,31,0.35));
+  }
+  @keyframes escorrer {
+    0%, 100% { background-position: 50% 0%; }
+    50%      { background-position: 50% 100%; }
+  }
+  /* A gota. Nasce colada na base do número e cai, sumindo no caminho. */
+  .deaths-count::after {
+    content: "";
+    position: absolute;
+    left: 58%;
+    top: 92%;
+    width: 3px;
+    height: 7px;
+    border-radius: 0 0 50% 50%;
+    background: linear-gradient(180deg, #a8321f, #6d1710);
+    opacity: 0;
+    animation: pingar 6.5s ease-in infinite;
+  }
+  @keyframes pingar {
+    0%, 62%  { transform: translateY(0) scaleY(0.5); opacity: 0; }
+    70%      { transform: translateY(2px) scaleY(1); opacity: 0.9; }
+    92%      { transform: translateY(22px) scaleY(1.5); opacity: 0; }
+    100%     { transform: translateY(22px) scaleY(1.5); opacity: 0; }
+  }
+  /* Quem pediu menos movimento no sistema recebe o número parado. */
+  @media (prefers-reduced-motion: reduce) {
+    .deaths-count { animation: none; background-position: 50% 30%; }
+    .deaths-count::after { display: none; }
+    .tempo-num { animation: none; background-position: 40% 50%; }
   }
   .deaths-note {
     font-size: 0.72rem;
@@ -352,10 +399,38 @@
   }
   .anel-num { font-size: 0.72rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .quadro-rot-centro { text-align: center; }
-  /* O emoji ocupa o meio do quadrado: é a leitura de relance. */
-  .skill { font-size: 2.6rem; line-height: 1; text-align: center; flex: 1;
-           min-height: 0;
-           display: flex; align-items: center; justify-content: center; }
+  /* --- tempo de jogo: o número é metal, e o metal melhora com as horas --- */
+  .tempo-meio {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+  }
+  .tempo-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 11vw, 4.2rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    /* O brilho é um gradiente atravessando o glifo, recortado pelo texto. A
+       faixa clara corre devagar, como luz passando por metal polido. */
+    background-image: linear-gradient(
+      100deg,
+      var(--m1) 0%, var(--m2) 28%, var(--m3) 42%,
+      var(--m2) 56%, var(--m1) 100%);
+    background-size: 280% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: polir 7s linear infinite;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,0.55));
+  }
+  @keyframes polir {
+    0%   { background-position: 140% 50%; }
+    100% { background-position: -40% 50%; }
+  }
+  /* Metais de partida; o script troca conforme as horas. */
+  .quadro { --m1: #5d5952; --m2: #8d877e; --m3: #c9c3b8; }
 
   /* Marcos de 25 em 25 horas até 200. */
   .marcos { display: flex; gap: 2px; height: 8px; }
@@ -385,11 +460,45 @@
   }
   .boss-panel::before,
   .boss-panel::after { content: ""; position: absolute; pointer-events: none; }
-  /* fio interno */
+  /* O fio interno é a borda que sangra: o vermelho escorre ao longo dela, e a
+     opacidade respira, de modo que a moldura pareça úmida em vez de pintada. */
   .boss-panel::before {
     inset: 5px;
-    border: 1px solid var(--blood);
-    opacity: 0.45;
+    border: 1px solid transparent;
+    border-image: linear-gradient(
+      180deg,
+      rgba(109,23,16,0.25) 0%, rgba(168,50,31,0.95) 22%,
+      rgba(212,70,42,1) 38%, rgba(168,50,31,0.95) 55%,
+      rgba(109,23,16,0.25) 100%) 1;
+    animation: sangrar 5.5s ease-in-out infinite;
+  }
+  @keyframes sangrar {
+    0%, 100% { opacity: 0.45; filter: saturate(0.8); }
+    50%      { opacity: 1;    filter: saturate(1.3); }
+  }
+  /* Uma gota escorrendo pela borda de baixo, do mesmo jeito do número. */
+  .boss-panel .boss-head::before {
+    content: "";
+    position: absolute;
+    left: 22px;
+    bottom: -3px;
+    width: 3px;
+    height: 8px;
+    border-radius: 0 0 50% 50%;
+    background: linear-gradient(180deg, var(--blood-bright), #6d1710);
+    opacity: 0;
+    animation: pingar-borda 7.5s ease-in infinite;
+    pointer-events: none;
+  }
+  @keyframes pingar-borda {
+    0%, 58%  { transform: translateY(0); opacity: 0; }
+    66%      { transform: translateY(3px); opacity: 0.85; }
+    90%      { transform: translateY(26px); opacity: 0; }
+    100%     { transform: translateY(26px); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .boss-panel::before { animation: none; opacity: 0.7; }
+    .boss-panel .boss-head::before { display: none; }
   }
   /* cantoneiras de sangue, as mesmas oito faixas do painel de mortes */
   .boss-panel::after {
@@ -425,8 +534,10 @@
     font-family: var(--font-display); font-weight: 800; font-size: 1.9rem;
     line-height: 1; color: var(--blood-bright);
   }
+  /* Bem maior que o de mortes: este é o número que se quer ver de longe. */
   .boss-num {
-    font-family: var(--font-display); font-weight: 800; font-size: 2.9rem;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(3.4rem, 13vw, 5.4rem);
     line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
   }
   .boss-rot { display: none; }
@@ -940,13 +1051,12 @@
     </section>
 
     <section class="quadro" id="quadroTempo">
-      <div class="quadro-topo">
-        <span class="quadro-num" id="tempoNum">—</span>
-        <span class="quadro-rot">hours played</span>
+      <!-- O número é a peça: grande, no meio, e com o metal do momento. A
+           barra abaixo situa isso numa escala de 0 a 200 horas. -->
+      <div class="tempo-meio">
+        <span class="tempo-num" id="tempoNum">—</span>
+        <span class="quadro-rot" id="tempoRot">hours played</span>
       </div>
-      <!-- O emoji é a leitura rápida; a barra abaixo diz onde isso cai numa
-           escala de 0 a 200 horas, com marca a cada 25. -->
-      <div class="skill" id="skillEmote" aria-hidden="true">🌱</div>
       <div class="quadro-pe">
         <div class="marcos" id="marcos"></div>
         <div class="marcos-esc"><span>0</span><span>100h</span><span>200h</span></div>
@@ -1711,16 +1821,21 @@ function ligarPontoDeSync() {
 // relance: quanto mais tempo, mais ele insiste na ideia de domínio.
 const HORAS_MAX = 200;
 const MARCOS = 8;
+
+// A escada agora é de metal, não de emote. Segue a ordem em que os materiais
+// aparecem no próprio jogo — ferro, magnetita, adamantita, lazulita —, com
+// bronze, prata e ouro no meio, e termina no lazulito, que é o material de fim
+// de jogo. Cada degrau são três cores: sombra, corpo e brilho.
 const ESCADA = [
-  [0, "🌱", "just off the boat"],
-  [25, "🗡️", "finding your footing"],
-  [50, "⚔️", "holding your own"],
-  [75, "🔥", "dangerous"],
-  [100, "🐺", "wolf"],
-  [125, "🥷", "shinobi"],
-  [150, "👹", "feared"],
-  [175, "🏆", "master"],
-  [200, "🐉", "sword saint"],
+  [0,   "scrap iron",  ["#4c4842", "#7b756c", "#b0a99e"]],
+  [25,  "iron",        ["#565049", "#8a8479", "#c4bdb1"]],
+  [50,  "magnetite",   ["#3f4650", "#6d7787", "#a9b3c2"]],
+  [75,  "bronze",      ["#5d3a20", "#9a6533", "#d69a56"]],
+  [100, "steel",       ["#4a5158", "#848d96", "#ccd4dc"]],
+  [125, "silver",      ["#6a6e73", "#a9aeb4", "#eef1f4"]],
+  [150, "gold",        ["#6e4f12", "#b9902f", "#f6dc8a"]],
+  [175, "adamantite",  ["#2f3a3f", "#5f7a82", "#a8ccd4"]],
+  [200, "lazulite",    ["#1d3a6b", "#3f6dbd", "#9fc6ff"]],
 ];
 
 function degrau(horas) {
@@ -1731,23 +1846,25 @@ function degrau(horas) {
 
 function renderTempo() {
   const num = document.getElementById("tempoNum");
-  const emote = document.getElementById("skillEmote");
+  const quadro = document.getElementById("quadroTempo");
   const marcos = document.getElementById("marcos");
   const t = temSync() ? sync.playtime : null;
 
   if (!t) {
     num.textContent = "—";
-    emote.textContent = "🌱";
     marcos.innerHTML = "";
-    document.getElementById("quadroTempo").title =
-      "Playtime comes from Steam's own record. Not available right now.";
+    quadro.title = "Playtime comes from Steam's own record. Not available right now.";
     return;
   }
 
   const horas = t.horas;
   num.textContent = horas >= 100 ? Math.round(horas) : horas.toFixed(1);
   const d = degrau(horas);
-  emote.textContent = d[1];
+  // O metal do momento entra como variáveis; o gradiente do número as usa.
+  quadro.style.setProperty("--m1", d[2][0]);
+  quadro.style.setProperty("--m2", d[2][1]);
+  quadro.style.setProperty("--m3", d[2][2]);
+  document.getElementById("tempoRot").textContent = d[1];
 
   // Oito blocos de 25h. O bloco onde você está fica preenchido em parte, para a
   // barra andar dentro do marco em vez de saltar só ao completá-lo.
@@ -1765,8 +1882,8 @@ function renderTempo() {
     marcos.appendChild(el);
   }
 
-  document.getElementById("quadroTempo").title =
-    horas.toFixed(1) + " hours — " + d[2] +
+  quadro.title =
+    horas.toFixed(1) + " hours — " + d[1] +
     ". From Steam's own record, so it updates when Steam syncs, not mid-session.";
 }
 
@@ -2070,11 +2187,17 @@ function render() {
   // progresso é zero, quando na verdade é desconhecido.
   for (const e of extras) { totalDone += e.feitos; totalAll += e.total; }
 
-  const ok = temSync();
-  const pct = ok && totalAll ? totalDone / totalAll * 100 : 0;
+  // O anel passa a medir as conquistas do Steam, que é o placar que o jogo
+  // reconhece. A contagem interna das listas continua somando por trás, mas
+  // não é ela que o bloco mostra.
+  const conq = temSync() && sync.achievements ? sync.achievements : null;
+  const ok = temSync() && !!conq;
+  const feitas = conq ? conq.desbloqueadas : 0;
+  const todas = conq ? conq.total : 0;
+  const pct = ok && todas ? feitas / todas * 100 : 0;
   document.getElementById("overallPct").textContent = ok ? Math.round(pct) + "%" : "—";
-  document.getElementById("overallCount").textContent = ok ? `${totalDone} / ${totalAll}` : "";
-  document.getElementById("overallLabel").textContent = ok ? "complete" : "waiting for the save";
+  document.getElementById("overallCount").textContent = ok ? feitas + " / " + todas : "";
+  document.getElementById("overallLabel").textContent = ok ? "achievements" : "waiting for the save";
   // O anel anda pelo offset: o traço inteiro mede 263.89 (2πr, r=42), e o que
   // sobra é o que falta. Sem save lido, fica vazio em vez de fechado em zero.
   const VOLTA = 263.89;
