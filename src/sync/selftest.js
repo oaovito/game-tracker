@@ -726,6 +726,75 @@ check('a conferência do fonte sabe distinguir falar de um caminho e escrever o 
   return 'seis casos, os três que passam e os três que não';
 });
 
+/*
+ * 12. A assinatura do projeto.
+ *
+ * O trabalho sai com o nome do autor e de mais ninguém. Isso já escapou três
+ * vezes por caminhos diferentes — um trailer no corpo do commit, que o GitHub
+ * conta como co-autor e mostra na lista de contribuidores; um comentário solto
+ * no meio do código; um arquivo de ferramenta com nome entregando de onde
+ * veio. Conferir à mão não pegou nenhuma das três, então passa a ser teste.
+ *
+ * Os termos procurados são montados em pedaços de propósito. Escritos por
+ * extenso, este arquivo acusaria a si mesmo na primeira execução — o teste da
+ * regra tropeçando na regra, igual ao que houve com o Steam ID de exemplo.
+ */
+console.log('\n  === 12. A assinatura do projeto ===');
+
+const MARCAS = ['cla' + 'ude', 'anthro' + 'pic', 'copi' + 'lot', 'chat' + 'gpt'];
+const marcado = (texto) => {
+  const baixo = String(texto).toLowerCase();
+  return MARCAS.filter((m) => baixo.includes(m));
+};
+
+const IGNORAR = new Set(['.git', 'node_modules', 'snapshots', 'arquivo', 'icones']);
+
+check('nenhum arquivo do projeto entrega de onde veio', () => {
+  const sujos = [];
+  const anda = (d) => {
+    for (const n of fs.readdirSync(d)) {
+      if (IGNORAR.has(n)) continue;
+      const c = path.join(d, n);
+      if (fs.statSync(c).isDirectory()) { anda(c); continue; }
+      if (/\.(log|log\.\d+|png|svg|bin|sl2|txt)$/i.test(n)) continue;
+      const achadosNome = marcado(n);
+      if (achadosNome.length) { sujos.push(path.relative(RAIZ_PROJETO, c) + ' (no nome)'); continue; }
+      let texto = '';
+      try { texto = fs.readFileSync(c, 'utf8'); } catch (e) { continue; }
+      const achados = marcado(texto);
+      if (achados.length) sujos.push(path.relative(RAIZ_PROJETO, c));
+    }
+  };
+  anda(RAIZ_PROJETO);
+  assert(sujos.length === 0, 'entregam: ' + sujos.join(', '));
+  return 'varreu o projeto inteiro, nome e conteúdo';
+});
+
+check('nenhuma mensagem de commit publicada entrega de onde veio', () => {
+  const { execFileSync } = require('child_process');
+  const site = path.join(RAIZ_PROJETO, 'site');
+  if (!fs.existsSync(path.join(site, '.git'))) return 'sem repositório publicado aqui';
+  const log = execFileSync('git', ['log', '--all', '--format=%H%n%s%n%b'],
+    { cwd: site, encoding: 'utf8', windowsHide: true });
+  const achados = marcado(log);
+  assert(achados.length === 0, 'aparece no histórico de commits');
+  const n = execFileSync('git', ['rev-list', '--count', 'HEAD'],
+    { cwd: site, encoding: 'utf8', windowsHide: true }).trim();
+  return n + ' commits, nenhum com trailer de co-autoria';
+});
+
+check('o histórico publicado tem um autor só', () => {
+  const { execFileSync } = require('child_process');
+  const site = path.join(RAIZ_PROJETO, 'site');
+  if (!fs.existsSync(path.join(site, '.git'))) return 'sem repositório publicado aqui';
+  const quem = execFileSync('git', ['log', '--all', '--format=%an <%ae>|%cn <%ce>'],
+    { cwd: site, encoding: 'utf8', windowsHide: true })
+    .split('\n').filter(Boolean);
+  const distintos = [...new Set(quem.flatMap((l) => l.split('|')))];
+  assert(distintos.length === 1, 'mais de um: ' + distintos.join(' / '));
+  return distintos[0];
+});
+
 function resumo() {
   console.log('');
   console.log(`  === Resultado: ${pass} ok, ${fail} falha(s) ===`);

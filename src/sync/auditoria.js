@@ -1,11 +1,11 @@
 'use strict';
 /*
  * auditoria.js - escreve um txt com TUDO que uma pessoa com o link público
- * consegue acessar, já com o prompt para alguém (ou outra IA) revisar.
+ * consegue acessar, já com as perguntas que quem for revisar precisa responder.
  *
  * O ponto é não descrever de memória. O arquivo é montado a partir do que está
  * de fato publicado — a página, o JSON, o README, o repositório, a API do
- * GitHub — porque uma auditoria feita sobre o que eu acho que publiquei não
+ * GitHub — porque uma auditoria feita sobre o que se supõe ter publicado não
  * audita nada.
  */
 
