@@ -25,7 +25,17 @@ const { execFileSync } = require('child_process');
 
 const RAIZ = path.join(__dirname, '..');
 const ARQUIVO = path.join(RAIZ, 'arquivo');
-const TAREFA = 'SekiroProgressSync';
+/*
+ * O nome da tarefa agendada.
+ *
+ * São dois porque o projeto mudou de nome: o serviço já instalado numa máquina
+ * continua registrado como `SekiroProgressSync` até alguém rodar o instalador
+ * de novo. Procurar só pelo nome novo faria a hibernação achar que não há
+ * tarefa e deixar o serviço voltando no próximo login, exatamente o que ela
+ * existe para evitar. O nome novo vem primeiro; o antigo é a reserva.
+ */
+const TAREFA = 'TrackeroaoSync';
+const TAREFAS = [TAREFA, 'SekiroProgressSync'];
 
 /** Arquivos do projeto que valem a pena guardar, e por quê. */
 const GUARDAR = [
