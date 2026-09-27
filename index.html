@@ -54,21 +54,21 @@
   .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
 
   header.top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
     border-bottom: 1px solid var(--line);
-    padding-bottom: 18px;
-    margin-bottom: 22px;
+    padding-bottom: 22px;
+    margin-bottom: 24px;
   }
+  /* Tudo do cabeçalho numa coluna centrada: o título manda, e o que vem
+     depois é subordinado a ele em vez de disputar a linha. */
+  .top-centro { display: flex; flex-direction: column; align-items: center; gap: 10px; }
   h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 1.9rem;
-    letter-spacing: 0.03em;
+    font-size: 3.1rem;
+    letter-spacing: 0.04em;
     margin: 0;
-    line-height: 1.15;
+    line-height: 1.05;
+    text-align: center;
   }
   h1 span { color: var(--blood-bright); }
 
@@ -233,13 +233,12 @@
   .theme-toggle:hover { opacity: 1; color: var(--text); }
   /* Assinatura: presente, mas sem puxar o olho para longe do progresso. */
   .assinatura {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     color: var(--text-dim);
-    letter-spacing: 0.1em;
+    letter-spacing: 0.16em;
     text-transform: lowercase;
-    opacity: 0.65;
+    opacity: 0.6;
     white-space: nowrap;
-    align-self: flex-end;
   }
   .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
 
@@ -349,57 +348,71 @@
   }
 
   /* --- bloco 3: mortes de chefe --- */
-  /* Mais sangrento que os outros blocos, de propósito: este conta o que custou
-     caro. O fio vermelho no topo e o respingo no canto dizem isso antes de
-     qualquer texto. */
+  /* Fechado, tem o porte do contador de mortes: mesma moldura de placa, mesmo
+     recuo, número grande no meio. A diferença é a cor — lá as cantoneiras são
+     douradas, aqui são de sangue, porque este conta o que custou caro. */
   .boss-panel {
     position: relative;
     border: 1px solid var(--line);
-    border-top: 2px solid var(--blood);
     background: var(--bg-panel);
+    border-radius: 0;
     margin-bottom: 26px;
-    overflow: hidden;
   }
+  .boss-panel::before,
+  .boss-panel::after { content: ""; position: absolute; pointer-events: none; }
+  /* fio interno */
   .boss-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 70px;
-    background: radial-gradient(120% 100% at 12% 0%, rgba(168,50,31,0.22), transparent 70%);
-    pointer-events: none;
+    inset: 5px;
+    border: 1px solid var(--blood);
+    opacity: 0.45;
   }
-  .boss-panel.aberto { border-top-color: var(--blood-bright); }
-  /* O cabeçalho é o botão inteiro: alvo grande, sem risco de errar no celular. */
+  /* cantoneiras de sangue, as mesmas oito faixas do painel de mortes */
+  .boss-panel::after {
+    inset: 0;
+    background:
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 0 0 / 16px 2px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 0 0 / 2px 16px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 100% 0 / 16px 2px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 100% 0 / 2px 16px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 0 100% / 16px 2px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 0 100% / 2px 16px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 100% 100% / 16px 2px no-repeat,
+      linear-gradient(var(--blood-bright), var(--blood-bright)) 100% 100% / 2px 16px no-repeat;
+  }
+  /* O cabeçalho é o botão inteiro: alvo grande, sem risco de errar no celular.
+     O número fica no centro, e a seta sai do fluxo para não desequilibrá-lo. */
   .boss-head {
+    position: relative;
     width: 100%;
     appearance: none;
     background: none;
     border: 0;
-    padding: 16px 18px;
+    padding: 20px 22px 18px;
     display: flex;
     align-items: baseline;
+    justify-content: center;
     gap: 12px;
     cursor: pointer;
-    text-align: left;
     font-family: var(--font-body);
   }
+  /* Mesmo porte do painel de mortes: 死 1.9rem e número 2.9rem, lá e aqui. */
   .boss-kanji {
-    font-family: var(--font-display); font-weight: 800; font-size: 1.5rem;
+    font-family: var(--font-display); font-weight: 800; font-size: 1.9rem;
     line-height: 1; color: var(--blood-bright);
   }
   .boss-num {
-    font-family: var(--font-display); font-weight: 800; font-size: 2.2rem;
+    font-family: var(--font-display); font-weight: 800; font-size: 2.9rem;
     line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
   }
-  .boss-rot {
-    font-size: 0.68rem; color: var(--text-dim);
-    letter-spacing: 0.1em; text-transform: uppercase; flex: 1;
-  }
+  .boss-rot { display: none; }
   /* Só a seta, como nas outras seções da página. O cabeçalho inteiro continua
      sendo o alvo de clique, então não se perde área no celular. */
+  /* Fora do fluxo, à direita: o número tem de ficar no meio do bloco, e não
+     no meio do espaço que sobrou depois da seta. */
   .boss-seta {
+    position: absolute; right: 16px; top: 50%; margin-top: -12px;
     font-size: 0.8rem; color: var(--text-dim);
-    transition: transform 0.2s ease; display: inline-block; padding: 6px;
+    transition: transform 0.2s ease; padding: 6px;
   }
   .boss-head:hover .boss-seta { color: var(--text); }
   .boss-panel.aberto .boss-seta { transform: rotate(180deg); color: #d8d2c6; }
@@ -409,9 +422,8 @@
     background: #2e2b28;
     border-color: #3d3935;
   }
-  .boss-panel.aberto .boss-num,
-  .boss-panel.aberto .boss-rot,
-  .boss-panel.aberto .boss-seta { color: #d8d2c6; }
+  .boss-panel.aberto .boss-num { color: #ede6d8; }
+  .boss-panel.aberto::before { border-color: #4a423b; opacity: 1; }
   .boss-lista {
     padding: 0 12px 12px;
     display: grid;
@@ -446,11 +458,21 @@
   .boss-card:not(.zero) .boss-icone span { color: #e3d6c2; }
   .boss-icone img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .boss-icone.com-arte { background: none; }
+  /* O nome é o título do bloco e passa a mandar nele: fonte de display,
+     maior, e a área abaixo recuando para não competir. */
   .boss-card-nome {
-    font-size: 0.74rem; line-height: 1.3; color: #ded8cc;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.25;
+    color: #f0e9dc;
     word-break: break-word;
   }
-  .boss-card-area { font-size: 0.62rem; color: #8a8076; margin-top: 3px; }
+  .boss-card.zero .boss-card-nome { color: #a49a8d; }
+  .boss-card-area {
+    font-size: 0.6rem; color: #85796c; margin-top: 5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
   /* A contagem no topo à direita do bloco do chefe. */
   .boss-card-n {
     position: absolute; top: 6px; right: 8px;
@@ -463,37 +485,45 @@
   .boss-nota:empty { display: none; }
 
   /* --- menu de tópicos --- */
+  /* Sem fio embaixo e sem os botões colados: o menu era uma régua de texto
+     onde nada parecia clicável. Agora cada tópico é uma peça com contorno
+     próprio, e o espaço entre elas faz o trabalho que a linha fazia. */
   .topics {
     display: flex;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 24px;
+    gap: 8px;
+    margin-bottom: 26px;
   }
   .topic {
     appearance: none;
-    background: none;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;          /* encosta no fio do menu */
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 2px;
     color: var(--text-dim);
     font-family: var(--font-body);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 9px 13px 8px;
+    padding: 10px 13px;
     cursor: pointer;
     white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
-  .topic:hover { color: var(--text); }
-  .topic.on { color: var(--text); border-bottom-color: var(--blood-bright); }
+  .topic:hover { color: var(--text); border-color: var(--gold); }
+  /* O escolhido é peça cheia, não sublinhado: de relance se vê onde se está. */
+  .topic.on {
+    color: var(--paper);
+    background: var(--blood);
+    border-color: var(--blood-bright);
+  }
   .topic-n {
-    margin-left: 7px;
+    margin-left: 8px;
     font-size: 0.66rem;
     letter-spacing: 0;
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
   }
-  .topic.on .topic-n { color: var(--gold); }
+  .topic.on .topic-n { color: var(--paper); opacity: 0.75; }
 
   section.category {
     margin-bottom: 8px;
@@ -768,6 +798,10 @@
   /* Em tela estreita o título longo + a barrinha decorativa estouram a largura
      e a página passa a rolar para o lado. A contagem por seção continua. */
   @media (max-width: 460px) {
+    h1 { font-size: 2.3rem; }
+    .topic { font-size: 0.64rem; padding: 11px 11px; letter-spacing: 0.06em; }
+    .topics { gap: 6px; }
+    .boss-card-nome { font-size: 0.85rem; }
     .deaths-panel { padding: 18px 16px 14px; }
     /* Dedo, não cursor: linha do menu e cabeçalho de seção ficam mais altos,
        e o alfinete ganha folga do chevron para não haver clique trocado. */
@@ -789,6 +823,7 @@
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
     }
     .topics::-webkit-scrollbar { display: none; }
     .deaths-count { font-size: 2.3rem; }
@@ -819,7 +854,7 @@
   </div>
 
   <header class="top">
-    <div>
+    <div class="top-centro">
       <h1>Sekiro<span> 進捗</span></h1>
       <!-- O estado do sync fica dentro do ponto: a cor já diz se está tudo
            certo, e o texto só aparece quando se clica nele. -->
@@ -827,8 +862,8 @@
         <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
         <span id="syncText" hidden>looking for the save…</span>
       </div>
+      <div class="assinatura">oaovito game progress</div>
     </div>
-    <div class="assinatura">oaovito game progress</div>
   </header>
 
   <nav class="topics" id="topics" aria-label="Sections" hidden></nav>
@@ -894,7 +929,7 @@
     <button class="boss-head" id="bossHead" type="button" aria-expanded="false" aria-controls="bossLista">
       <span class="boss-kanji">討</span>
       <span class="boss-num" id="bossNum">—</span>
-      <span class="boss-rot">boss kills</span>
+      <span class="boss-rot"></span>
       <span class="boss-seta">▾</span>
     </button>
     <div class="boss-lista" id="bossLista" hidden></div>
