@@ -395,20 +395,14 @@
     font-size: 0.68rem; color: var(--text-dim);
     letter-spacing: 0.1em; text-transform: uppercase; flex: 1;
   }
-  /* O convite fica escrito, e não só numa seta: "dá para abrir" tem de ser
-     legível sem hover e sem adivinhação. */
-  .boss-abre {
-    display: inline-flex; align-items: center; gap: 6px;
-    border: 1px solid var(--line); border-radius: 2px;
-    padding: 5px 9px;
-    font-size: 0.63rem; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-dim);
-    white-space: nowrap;
+  /* Só a seta, como nas outras seções da página. O cabeçalho inteiro continua
+     sendo o alvo de clique, então não se perde área no celular. */
+  .boss-seta {
+    font-size: 0.8rem; color: var(--text-dim);
+    transition: transform 0.2s ease; display: inline-block; padding: 6px;
   }
-  .boss-head:hover .boss-abre { color: var(--text); border-color: var(--gold); }
-  .boss-seta { font-size: 0.7rem; transition: transform 0.2s ease; display: inline-block; }
-  .boss-panel.aberto .boss-seta { transform: rotate(180deg); }
-  .boss-panel.aberto .boss-abre { color: #d8d2c6; border-color: #4a443e; }
+  .boss-head:hover .boss-seta { color: var(--text); }
+  .boss-panel.aberto .boss-seta { transform: rotate(180deg); color: #d8d2c6; }
 
   /* Aberto, o bloco vira cimento queimado: é a cor do lugar onde se apanha. */
   .boss-panel.aberto {
@@ -440,9 +434,8 @@
      seria violação. Quem tiver arte com direito de uso põe o arquivo em
      site/icones/<key>.png e ela entra por cima daqui. */
   .boss-icone {
-    width: 46px; height: 46px; margin: 0 auto 9px;
+    width: 54px; height: 54px; margin: 0 auto 9px;
     display: flex; align-items: center; justify-content: center;
-    border: 1px solid #4a443e; border-radius: 50%;
     background: #2a2724;
     overflow: hidden;
   }
@@ -450,10 +443,9 @@
     font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
     line-height: 1; color: #b9ad9c;
   }
-  .boss-card:not(.zero) .boss-icone { border-color: var(--blood); }
   .boss-card:not(.zero) .boss-icone span { color: #e3d6c2; }
   .boss-icone img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .boss-icone.com-arte { border-color: #5a524a; }
+  .boss-icone.com-arte { background: none; }
   .boss-card-nome {
     font-size: 0.74rem; line-height: 1.3; color: #ded8cc;
     word-break: break-word;
@@ -903,7 +895,7 @@
       <span class="boss-kanji">討</span>
       <span class="boss-num" id="bossNum">—</span>
       <span class="boss-rot">boss kills</span>
-      <span class="boss-abre"><span id="bossAbreTxt">see each boss</span><span class="boss-seta">▾</span></span>
+      <span class="boss-seta">▾</span>
     </button>
     <div class="boss-lista" id="bossLista" hidden></div>
     <div class="boss-nota" id="bossNota"></div>
@@ -1798,7 +1790,6 @@ function ligarBossPanel() {
     lista.hidden = !abrir;
     painel.classList.toggle("aberto", abrir);
     head.setAttribute("aria-expanded", abrir ? "true" : "false");
-    document.getElementById("bossAbreTxt").textContent = abrir ? "hide" : "see each boss";
   });
 }
 
