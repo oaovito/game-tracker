@@ -1,0 +1,25 @@
+{
+  "name": "sekiro-progresso-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Le o save do Sekiro (somente leitura) e alimenta o tracker de progresso em HTML.",
+  "scripts": {
+    "start": "node sync/main.js",
+    "sync": "node sync/parse.js",
+    "serve": "node sync/serve.js",
+    "discover": "node sync/discover.js",
+    "selftest": "node sync/selftest.js",
+    "qr": "node sync/qrfile.js",
+    "auditoria": "node sync/auditoria.js",
+    "tempo": "node sync/tempo.js",
+    "icones": "node sync/icones.js",
+    "deaths": "node sync/deathsmem.js",
+    "mem": "node sync/memoria.js",
+    "instalacao": "node sync/instalacao.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

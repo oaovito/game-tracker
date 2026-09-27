@@ -1,0 +1,1909 @@
+{
+  "_README": [
+    "Configuração do leitor de save do Sekiro. Tudo aqui é REVERSE-ENGINEERED.",
+    "Cada entrada tem um campo 'confidence':",
+    "  confirmed - verificado byte a byte num save real nesta máquina",
+    "  high      - nome do parâmetro é inequívoco (tradução direta do japonês)",
+    "  likely    - dedução por tier/ordem; confirme com 'npm run discover'",
+    "  unknown   - ninguém mapeou ainda; preencha via descoberta por diff",
+    "Se um patch do jogo mudar algo, corrija aqui - o código não tem offsets fixos."
+  ],
+  "schemaVersion": 1,
+  "container": {
+    "_note": "Confirmado: BND4 sem criptografia, cada bloco = [MD5 16 bytes][payload].",
+    "confidence": "confirmed"
+  },
+  "slot": "auto",
+  "_slotNote": "'auto' = aprende qual slot o jogo está gravando observando qual bloco muda. Ou use 0..9.",
+  "itemTable": {
+    "start": null,
+    "end": null,
+    "_note": "null = detecta a tabela pela estrutura (corrida de células vazias com passo 16). Mais resistente a patches que um offset fixo.",
+    "confidence": "confirmed"
+  },
+  "slotFields": {
+    "_note": "Offsets relativos ao payload do slot (payload = bloco - 16 bytes de MD5). Origem: alfizari/Sekiro-Save-Editor, e steamId64 conferido contra o nome da pasta neste PC.",
+    "steamId64": {
+      "offset": 212564,
+      "type": "u64",
+      "confidence": "confirmed"
+    },
+    "attackPower": {
+      "offset": 213660,
+      "type": "u8",
+      "confidence": "likely"
+    },
+    "spiritEmblems": {
+      "offset": 213914,
+      "type": "u8",
+      "confidence": "likely"
+    },
+    "skillPoints": {
+      "offset": 213940,
+      "type": "u32",
+      "confidence": "likely"
+    },
+    "sen": {
+      "offset": 213712,
+      "type": "u32",
+      "confidence": "likely"
+    }
+  },
+  "goods": {
+    "_note": "IDs do EquipParamGoods do Sekiro. A quantidade vem da tabela de itens.",
+    "prayerBead": {
+      "id": 4000,
+      "label": "Prayer Beads",
+      "paramName": "HP/体幹UPの欠片 (HP/Posture UP Fragment)",
+      "confidence": "high"
+    },
+    "gourdSeed": {
+      "id": 4400,
+      "label": "Gourd Seeds",
+      "paramName": "ひょうたん所持上限UP (Gourd possession upper limit UP)",
+      "confidence": "high"
+    },
+    "prayerNecklaces": {
+      "ids": [
+        4100,
+        4101,
+        4102,
+        4103,
+        4104,
+        4105,
+        4106,
+        4107,
+        4108,
+        4109
+      ],
+      "label": "Prayer Necklaces",
+      "paramName": "HP/体幹UPの器1..10 (HP/Posture UP Vessel 1..10)",
+      "confidence": "high"
+    },
+    "healingGourd": {
+      "id": 3000,
+      "label": "Healing Gourd",
+      "paramName": "回復ひょうたん (Healing Gourd)",
+      "confidence": "high",
+      "_note": "A quantidade deste item e o numero de cargas: 1 inicial + 1 por semente entregue."
+    }
+  },
+  "progression": {
+    "_note": "Aritmética do jogo, não do save.",
+    "beadsPerNecklace": 4,
+    "totalNecklaces": 10,
+    "totalPrayerBeads": 40,
+    "maxGourdSeeds": 9,
+    "startingGourdCharges": 1,
+    "maxGourdCharges": 10,
+    "_confidence": "high",
+    "_beadsNote": "São 4 contas por colar e 10 colares (= 40 contas). Os 10 'vessels' 4100-4109 no param confirmam os 10 colares. (O pedido original dizia '/5'; o correto é /4.)",
+    "_gourdNote": "9 sementes no jogo; a cabaça começa com 1 carga e vai até 10."
+  },
+  "materials": [
+    {
+      "key": "scrapIron",
+      "id": 6000,
+      "label": "Scrap Iron",
+      "paramName": "汎用素材：鋼鉄1（欠片） = 鉄屑",
+      "confidence": "high"
+    },
+    {
+      "key": "scrapMagnetite",
+      "id": 6010,
+      "label": "Scrap Magnetite",
+      "paramName": "汎用素材：鋼鉄2（大欠片） = 磁鉄屑",
+      "confidence": "high"
+    },
+    {
+      "key": "adamantiteScrap",
+      "id": 6020,
+      "label": "Adamantite Scrap",
+      "paramName": "汎用素材：鋼鉄3（塊） = 金剛屑",
+      "confidence": "high"
+    },
+    {
+      "key": "blackGunpowder",
+      "id": 6100,
+      "label": "Black Gunpowder",
+      "paramName": "汎用素材：化学呪術1（欠片） = 黒色煙硝",
+      "confidence": "high"
+    },
+    {
+      "key": "yellowGunpowder",
+      "id": 6200,
+      "label": "Yellow Gunpowder",
+      "paramName": "汎用素材：化学2（大欠片） = 黄色煙硝",
+      "confidence": "high"
+    },
+    {
+      "key": "fulminatedMercury",
+      "id": 6210,
+      "label": "Fulminated Mercury",
+      "paramName": "汎用素材：化学3（塊） = 雷汞",
+      "confidence": "high"
+    },
+    {
+      "key": "lumpOfFatWax",
+      "id": 6300,
+      "label": "Lump of Fat Wax",
+      "paramName": "汎用素材：呪術2（大欠片） = 脂蝋の瘤",
+      "confidence": "high"
+    },
+    {
+      "key": "lumpOfGraveWax",
+      "id": 6310,
+      "label": "Lump of Grave Wax",
+      "paramName": "汎用素材：呪術3（塊） = 死蝋の瘤",
+      "confidence": "high"
+    },
+    {
+      "key": "lapisLazuli",
+      "id": 6400,
+      "label": "Lapis Lazuli",
+      "paramName": "汎用素材：鋼鉄化学呪術4（原盤） = 源の瑠璃",
+      "confidence": "high"
+    }
+  ],
+  "bossMemories": {
+    "_note": [
+      "Em Sekiro, cada chefe principal dá uma 'Memória' (Boss Soul).",
+      "52xx = memória não usada, 53xx = memória já gasta num Ídolo.",
+      "Chefe derrotado = possui 52xx OU 53xx. Mini-chefes NÃO dão memória:",
+      "esses continuam manuais no tracker."
+    ],
+    "unusedBase": 5200,
+    "usedBase": 5300,
+    "confidence": "high",
+    "list": [
+      {
+        "key": "genichiroPrologue",
+        "label": "Genichiro Ashina (prologue)",
+        "flagOnly": true,
+        "flag": 9300,
+        "area": "Ashina Reservoir",
+        "emblema": "弓",
+        "emblemaPorque": "o arqueiro do prólogo"
+      },
+      {
+        "n": 0,
+        "key": "gyoubu",
+        "label": "Gyoubu Masataka Oniwa",
+        "paramName": "ボスソウル_騎馬武者",
+        "drop": "Memory: Gyoubu Oniwa",
+        "area": "Ashina Outskirts",
+        "emblema": "馬",
+        "emblemaPorque": "entra a cavalo"
+      },
+      {
+        "n": 1,
+        "key": "ladyButterfly",
+        "label": "Lady Butterfly",
+        "paramName": "ボスソウル_お蝶",
+        "drop": "Memory: Lady Butterfly",
+        "area": "Hirata Estate",
+        "emblema": "蝶",
+        "emblemaPorque": "お蝶, borboleta"
+      },
+      {
+        "n": 2,
+        "key": "genichiro2",
+        "label": "Genichiro Ashina",
+        "paramName": "ボスソウル_ライバル2回目",
+        "drop": "Memory: Genichiro",
+        "area": "Ashina Castle",
+        "emblema": "雷",
+        "emblemaPorque": "Way of Tomoe, o relâmpago"
+      },
+      {
+        "n": 3,
+        "key": "foldingMonkeys",
+        "label": "Folding Screen Monkeys",
+        "paramName": "ボスソウル_稚児猿",
+        "drop": "Memory: Screen Monkeys",
+        "area": "Senpou Temple",
+        "emblema": "猿",
+        "emblemaPorque": "稚児猿, os macacos"
+      },
+      {
+        "n": 4,
+        "key": "guardianApe",
+        "label": "Guardian Ape",
+        "paramName": "ボスソウル_夜叉猿",
+        "drop": "Memory: Guardian Ape",
+        "area": "Sunken Valley",
+        "emblema": "夜",
+        "emblemaPorque": "夜叉猿, o macaco yasha"
+      },
+      {
+        "n": 13,
+        "key": "guardianApe2",
+        "label": "Headless Ape",
+        "paramName": "ボスソウル_夜叉猿2戦目",
+        "drop": "Memory: Headless Ape",
+        "area": "Sunken Valley",
+        "emblema": "首",
+        "emblemaPorque": "sem cabeça"
+      },
+      {
+        "n": 5,
+        "key": "corruptedMonkIll",
+        "label": "Corrupted Monk (illusion)",
+        "paramName": "ボスソウル_破戒僧（幻影）",
+        "drop": "Memory: Corrupted Monk",
+        "area": "Ashina Depths (Mibu Village)",
+        "emblema": "幻",
+        "emblemaPorque": "幻影, a ilusão"
+      },
+      {
+        "n": 6,
+        "key": "greatShinobiOwl",
+        "label": "Great Shinobi - Owl",
+        "paramName": "ボスソウル_忍軍の長",
+        "drop": "Memory: Great Shinobi",
+        "area": "Ashina Castle",
+        "emblema": "梟",
+        "emblemaPorque": "梟, a coruja"
+      },
+      {
+        "n": 7,
+        "key": "owlFather",
+        "label": "Owl (Father)",
+        "paramName": "ボスソウル_忍軍の長（真）",
+        "drop": "Memory: Foster Father",
+        "area": "Hirata Estate (2nd memory)",
+        "emblema": "義",
+        "emblemaPorque": "義父, o pai adotivo"
+      },
+      {
+        "n": 8,
+        "key": "trueCorruptedMonk",
+        "label": "True Corrupted Monk",
+        "paramName": "ボスソウル_破戒僧",
+        "drop": "Memory: True Monk",
+        "area": "Fountainhead Palace",
+        "emblema": "僧",
+        "emblemaPorque": "破戒僧, o monge"
+      },
+      {
+        "n": 9,
+        "key": "divineDragon",
+        "label": "Divine Dragon",
+        "paramName": "ボスソウル_人魚竜",
+        "drop": "Memory: Divine Dragon",
+        "area": "Fountainhead Palace",
+        "emblema": "龍",
+        "emblemaPorque": "o dragão"
+      },
+      {
+        "n": 10,
+        "key": "demonOfHatred",
+        "label": "Demon of Hatred",
+        "paramName": "ボスソウル_鬼仏師",
+        "drop": "Memory: Hatred Demon",
+        "area": "Ashina Outskirts",
+        "emblema": "鬼",
+        "emblemaPorque": "o demônio"
+      },
+      {
+        "n": 11,
+        "key": "isshinSwordSaint",
+        "label": "Isshin, the Sword Saint",
+        "paramName": "ボスソウル_蘇った剣聖",
+        "drop": "Memory: Saint Isshin",
+        "area": "Ashina Castle Tower",
+        "emblema": "剣",
+        "emblemaPorque": "剣聖, o santo da espada"
+      },
+      {
+        "key": "emma",
+        "label": "Emma, the Gentle Blade",
+        "flagOnly": true,
+        "flag": 9315,
+        "note": "Shura ending",
+        "area": "Ashina Castle Tower",
+        "emblema": "医",
+        "emblemaPorque": "a médica",
+        "enquadre": {
+          "size": "330%",
+          "pos": "54% 6%"
+        },
+        "enquadrePorque": "retrato de corpo inteiro: aproxima no rosto para igualar o enquadramento das outras"
+      },
+      {
+        "n": 12,
+        "key": "isshinAshina",
+        "label": "Isshin Ashina",
+        "paramName": "ボスソウル_病床の剣聖",
+        "drop": "Memory: Isshin Ashina",
+        "area": "Ashina Castle Tower",
+        "emblema": "一",
+        "emblemaPorque": "一心"
+      },
+      {
+        "n": 20,
+        "key": "innerGenichiro",
+        "label": "Inner Genichiro",
+        "paramName": "ボスソウル_EX弦一郎",
+        "area": "Gauntlets of Strength",
+        "emblema": "弦",
+        "emblemaPorque": "弦一郎"
+      },
+      {
+        "n": 21,
+        "key": "innerFather",
+        "label": "Inner Father",
+        "paramName": "ボスソウル_EX義父",
+        "area": "Gauntlets of Strength",
+        "emblema": "奥",
+        "emblemaPorque": "o interior"
+      },
+      {
+        "n": 22,
+        "key": "innerIsshin",
+        "label": "Inner Isshin",
+        "paramName": "ボスソウル_EX一心",
+        "area": "Gauntlets of Strength",
+        "emblema": "心",
+        "emblemaPorque": "一心, o coração"
+      }
+    ],
+    "_dropNote": "Nomes dos itens de Memória conferidos na wiki (fextralife). Não derivar do rótulo do chefe: \"Memory: Great Shinobi\" e não \"Memory: Great Shinobi Owl\".",
+    "_emblemaNota": [
+      "Emblema em kanji, nao imagem. As artes de chefe que circulam em wiki sao da",
+      "FromSoftware: republica-las num repositorio publico seria violacao. Estes sao",
+      "caracteres japoneses comuns, escolhidos pelo que o chefe e.",
+      "Se um dia houver arte com direito de uso, basta por o arquivo em",
+      "site/icones/<key>.png: a pagina usa a imagem e so cai no kanji se ela faltar."
+    ],
+    "_focoNota": "enquadre vira background-size/position do icone; so entra onde o recorte padrao erra o alvo."
+  },
+  "prostheticTools": {
+    "_note": [
+      "Próteses ficam na categoria 'weapon' da tabela de itens, não em 'goods'.",
+      "ID base 7X000 = ferramenta nível 1; 7X100/7X200/7X300 = upgrades.",
+      "Nomes internos são japoneses genéricos (斧 = machado, 鉄扇 = leque de ferro),",
+      "então o mapeamento para o nome em inglês do jogo é dedução — marcada abaixo.",
+      "'溜め可能' (pode carregar) é o que o jogo chama de 'Spring-load'."
+    ],
+    "list": [
+      {
+        "key": "loadedShuriken",
+        "id": 70000,
+        "label": "Loaded Shuriken",
+        "paramName": "手裏剣LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "shinobiFirecracker",
+        "id": 71000,
+        "label": "Shinobi Firecracker",
+        "paramName": "爆竹LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "flameVent",
+        "id": 72000,
+        "label": "Flame Vent",
+        "paramName": "発火LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "loadedAxe",
+        "id": 73000,
+        "label": "Loaded Axe",
+        "paramName": "斧LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "mistRaven",
+        "id": 74000,
+        "label": "Mist Raven",
+        "paramName": "変わり身 (substituicao) = Mist Raven",
+        "confidence": "high"
+      },
+      {
+        "key": "sabimaru",
+        "id": 75000,
+        "label": "Sabimaru",
+        "paramName": "小太刀LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "loadedUmbrella",
+        "id": 76000,
+        "label": "Loaded Umbrella",
+        "paramName": "鉄扇 (leque de ferro, 回し受け) = Loaded Umbrella",
+        "confidence": "high"
+      },
+      {
+        "key": "divineAbduction",
+        "id": 77000,
+        "label": "Divine Abduction",
+        "paramName": "敵回し (girar o inimigo) = Divine Abduction",
+        "confidence": "high"
+      },
+      {
+        "key": "loadedSpear",
+        "id": 78000,
+        "label": "Loaded Spear",
+        "paramName": "槍LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "fingerWhistle",
+        "id": 79000,
+        "label": "Finger Whistle",
+        "paramName": "指笛LV1",
+        "confidence": "high"
+      },
+      {
+        "key": "lazuliteFlame",
+        "id": 72300,
+        "label": "Lazulite Sacred Flame",
+        "paramName": "発火LV4（対霊）- 対霊 = anti-espirito, que e o proposito do Lazulite",
+        "confidence": "high"
+      },
+      {
+        "key": "phoenixUmbrella",
+        "id": 76300,
+        "label": "Phoenix's Lilac Umbrella",
+        "paramName": "鉄扇LV3-B（対霊）- o LV3-A e 対炎 (Suzaku), o LV3-B e 対霊 (Phoenix)",
+        "confidence": "high"
+      }
+    ]
+  },
+  "combatArts": {
+    "_note": [
+      "Artes de combate também ficam na categoria 'weapon', como registros de",
+      "'解禁' (desbloqueado). Os nomes internos são descritivos em japonês, então",
+      "os de nível mais alto são dedução; confirme com 'npm run discover'."
+    ],
+    "list": [
+      {
+        "key": "whirlwindSlash",
+        "id": 210000,
+        "label": "Whirlwind Slash",
+        "paramName": "回転斬り解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "shadowrush",
+        "id": 211000,
+        "label": "Shadowrush",
+        "paramName": "忍者牙突解禁 (estocada com avanco); Shadowfall e a evolucao dele",
+        "confidence": "high"
+      },
+      {
+        "key": "shadowfall",
+        "id": 610100,
+        "label": "Shadowfall",
+        "paramName": "忍者牙突強化+1 = evolucao do Shadowrush, confirmada pelo wiki",
+        "confidence": "high"
+      },
+      {
+        "key": "nightjarSlash",
+        "id": 310000,
+        "label": "Nightjar Slash",
+        "paramName": "飛び込み斬り解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "nightjarReversal",
+        "id": 310100,
+        "label": "Nightjar Slash Reversal",
+        "paramName": "飛び込み斬り強化+1",
+        "confidence": "high"
+      },
+      {
+        "key": "ichimonji",
+        "id": 410000,
+        "label": "Ichimonji",
+        "paramName": "面打ち解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "ichimonjiDouble",
+        "id": 410100,
+        "label": "Ichimonji: Double",
+        "paramName": "面打ち強化+1",
+        "confidence": "high"
+      },
+      {
+        "key": "ashinaCross",
+        "id": 411000,
+        "label": "Ashina Cross",
+        "paramName": "葦名流：居合い解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "prayingStrikes",
+        "id": 510000,
+        "label": "Praying Strikes",
+        "paramName": "体術連撃解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "prayingExorcism",
+        "id": 510100,
+        "label": "Praying Strikes - Exorcism",
+        "paramName": "体術連撃強化+1",
+        "confidence": "high"
+      },
+      {
+        "key": "senpouKicks",
+        "id": 511000,
+        "label": "Senpou Leaping Kicks",
+        "paramName": "蹴りラッシュ解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "highMonk",
+        "id": 511100,
+        "label": "High Monk",
+        "paramName": "蹴りラッシュ強化+1",
+        "confidence": "high"
+      },
+      {
+        "key": "mortalDraw",
+        "id": 670000,
+        "label": "Mortal Draw",
+        "paramName": "不死斬り解禁",
+        "confidence": "high"
+      },
+      {
+        "key": "empoweredMortalDraw",
+        "id": 612100,
+        "label": "Empowered Mortal Draw",
+        "paramName": "不死斬り斬撃強化+1",
+        "confidence": "high"
+      },
+      {
+        "key": "mikiriCounter",
+        "id": 200300,
+        "label": "Mikiri Counter",
+        "paramName": "ステップ見切り",
+        "confidence": "high"
+      },
+      {
+        "key": "dragonFlash",
+        "id": 671000,
+        "label": "Dragon Flash",
+        "paramName": "剣聖居合解禁 = 秘伝・竜閃; iai unico, obtido ao vencer o Sword Saint",
+        "confidence": "high"
+      },
+      {
+        "key": "floatingPassage",
+        "id": 672000,
+        "label": "Floating Passage",
+        "paramName": "八艘飛びラッシュ解禁 = 奥義・浮き舟渡り",
+        "confidence": "high"
+      },
+      {
+        "key": "spiralCloud",
+        "id": 611100,
+        "label": "Spiral Cloud Passage",
+        "paramName": "八艘飛びラッシュ強化+1 = 秘伝・渦雲渡り",
+        "confidence": "high"
+      },
+      {
+        "key": "oneMind",
+        "id": 673000,
+        "label": "One Mind",
+        "paramName": "見えない居合連撃解禁 = 秘伝・一心; 連撃 = combo, bate com a rajada do One Mind",
+        "confidence": "high"
+      },
+      {
+        "key": "sakuraDance",
+        "id": 674000,
+        "label": "Sakura Dance",
+        "paramName": "新技解禁 = 桜舞 (Sakura Dance)",
+        "confidence": "likely",
+        "_note": "O id nao aparece nas tabelas de nome publicadas; o param se chama 必殺剣_新技解禁 (\"special sword: new technique unlocked\"). Fica no mesmo bloco dos outros 必殺剣 (670000 Mortal Draw, 671000 Dragon Flash, 672000 Floating Passage, 673000 One Mind), e Sakura Dance e a unica arte desse bloco adicionada depois do lancamento (recompensa do Gauntlet of Strength: Divine Heir), o que explica o nome de placeholder. Dai a atribuicao."
+      }
+    ]
+  },
+  "goodsUnlocks": {
+    "_note": [
+      "Coisas que o save só registra como 'você tem este item'.",
+      "Great Serpent não é morto normalmente: a prova de tê-lo enfrentado é a",
+      "Serpent Viscera (蛇の臓器 A/B). Puppeteer Ninjutsu é um ninjutsu, não uma",
+      "prótese, e aparece como goods."
+    ],
+    "list": [
+      {
+        "key": "greatSerpent",
+        "anyOf": [
+          9192,
+          9193
+        ],
+        "label": "Great Serpent (Serpent Viscera)",
+        "paramName": "蛇の臓器_A/B",
+        "confidence": "likely",
+        "drop": "Dried Serpent Viscera"
+      },
+      {
+        "key": "puppeteerNinjutsu",
+        "anyOf": [
+          2110
+        ],
+        "label": "Puppeteer Ninjutsu",
+        "paramName": "忍殺忍術_傀儡",
+        "confidence": "high",
+        "drop": "Puppeteer Ninjutsu"
+      }
+    ]
+  },
+  "eventFlags": {
+    "_note": [
+      "Área de event flags do bloco comum (region 0, area 0, group 0).",
+      "Endereço de uma flag:  base + zona*zoneStride + word*4,  bit = 31 - ((id%1000)%32)",
+      "  zona = (id/1000)%10     word = (id%1000)/32",
+      "A decomposição vem do SoulSplitter/from-rs; a base foi confirmada de duas",
+      "formas independentes neste save: (1) as flags 9301-9317 batem exatamente",
+      "com as Memories lidas da tabela de itens, e (2) a contagem de mini-chefes",
+      "com flag ligada bate com as Prayer Beads do inventário (2 mini-chefes = 2",
+      "contas no slot 0).",
+      "Mini-chefe usa a flag da Prayer Bead que ele dropa: na prática é o mesmo",
+      "que 'derrotado', já que a conta só aparece quando ele morre."
+    ],
+    "confidence": "confirmed",
+    "base": 52,
+    "zoneStride": 128,
+    "zoneCount": 10,
+    "wordsPerZone": 32,
+    "miniBosses": [
+      {
+        "key": "juzou",
+        "label": "Juzou the Drunkard",
+        "area": "Hirata Estate",
+        "entity": 1000300,
+        "drop": "Prayer Bead",
+        "flag": 6764
+      },
+      {
+        "key": "enshin",
+        "label": "Shinobi Hunter Enshin of Misen",
+        "area": "Hirata Estate",
+        "entity": 1000330,
+        "drop": "Prayer Bead",
+        "flag": 6763
+      },
+      {
+        "key": "juzou2",
+        "label": "Juzou the Drunkard",
+        "area": "Hirata Estate (2nd memory)",
+        "entity": 1000301,
+        "drop": "Prayer Bead",
+        "flag": 6782
+      },
+      {
+        "key": "masanagaHirata",
+        "label": "Lone Shadow Masanaga the Spear-Bearer",
+        "area": "Hirata Estate (2nd memory)",
+        "entity": 1000353,
+        "drop": "Prayer Bead",
+        "flag": 6781
+      },
+      {
+        "key": "kawarada",
+        "label": "General Naomori Kawarada",
+        "area": "Ashina Outskirts",
+        "entity": 1100300,
+        "drop": "Prayer Bead",
+        "flag": 6760
+      },
+      {
+        "key": "ogreOutskirts",
+        "label": "Chained Ogre",
+        "area": "Ashina Outskirts",
+        "entity": 1100310,
+        "drop": "Prayer Bead",
+        "flag": 6761
+      },
+      {
+        "key": "tenzen",
+        "label": "General Tenzen Yamauchi",
+        "area": "Ashina Outskirts",
+        "entity": 1100301,
+        "drop": "Prayer Bead",
+        "flag": 6762
+      },
+      {
+        "key": "shigekichi",
+        "label": "Shigekichi of the Red Guard",
+        "area": "Ashina Outskirts",
+        "entity": 1100480,
+        "drop": "Prayer Bead",
+        "flag": 6787
+      },
+      {
+        "key": "blazingBull",
+        "label": "Blazing Bull",
+        "area": "Ashina Castle",
+        "entity": 1110440,
+        "drop": "Prayer Bead",
+        "flag": 6765
+      },
+      {
+        "key": "kuranosuke",
+        "label": "General Kuranosuke Matsumoto",
+        "area": "Ashina Castle",
+        "entity": 1110410,
+        "drop": "Prayer Bead",
+        "flag": 6766
+      },
+      {
+        "key": "jinsukeSaze",
+        "label": "Ashina Elite - Jinsuke Saze",
+        "area": "Ashina Castle",
+        "entity": 1110504,
+        "drop": "Prayer Bead",
+        "flag": 6767
+      },
+      {
+        "key": "vilehand",
+        "label": "Lone Shadow Vilehand",
+        "area": "Ashina Castle",
+        "entity": 1110305,
+        "drop": "Prayer Bead",
+        "flag": 6779
+      },
+      {
+        "key": "masanagaCastle",
+        "label": "Lone Shadow Masanaga the Spear-Bearer",
+        "area": "Ashina Castle",
+        "entity": 1110316,
+        "drop": "Prayer Bead",
+        "flag": 6780
+      },
+      {
+        "key": "ogreCastle",
+        "label": "Chained Ogre",
+        "area": "Ashina Castle",
+        "entity": 1110610,
+        "drop": "Prayer Bead",
+        "flag": 6778
+      },
+      {
+        "key": "ujinariMizuo",
+        "label": "Ashina Elite - Ujinari Mizuo",
+        "area": "Ashina Castle",
+        "entity": 1110511,
+        "drop": "Prayer Bead",
+        "flag": 6785
+      },
+      {
+        "key": "shigenori",
+        "label": "Leader Shigenori Yamauchi",
+        "area": "Ashina Reservoir",
+        "entity": 1120250,
+        "drop": "Pellet",
+        "detect": "none"
+      },
+      {
+        "key": "longswordsman",
+        "label": "Lone Shadow Longswordsman",
+        "area": "Ashina Reservoir",
+        "entity": 1120300,
+        "drop": "Prayer Bead",
+        "flag": 6770
+      },
+      {
+        "key": "masajiOniwa",
+        "label": "Seven Ashina Spears - Shume Masaji Oniwa",
+        "area": "Ashina Reservoir",
+        "entity": 1120530,
+        "drop": "Prayer Bead",
+        "flag": 6769
+      },
+      {
+        "key": "toshikatsu",
+        "label": "Seven Ashina Spears - Shikibu Toshikatsu Yamauchi",
+        "area": "Ashina Reservoir",
+        "entity": 1120521,
+        "drop": "Prayer Bead",
+        "flag": 6786
+      },
+      {
+        "key": "shichimenDungeon",
+        "label": "Shichimen Warrior",
+        "area": "Abandoned Dungeon",
+        "entity": 1300200,
+        "drop": "Ceremonial Tanto",
+        "goodsAnyOf": [
+          3800,
+          3801
+        ],
+        "confidence": "likely"
+      },
+      {
+        "key": "mistNoble",
+        "label": "Mist Noble",
+        "area": "Ashina Depths (Hidden Forest)",
+        "entity": 1500200,
+        "drop": "Lump of Grave Wax",
+        "flag": 9380
+      },
+      {
+        "key": "tokujiro",
+        "label": "Tokujiro the Glutton",
+        "area": "Ashina Depths (Mibu Village)",
+        "entity": 1500490,
+        "drop": "Prayer Bead",
+        "flag": 6776
+      },
+      {
+        "key": "orin",
+        "label": "O'Rin of the Water",
+        "area": "Ashina Depths (Mibu Village)",
+        "entity": 1500690,
+        "drop": "Prayer Bead",
+        "flag": 6777
+      },
+      {
+        "key": "shirafuji",
+        "label": "Snake Eyes Shirafuji",
+        "area": "Sunken Valley (Gun Fort)",
+        "entity": 1700200,
+        "drop": "Prayer Bead",
+        "flag": 6773
+      },
+      {
+        "key": "giraffe",
+        "label": "Long-arm Centipede Giraffe",
+        "area": "Sunken Valley",
+        "entity": 1700425,
+        "drop": "Prayer Bead",
+        "flag": 6774
+      },
+      {
+        "key": "shirahagi",
+        "label": "Snake Eyes Shirahagi",
+        "area": "Sunken Valley (Poison Pool)",
+        "entity": 1700201,
+        "drop": "Prayer Bead",
+        "flag": 6775
+      },
+      {
+        "key": "shichimenValley",
+        "label": "Shichimen Warrior",
+        "area": "Sunken Valley",
+        "entity": 1700520,
+        "drop": "Malcontent's Ring",
+        "flag": 6743
+      },
+      {
+        "key": "senun",
+        "label": "Long-arm Centipede Sen'un",
+        "area": "Senpou Temple",
+        "entity": 2000279,
+        "drop": "Prayer Bead",
+        "flag": 6772
+      },
+      {
+        "key": "armoredWarrior",
+        "label": "Armored Warrior",
+        "area": "Senpou Temple",
+        "entity": 2000400,
+        "drop": "Prayer Bead",
+        "flag": 6771
+      },
+      {
+        "key": "sakuraBull",
+        "label": "Sakura Bull of the Palace",
+        "area": "Fountainhead Palace",
+        "entity": 2500570,
+        "drop": "Prayer Bead",
+        "flag": 6783
+      },
+      {
+        "key": "okamiShizu",
+        "label": "Okami Leader Shizu",
+        "area": "Fountainhead Palace",
+        "entity": 2500406,
+        "drop": "Prayer Bead",
+        "flag": 6784
+      },
+      {
+        "key": "shichimenPalace",
+        "label": "Shichimen Warrior",
+        "area": "Fountainhead Palace",
+        "entity": 2500580,
+        "drop": "Lapis Lazuli",
+        "detect": "none"
+      }
+    ],
+    "bossFlags": {
+      "_note": "Confere com as Memories; serve de calibração automática da base.",
+      "list": [
+        {
+          "key": "gyoubu",
+          "flag": 9301
+        },
+        {
+          "key": "ladyButterfly",
+          "flag": 9302
+        },
+        {
+          "key": "genichiro2",
+          "flag": 9303
+        },
+        {
+          "key": "guardianApe",
+          "flag": 9304
+        },
+        {
+          "key": "foldingMonkeys",
+          "flag": 9305
+        },
+        {
+          "key": "corruptedMonkIll",
+          "flag": 9306
+        },
+        {
+          "key": "guardianApe2",
+          "flag": 9307
+        },
+        {
+          "key": "greatShinobiOwl",
+          "flag": 9308
+        },
+        {
+          "key": "trueCorruptedMonk",
+          "flag": 9309
+        },
+        {
+          "key": "divineDragon",
+          "flag": 9310
+        },
+        {
+          "key": "isshinSwordSaint",
+          "flag": 9312
+        },
+        {
+          "key": "demonOfHatred",
+          "flag": 9313
+        },
+        {
+          "key": "emma",
+          "flag": 9315
+        },
+        {
+          "key": "isshinAshina",
+          "flag": 9316
+        },
+        {
+          "key": "owlFather",
+          "flag": 9317
+        }
+      ]
+    },
+    "_dropNote": "O campo \"drop\" de cada mini-chefe vem do dump EMEVD (bloco \"Enemy award on death\"), onde cada entidade aparece seguida da flag do item que larga."
+  },
+  "excludeFromDiff": [
+    {
+      "start": 983040,
+      "end": 1048576,
+      "reason": "Região comprimida no fim do slot (payload 0xF0000-0x100000). Qualquer mudança reescreve o bloco inteiro e polui o diff."
+    }
+  ],
+  "idols": {
+    "_note": [
+      "Ídolos do Escultor. Os ids de flag vêm do enum Idol do SoulSplitter.",
+      "ATENÇÃO: cada área vive num BLOCO de flags diferente do bloco comum",
+      "(region 0 / area 0 / group 0) cuja base eu descobri. A base de cada bloco",
+      "de área ainda não é conhecida, e não dá para deduzir: todos os ídolos usam",
+      "as mesmas posições dentro do seu bloco, então ler qualquer base devolve os",
+      "mesmos bits e não há como distinguir a área certa sem um ponto de partida.",
+      "Para calibrar: descanse num Ídolo NOVO e rode \"npm run discover idol\".",
+      "Enquanto blockBases estiver nulo, a página mostra os ídolos como pendentes",
+      "em vez de fingir que estão apagados."
+    ],
+    "confidence": "unknown",
+    "zoneStride": 128,
+    "blockBases": {
+      "r1a10g0": null,
+      "r1a11g0": null,
+      "r1a11g1": null,
+      "r1a11g2": null,
+      "r1a13g0": null,
+      "r1a15g0": null,
+      "r1a17g0": null,
+      "r1a20g0": null,
+      "r1a25g0": null
+    },
+    "list": [
+      {
+        "key": "DilapidatedTemple",
+        "flag": 11100000,
+        "label": "Dilapidated Temple",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "AshinaOutskirts",
+        "flag": 11100006,
+        "label": "Ashina Outskirts",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "OutskirtsWallGatePath",
+        "flag": 11100001,
+        "label": "Outskirts Wall - Gate Path",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "OutskirtsWallStairway",
+        "flag": 11100002,
+        "label": "Outskirts Wall - Stairway",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "UnderbridgeValley",
+        "flag": 11100003,
+        "label": "Underbridge Valley",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "AshinaCastleFortress",
+        "flag": 11100004,
+        "label": "Ashina Castle Fortress",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "AshinaCastleGate",
+        "flag": 11100005,
+        "label": "Ashina Castle Gate",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "FlamesOfHatred",
+        "flag": 11100007,
+        "label": "Flames of Hatred",
+        "area": "Ashina Outskirts",
+        "block": "r1a11g0"
+      },
+      {
+        "key": "DragonspringHirataEstate",
+        "flag": 11000000,
+        "label": "Dragonspring - Hirata Estate",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "EstatePath",
+        "flag": 11000001,
+        "label": "Estate Path",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "BambooThicketSlope",
+        "flag": 11000002,
+        "label": "Bamboo Thicket Slope",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "HirataEstateMainHall",
+        "flag": 11000003,
+        "label": "Hirata Estate - Main Hall",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "HirataAudienceChamber",
+        "flag": 11000005,
+        "label": "Hirata Audience Chamber",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "HirataEstateHiddenTemple",
+        "flag": 11000004,
+        "label": "Hirata Estate - Hidden Temple",
+        "area": "Hirata Estate",
+        "block": "r1a10g0"
+      },
+      {
+        "key": "AshinaCastle",
+        "flag": 11110000,
+        "label": "Ashina Castle",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "UpperTowerAntechamber",
+        "flag": 11110001,
+        "label": "Upper Tower - Antechamber",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "UpperTowerAshinaDojo",
+        "flag": 11110007,
+        "label": "Upper Tower - Ashina Dojo",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "CastleTowerLookout",
+        "flag": 11110002,
+        "label": "Castle Tower Lookout",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "UpperTowerKurosRoom",
+        "flag": 11110003,
+        "label": "Upper Tower - Kuro's Room",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "OldGrave",
+        "flag": 11110006,
+        "label": "Old Grave",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "GreatSerpentShrine",
+        "flag": 11110004,
+        "label": "Great Serpent Shrine",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "AbandonedDungeonEntrance",
+        "flag": 11110005,
+        "label": "Abandoned Dungeon Entrance",
+        "area": "Ashina Castle",
+        "block": "r1a11g1"
+      },
+      {
+        "key": "AshinaReservoir",
+        "flag": 11120001,
+        "label": "Ashina Reservoir",
+        "area": "Ashina Castle",
+        "block": "r1a11g2"
+      },
+      {
+        "key": "NearSecretPassage",
+        "flag": 11120000,
+        "label": "Near Secret Passage",
+        "area": "Ashina Castle",
+        "block": "r1a11g2"
+      },
+      {
+        "key": "UndergroundWaterway",
+        "flag": 11300000,
+        "label": "Underground Waterway",
+        "area": "Abandoned Dungeon",
+        "block": "r1a13g0"
+      },
+      {
+        "key": "BottomlessHole",
+        "flag": 11300001,
+        "label": "Bottomless Hole",
+        "area": "Abandoned Dungeon",
+        "block": "r1a13g0"
+      },
+      {
+        "key": "SenpouTempleMtKongo",
+        "flag": 12000000,
+        "label": "Senpou Temple, Mt. Kongo",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "Shugendo",
+        "flag": 12000001,
+        "label": "Shugendo",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "TempleGrounds",
+        "flag": 12000002,
+        "label": "Temple Grounds",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "MainHall",
+        "flag": 12000003,
+        "label": "Main Hall",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "InnerSanctum",
+        "flag": 12000004,
+        "label": "Inner Sanctum",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "SunkenValleyCavern",
+        "flag": 12000005,
+        "label": "Sunken Valley Cavern",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "BellDemonsTemple",
+        "flag": 12000006,
+        "label": "Bell Demon's Temple",
+        "area": "Senpou Temple, Mt. Kongo",
+        "block": "r1a20g0"
+      },
+      {
+        "key": "UnderShrineValley",
+        "flag": 11700007,
+        "label": "Under-Shrine Valley",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "SunkenValley",
+        "flag": 11700000,
+        "label": "Sunken Valley",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "GunFort",
+        "flag": 11700001,
+        "label": "Gun Fort",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "RivenCave",
+        "flag": 11700002,
+        "label": "Riven Cave",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "BodhisattvaValley",
+        "flag": 11700008,
+        "label": "Bodhisattva Valley",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "GuardianApesWateringHole",
+        "flag": 11700003,
+        "label": "Guardian Ape's Watering Hole",
+        "area": "Sunken Valley",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "AshinaDepths",
+        "flag": 11700005,
+        "label": "Ashina Depths",
+        "area": "Ashina Depths",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "PoisonPool",
+        "flag": 11700004,
+        "label": "Poison Pool",
+        "area": "Ashina Depths",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "GuardianApesBurrow",
+        "flag": 11700006,
+        "label": "Guardian Ape's Burrow",
+        "area": "Ashina Depths",
+        "block": "r1a17g0"
+      },
+      {
+        "key": "HiddenForest",
+        "flag": 11500000,
+        "label": "Hidden Forest",
+        "area": "Ashina Depths",
+        "block": "r1a15g0"
+      },
+      {
+        "key": "MibuVillage",
+        "flag": 11500001,
+        "label": "Mibu Village",
+        "area": "Ashina Depths",
+        "block": "r1a15g0"
+      },
+      {
+        "key": "WaterMill",
+        "flag": 11500002,
+        "label": "Water Mill",
+        "area": "Ashina Depths",
+        "block": "r1a15g0"
+      },
+      {
+        "key": "WeddingCaveDoor",
+        "flag": 11500003,
+        "label": "Wedding Cave Door",
+        "area": "Ashina Depths",
+        "block": "r1a15g0"
+      },
+      {
+        "key": "FountainheadPalace",
+        "flag": 12500000,
+        "label": "Fountainhead Palace",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "VermilionBridge",
+        "flag": 12500001,
+        "label": "Vermilion Bridge",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "MibuManor",
+        "flag": 12500006,
+        "label": "Mibu Manor",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "FlowerViewingStage",
+        "flag": 12500002,
+        "label": "Flower Viewing Stage",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "GreatSakura",
+        "flag": 12500003,
+        "label": "Great Sakura",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "PalaceGrounds",
+        "flag": 12500004,
+        "label": "Palace Grounds",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "FeedingGrounds",
+        "flag": 12500007,
+        "label": "Feeding Grounds",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "NearPotNoble",
+        "flag": 12500008,
+        "label": "Near Pot Noble",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      },
+      {
+        "key": "Sanctuary",
+        "flag": 12500005,
+        "label": "Sanctuary",
+        "area": "Fountainhead Palace",
+        "block": "r1a25g0"
+      }
+    ]
+  },
+  "headless": {
+    "_note": [
+      "Headless nao sao detectaveis por flag: as recompensas usam flags de bloco",
+      "de area (51100950, 51110973, 51500910, 51700990, 52500940), e a base desses",
+      "blocos nao e conhecida. Mas cada um larga um Spiritfall exclusivo e",
+      "permanente, entao possuir o item prova a morte. Em NG+ o item vem junto,",
+      "portanto conta como derrotado mesmo antes de mata-lo no ciclo novo."
+    ],
+    "list": [
+      {
+        "key": "headlessOutskirts",
+        "entity": 1100330,
+        "label": "Headless",
+        "area": "Ashina Outskirts",
+        "goodsAnyOf": [
+          3350
+        ],
+        "drop": "Ako's Spiritfall",
+        "confidence": "high"
+      },
+      {
+        "key": "headlessCastle",
+        "entity": 1110660,
+        "label": "Underwater Headless",
+        "area": "Ashina Castle (moat)",
+        "goodsAnyOf": [
+          3370
+        ],
+        "drop": "Ungo's Spiritfall",
+        "confidence": "high"
+      },
+      {
+        "key": "headlessDepths",
+        "entity": 1500680,
+        "label": "Headless",
+        "area": "Ashina Depths",
+        "goodsAnyOf": [
+          3390
+        ],
+        "drop": "Gachiin's Spiritfall",
+        "confidence": "high"
+      },
+      {
+        "key": "headlessValley",
+        "entity": 1700500,
+        "label": "Headless",
+        "area": "Sunken Valley",
+        "goodsAnyOf": [
+          3380
+        ],
+        "drop": "Gokan's Spiritfall",
+        "confidence": "high"
+      },
+      {
+        "key": "headlessPalace",
+        "entity": 2500550,
+        "label": "Underwater Headless (pair)",
+        "area": "Fountainhead Palace",
+        "goodsAnyOf": [
+          3360
+        ],
+        "drop": "Yashariku's Spiritfall",
+        "confidence": "high"
+      }
+    ]
+  },
+  "prayerBeadFlags": {
+    "_note": [
+      "As 40 contas tem flag propria no bloco comum (6760-6799), inclusive as do",
+      "mundo e a da loja. Antes eu so sabia o total das do mundo pela aritmetica",
+      "dos colares; agora cada uma tem nome e local. Rotulos e descricoes vem de",
+      "dists/Base/annotations.txt do randomizer (campos DebugText e Text) e, para",
+      "as de mini-chefe, do proprio eventFlags.miniBosses deste config."
+    ],
+    "totalInGame": 40,
+    "fontes": {
+      "mini-boss": "dropped by a mini-boss",
+      "enemy": "enemy drop",
+      "world": "found in the world",
+      "shop": "bought from a merchant"
+    },
+    "list": [
+      {
+        "key": "mb_kawarada",
+        "flag": 6760,
+        "label": "General Naomori Kawarada",
+        "area": "Ashina Outskirts",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_ogreOutskirts",
+        "flag": 6761,
+        "label": "Chained Ogre",
+        "area": "Ashina Outskirts",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_tenzen",
+        "flag": 6762,
+        "label": "General Tenzen Yamauchi",
+        "area": "Ashina Outskirts",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_enshin",
+        "flag": 6763,
+        "label": "Shinobi Hunter Enshin of Misen",
+        "area": "Hirata Estate",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_juzou",
+        "flag": 6764,
+        "label": "Juzou the Drunkard",
+        "area": "Hirata Estate",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_blazingBull",
+        "flag": 6765,
+        "label": "Blazing Bull",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_kuranosuke",
+        "flag": 6766,
+        "label": "General Kuranosuke Matsumoto",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_jinsukeSaze",
+        "flag": 6767,
+        "label": "Ashina Elite - Jinsuke Saze",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "shop_6768",
+        "flag": 6768,
+        "label": "Dungeon Memorial Mob",
+        "area": "Ashina Castle",
+        "from": "shop",
+        "where": "bought from the Dungeon Memorial Mob"
+      },
+      {
+        "key": "mb_masajiOniwa",
+        "flag": 6769,
+        "label": "Seven Ashina Spears - Shume Masaji Oniwa",
+        "area": "Ashina Reservoir",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_longswordsman",
+        "flag": 6770,
+        "label": "Lone Shadow Longswordsman",
+        "area": "Ashina Reservoir",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_armoredWarrior",
+        "flag": 6771,
+        "label": "Armored Warrior",
+        "area": "Senpou Temple",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_senun",
+        "flag": 6772,
+        "label": "Long-arm Centipede Sen'un",
+        "area": "Senpou Temple",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_shirafuji",
+        "flag": 6773,
+        "label": "Snake Eyes Shirafuji",
+        "area": "Sunken Valley (Gun Fort)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_giraffe",
+        "flag": 6774,
+        "label": "Long-arm Centipede Giraffe",
+        "area": "Sunken Valley",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_shirahagi",
+        "flag": 6775,
+        "label": "Snake Eyes Shirahagi",
+        "area": "Sunken Valley (Poison Pool)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_tokujiro",
+        "flag": 6776,
+        "label": "Tokujiro the Glutton",
+        "area": "Ashina Depths (Mibu Village)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_orin",
+        "flag": 6777,
+        "label": "O'Rin of the Water",
+        "area": "Ashina Depths (Mibu Village)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_ogreCastle",
+        "flag": 6778,
+        "label": "Chained Ogre",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_vilehand",
+        "flag": 6779,
+        "label": "Lone Shadow Vilehand",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_masanagaCastle",
+        "flag": 6780,
+        "label": "Lone Shadow Masanaga the Spear-Bearer",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_masanagaHirata",
+        "flag": 6781,
+        "label": "Lone Shadow Masanaga the Spear-Bearer",
+        "area": "Hirata Estate (2nd memory)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_juzou2",
+        "flag": 6782,
+        "label": "Juzou the Drunkard",
+        "area": "Hirata Estate (2nd memory)",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_sakuraBull",
+        "flag": 6783,
+        "label": "Sakura Bull of the Palace",
+        "area": "Fountainhead Palace",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_okamiShizu",
+        "flag": 6784,
+        "label": "Okami Leader Shizu",
+        "area": "Fountainhead Palace",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_ujinariMizuo",
+        "flag": 6785,
+        "label": "Ashina Elite - Ujinari Mizuo",
+        "area": "Ashina Castle",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_toshikatsu",
+        "flag": 6786,
+        "label": "Seven Ashina Spears - Shikibu Toshikatsu Yamauchi",
+        "area": "Ashina Reservoir",
+        "from": "mini-boss"
+      },
+      {
+        "key": "mb_shigekichi",
+        "flag": 6787,
+        "label": "Shigekichi of the Red Guard",
+        "area": "Ashina Outskirts",
+        "from": "mini-boss"
+      },
+      {
+        "key": "w_6788",
+        "flag": 6788,
+        "label": "Chest",
+        "area": "Ashina Outskirts",
+        "from": "world",
+        "where": "In a chest on the top floor of the building up the stairs after Gyoubu"
+      },
+      {
+        "key": "w_6789",
+        "flag": 6789,
+        "label": "Chest",
+        "area": "Hirata Estate",
+        "from": "world",
+        "where": "In a chest behind the scroll-covered shinobi door before the Audience Chamber"
+      },
+      {
+        "key": "w_6790",
+        "flag": 6790,
+        "label": "Chest",
+        "area": "Ashina Castle",
+        "from": "world",
+        "where": "In a chest past a scroll-covered shinobi door in the Upper Tower room where two fencers are studying a map"
+      },
+      {
+        "key": "w_6791",
+        "flag": 6791,
+        "label": "Treasure",
+        "area": "Senpou Temple",
+        "from": "world",
+        "where": "Underwater in the Temple Grounds pond"
+      },
+      {
+        "key": "w_6792",
+        "flag": 6792,
+        "label": "Treasure",
+        "area": "Sunken Valley",
+        "from": "world",
+        "where": "In the area before the Headless cave, found going backwards from the Under-Shrine Valley Sculptor's Idol"
+      },
+      {
+        "key": "w_6793",
+        "flag": 6793,
+        "label": "Treasure",
+        "area": "Sunken Valley",
+        "from": "world",
+        "where": "In the network of caves accessed beneath Long-arm Centipede Giraffe's room. After reaching the ravine, grapple up to the right, then again up to the skull, then down to the pit with Centipedes."
+      },
+      {
+        "key": "w_6794",
+        "flag": 6794,
+        "label": "Treasure",
+        "area": "Sunken Valley",
+        "from": "world",
+        "where": "Rather than dropping down into the burrow, grapple to the left and wall jump up to the cliff edge overlooking Poison Pool, and then grapple onto the nearby statue's head"
+      },
+      {
+        "key": "w_6795",
+        "flag": 6795,
+        "label": "Shiny Treasure",
+        "area": "Ashina Depths",
+        "from": "world",
+        "where": "On a small shrine in the upper floor of the Head Priest's house"
+      },
+      {
+        "key": "w_6796",
+        "flag": 6796,
+        "label": "Underwater Chest",
+        "area": "Ashina Depths",
+        "from": "world",
+        "where": "In a chest at the bottom of the village pond"
+      },
+      {
+        "key": "w_6797",
+        "flag": 6797,
+        "label": "Underwater Chest",
+        "area": "Fountainhead Palace",
+        "from": "world",
+        "where": "In the chest guarded by the two Underwater Headless"
+      },
+      {
+        "key": "e_6798",
+        "flag": 6798,
+        "label": "Guardian Ape",
+        "area": "Sunken Valley",
+        "from": "enemy",
+        "where": "Dropped by Headless Ape"
+      },
+      {
+        "key": "e_6799",
+        "flag": 6799,
+        "label": "Guardian Ape",
+        "area": "Sunken Valley",
+        "from": "enemy",
+        "where": "Dropped by Headless Ape"
+      }
+    ]
+  },
+  "gourdSeedFlags": {
+    "_note": [
+      "As 9 sementes tambem tem flag propria (6721-6729). Essa contagem e a que",
+      "vale: a quantidade do item 4400 na bolsa zera quando a semente e entregue",
+      "a Emma."
+    ],
+    "totalInGame": 9,
+    "fontes": {
+      "mini-boss": "dropped by a mini-boss",
+      "enemy": "enemy drop",
+      "world": "found in the world",
+      "shop": "bought from a merchant"
+    },
+    "list": [
+      {
+        "key": "shop_6721",
+        "flag": 6721,
+        "label": "Battlefield Memorial Mob",
+        "area": "Ashina Outskirts",
+        "from": "shop",
+        "where": "bought from the Memorial Mob"
+      },
+      {
+        "key": "shop_6722",
+        "flag": 6722,
+        "label": "Fujioka the Info Broker",
+        "area": "Ashina Outskirts",
+        "from": "shop",
+        "where": "bought from Fujioka the Info Broker"
+      },
+      {
+        "key": "e_6723",
+        "flag": 6723,
+        "label": "General Naomori Kawarada",
+        "area": "Ashina Outskirts",
+        "from": "mini-boss",
+        "where": "Dropped by General Naomori Kawarada, or in Offering Box after the Central Forces invasion"
+      },
+      {
+        "key": "w_6724",
+        "flag": 6724,
+        "label": "Treasure",
+        "area": "Sunken Valley",
+        "from": "world",
+        "where": "After two tree branch grapples in Under-Shrine Valley, rather than going right toward the Sunken Valley Sculptor's Idol, climb up the wall to the left and follow that path"
+      },
+      {
+        "key": "w_6725",
+        "flag": 6725,
+        "label": "Treasure",
+        "area": "Ashina Outskirts",
+        "from": "world",
+        "where": "In the left room of the lookout building after Chained Ogre"
+      },
+      {
+        "key": "w_6726",
+        "flag": 6726,
+        "label": "Chest",
+        "area": "Ashina Castle",
+        "from": "world",
+        "where": "In a chest before the Upper Tower Antechamber"
+      },
+      {
+        "key": "w_6727",
+        "flag": 6727,
+        "label": "Treasure",
+        "area": "Senpou Temple",
+        "from": "world",
+        "where": "In the main room of the cricket building, in front of the Infested Seeker"
+      },
+      {
+        "key": "w_6728",
+        "flag": 6728,
+        "label": "Treasure",
+        "area": "Ashina Depths",
+        "from": "world",
+        "where": "In front of the tree in the area with many underground villagers"
+      },
+      {
+        "key": "w_6729",
+        "flag": 6729,
+        "label": "Fountainhead Chest",
+        "area": "Fountainhead Palace",
+        "from": "world",
+        "where": "In a chest in the Palace Grounds building"
+      }
+    ]
+  },
+  "deathCount": {
+    "_note": [
+      "Sekiro nao tem contador de mortes em lugar nenhum da interface, e a",
+      "comunidade que mapeou este bloco de stats (SteamID 0x33E54, NG+ 0x33F34,",
+      "HP 0x3446C, Guard 0x34488, Attack Power 0x3449C, Sen 0x344D0, Emblems",
+      "0x3459A) nunca documentou um. As ferramentas de contagem que existem leem a",
+      "tela de morte ou a memoria do processo, nao o save.",
+      "Por isso offset fica nulo aqui: nao invento um. Quem acha e o sync/deaths.js,",
+      "observando cada gravacao do save - o usuario nao precisa fazer nada. O offset",
+      "achado fica em deaths.json, nao neste arquivo, porque e resultado de execucao",
+      "e nao configuracao escrita a mao. Preencher offset aqui tem precedencia, para",
+      "o caso de um dia existir fonte confiavel."
+    ],
+    "offset": null,
+    "width": 4,
+    "confidence": "unknown",
+    "senOffset": 214224,
+    "sanityMax": 100000,
+    "_senNote": "Offset do Sen, confirmado neste save (1398). Serve de sinal de morte certa: Sen caiu e nada entrou no inventario."
+  }
+}
