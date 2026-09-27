@@ -60,7 +60,7 @@
   }
   /* Tudo do cabeçalho numa coluna centrada: o título manda, e o que vem
      depois é subordinado a ele em vez de disputar a linha. */
-  .top-centro { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .top-centro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
   h1 {
     font-family: var(--font-display);
     font-weight: 800;
@@ -217,7 +217,13 @@
   /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". */
   .deaths-panel.over .therm-scale span:last-child { color: var(--blood-bright); }
   /* Faixa do botão de tema: colada no topo, alinhada à direita. */
-  .topbar { display: flex; justify-content: flex-end; padding-bottom: 6px; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
   .theme-toggle {
     background: none;
     border: 0;
@@ -232,12 +238,14 @@
   }
   .theme-toggle:hover { opacity: 1; color: var(--text); }
   /* Assinatura: presente, mas sem puxar o olho para longe do progresso. */
+  /* Assinatura com peso: é o nome do projeto, não uma nota de rodapé. */
   .assinatura {
-    font-size: 0.66rem;
-    color: var(--text-dim);
-    letter-spacing: 0.16em;
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.22em;
     text-transform: lowercase;
-    opacity: 0.6;
     white-space: nowrap;
   }
   .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
@@ -275,11 +283,13 @@
     gap: 14px;
     margin-bottom: 26px;
   }
+  /* Sem moldura e sem fundo: estes dois não são placas como os de mortes e
+     chefes, só precisam se parecer um com o outro. */
   .quadro {
     aspect-ratio: 1 / 1;
-    border: 1px solid var(--line);
-    background: var(--bg-panel);
-    padding: 16px 18px;
+    border: 0;
+    background: none;
+    padding: 4px 6px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -694,7 +704,7 @@
     padding: 0;
     width: 20px;
     height: 20px;
-    margin: -7px 0 -7px -7px;
+    margin: -7px 0 -7px -6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -818,6 +828,7 @@
      e a página passa a rolar para o lado. A contagem por seção continua. */
   @media (max-width: 460px) {
     h1 { font-size: 2.3rem; }
+    .assinatura { font-size: 0.8rem; letter-spacing: 0.16em; }
     .topic { font-size: 0.64rem; padding: 11px 11px; letter-spacing: 0.06em; }
     .topics { gap: 6px; }
     .boss-card-nome { font-size: 0.85rem; }
@@ -868,19 +879,19 @@
 
   <!-- Faixa só para o botão de tema, no extremo topo à direita: fora do
        cabeçalho, para não disputar espaço com o título nem com a assinatura. -->
+  <!-- Ponto de sync na ponta esquerda, botão de tema na direita: a faixa do
+       topo passa a ser só estado e controle, e o cabeçalho fica com o título. -->
   <div class="topbar">
+    <div class="sync-line" id="syncLine">
+      <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
+      <span id="syncText" hidden>looking for the save…</span>
+    </div>
     <button class="theme-toggle" id="themeToggle" type="button" title="Switch theme" aria-label="Switch theme">◐</button>
   </div>
 
   <header class="top">
     <div class="top-centro">
       <h1>Sekiro<span> 進捗</span></h1>
-      <!-- O estado do sync fica dentro do ponto: a cor já diz se está tudo
-           certo, e o texto só aparece quando se clica nele. -->
-      <div class="sync-line" id="syncLine">
-        <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
-        <span id="syncText" hidden>looking for the save…</span>
-      </div>
       <div class="assinatura">oaovito game progress</div>
     </div>
   </header>
