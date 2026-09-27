@@ -1571,15 +1571,11 @@ function renderDeaths() {
           (d.desde ? new Date(d.desde).toLocaleDateString() : "tracking started") +
           ". A death only shows up when it costs Sen, and Unseen Aid cancels that loss sometimes."
         : "Read straight from the save.";
+    // O painel não carrega parágrafo: é um número para ler de relance. A
+    // ressalva não some do produto, muda de lugar — está no `title` acima,
+    // que já diz desde quando a conta vale e o que ela não pega.
     nota.textContent =
-      d.how === "counted"
-        ? "Sekiro keeps no death counter of its own, so this one is counted here, from " +
-          (d.desde ? new Date(d.desde).toLocaleDateString() : "when tracking started") +
-          " onwards. It is a floor, not a lifetime total."
-        : d.how === "discovered"
-        ? "Field found by watching the save, so this is the whole life of the character." +
-          (d.count > TOPO ? " Past the end of the scale." : "")
-        : "Read straight from the save.";
+      d.how === "discovered" && d.count > TOPO ? "Past the end of the scale." : "";
     return;
   }
 
