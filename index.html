@@ -1593,7 +1593,14 @@ async function pollProgress() {
 openState.add("essentials");
 render();
 pollProgress();
-setInterval(pollProgress, 5000);
+// Na rede local o progress.json muda em segundos, e vale perguntar sempre. No
+// GitHub Pages ele só muda quando o serviço publica, e vem de CDN com cache:
+// perguntar de 5 em 5 segundos ali seria gastar rede da pessoa à toa.
+const NA_REDE_LOCAL =
+  location.protocol === "file:" ||
+  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname) ||
+  /\.local$/.test(location.hostname);
+setInterval(pollProgress, NA_REDE_LOCAL ? 5000 : 60000);
 </script>
 </body>
 </html>
