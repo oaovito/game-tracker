@@ -578,17 +578,22 @@
      mantém igual o intervalo de espera entre um susto e o próximo; a
      intensidade subiu pelo tamanho e pela quantidade de solavancos dentro da
      janela, não por ela ter esticado. */
+  /* Os vetores do susto apontam todos para baixo — sudoeste e sudeste,
+     alternando —, e a escala só encolhe. Isso é o que faz o movimento
+     comunicar medo em vez de agitação: quem se assusta se encolhe e recua
+     para baixo, não pula para cima. Um tremor com componente para o norte
+     lia como energia, como um bicho batendo na caixa por dentro. */
   @keyframes tremor {
     0%, 88%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    88.7% { transform: translate(-6px, 4px)  rotate(-1.1deg) scale(1.015); }
-    90%   { transform: translate(7px, -5px)  rotate(1.4deg)  scale(0.985); }
-    91.2% { transform: translate(-8px, -3px) rotate(-1.6deg) scale(1.02); }
-    92.4% { transform: translate(6px, 5px)   rotate(1.1deg)  scale(0.99); }
-    93.6% { transform: translate(-5px, 2px)  rotate(-1.3deg) scale(1.012); }
-    94.8% { transform: translate(4px, -4px)  rotate(0.9deg)  scale(0.994); }
-    96%   { transform: translate(-3px, 3px)  rotate(-0.6deg) scale(1.006); }
-    97.2% { transform: translate(2px, -1px)  rotate(0.4deg)  scale(1); }
-    98.4% { transform: translate(-1px, 1px)  rotate(-0.2deg) scale(1); }
+    88.7% { transform: translate(-7px, 5px) rotate(-1.4deg) scale(0.984); }
+    90%   { transform: translate(6px, 6px)  rotate(1.2deg)  scale(0.978); }
+    91.2% { transform: translate(-8px, 4px) rotate(-1.6deg) scale(0.974); }
+    92.4% { transform: translate(7px, 5px)  rotate(1.4deg)  scale(0.981); }
+    93.6% { transform: translate(-6px, 3px) rotate(-1.1deg) scale(0.987); }
+    94.8% { transform: translate(5px, 4px)  rotate(0.9deg)  scale(0.99); }
+    96%   { transform: translate(-4px, 2px) rotate(-0.7deg) scale(0.994); }
+    97.2% { transform: translate(3px, 2px)  rotate(0.5deg)  scale(0.997); }
+    98.4% { transform: translate(-2px, 1px) rotate(-0.3deg) scale(0.999); }
   }
   .headless-kanji { color: #b06bf0; text-shadow: 0 0 16px rgba(176,107,240,0.9), 0 0 38px rgba(124,58,186,0.6); }
   /* O número era roxo sobre fundo roxo: de longe sumia dentro do próprio
