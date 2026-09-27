@@ -82,10 +82,20 @@ function createServer(options) {
     let urlPath = (req.url || '/').split('?')[0];
     if (urlPath === '/' || urlPath === '') urlPath = '/' + indexFile;
 
-    const file = safeJoin(root, urlPath);
+    let file = safeJoin(root, urlPath);
     if (!file) {
       res.writeHead(403).end('forbidden');
       return;
+    }
+
+    // As artes dos chefes moram em site/icones/, que é a raiz do que vai para
+    // o Pages. A página pede "icones/<chave>.png" relativo a si mesma, e aqui
+    // ela é servida da raiz do projeto — então, sem esta ponte, na rede local
+    // todo chefe caía no kanji de reserva enquanto no site público aparecia a
+    // ilustração. Duas páginas iguais mostrando coisas diferentes.
+    if (/^\/icones\//.test(urlPath) && !fs.existsSync(file)) {
+      const noSite = safeJoin(path.join(root, 'site'), urlPath);
+      if (noSite && fs.existsSync(noSite)) file = noSite;
     }
 
     fs.stat(file, (err, st) => {

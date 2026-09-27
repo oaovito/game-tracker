@@ -201,18 +201,31 @@ async function rodar(log) {
     limpoNoInicio ? 'só o menu' : 'alguma seção apareceu sem ninguém escolher');
 
   const menu = nodes.topics.outerHTML;
-  const esperados = ['Bosses', 'Mini-bosses', 'Essential Items'];
+  const esperados = ['Bosses', 'Mini-bosses', 'Items'];
   const ausentes = esperados.filter((t) => !menu.includes(t));
   log(ausentes.length === 0, 'menu tem os três tópicos pedidos',
     ausentes.length ? 'faltou: ' + ausentes.join(', ') : esperados.join(', '));
-  log(/All</.test(menu), 'menu tem a opção de ver tudo', 'All presente');
+  log(!/>All</.test(menu), 'o tópico "All" saiu do menu',
+    /All</.test(menu) ? 'All ainda está lá' : 'nenhum atalho de ver tudo');
 
-  // Exatamente quatro: o menu é atalho, não índice. Se uma seção nova entrar
-  // sozinha aqui, o menu volta a crescer sem ninguém pedir.
-  const botoes = (menu.match(/<button/g) || []).length;
-  log(botoes === 4, 'menu tem exatamente quatro botões', botoes + ' botões');
+  // Três tópicos e a gaveta, nessa ordem. O menu é atalho, não índice: se uma
+  // seção nova entrar sozinha aqui, ele volta a crescer sem ninguém pedir.
+  const naBarra = nodes.topics.children;
+  const topicosFixos = naBarra.filter((c) => c.tagName === 'BUTTON');
+  log(topicosFixos.length === 3, 'menu tem exatamente três tópicos fixos',
+    topicosFixos.length + ' botões soltos na barra');
+  const gaveta = naBarra.find((c) => /(^| )gaveta( |$)/.test(c.className));
+  log(!!gaveta, 'a gaveta de três risquinhos existe', gaveta ? 'presente' : 'ausente');
+  const risquinhos = gaveta && gaveta.children[0] ? gaveta.children[0].children.length : 0;
+  log(risquinhos === 3, 'a gaveta é desenhada com três risquinhos', risquinhos + ' traços');
+
+  // Prosthetic Tools mora na gaveta, não na barra.
+  const naGaveta = gaveta && gaveta.children[1] ? stripTags(gaveta.children[1].outerHTML) : '';
+  log(naGaveta.includes('Prosthetic Tools'), '"Prosthetic Tools" está dentro da gaveta',
+    naGaveta.trim() ? 'gaveta: ' + naGaveta.replace(/\s+/g, ' ').trim() : 'gaveta vazia');
+  const barraTexto = topicosFixos.map((b) => stripTags(b.outerHTML)).join(' | ');
   for (const fora of ['Prayer Beads', 'Gourd Seeds', 'Headless', 'Prosthetic Tools']) {
-    log(!menu.includes(fora), 'menu não lista "' + fora + '"', 'fora do menu, visível em All');
+    log(!barraTexto.includes(fora), 'a barra não lista "' + fora + '"', 'fora da barra do menu');
   }
 
   // Escolher uma aba mostra ela e esconde as outras.
@@ -234,9 +247,11 @@ async function rodar(log) {
   // Clicar de novo no tópico já marcado faz a mesma coisa. O clique tem de ser
   // no botão de verdade: `abaAtual` é uma `let` do script, invisível daqui, e
   // reimplementar a decisão no teste testaria o teste, não a página.
+  // `outerHTML`, não `innerHTML`: o botão é montado com appendChild, então o
+  // innerHTML dele está vazio e a busca por nome não achava nada.
   const clicar = (el) => el.listeners.click[0]({ stopPropagation() {} });
-  const botao = (nome) => nodes.topics.children
-    .find((b) => stripTags(b.innerHTML).replace(/\d+\/\d+$/, '').trim() === nome);
+  const nomeDe = (b) => stripTags(b.outerHTML).replace(/\d+\/\d+$/, '').trim();
+  const botao = (nome) => nodes.topics.children.find((b) => nomeDe(b) === nome);
 
   clicar(botao('Mini-bosses'));
   const abriu = !secao('minibosses').hidden;
@@ -258,8 +273,8 @@ async function rodar(log) {
   const entrou = nodes.topics.outerHTML.includes('Prayer Beads');
   log(entrou, 'alfinetar põe a seção no menu',
     entrou ? 'Prayer Beads entrou' : 'não entrou');
-  log((nodes.topics.outerHTML.match(/<button/g) || []).length === 5,
-    'o menu cresce de um', (nodes.topics.outerHTML.match(/<button/g) || []).length + ' botões');
+  const naBarraDepois = nodes.topics.children.filter((c) => c.tagName === 'BUTTON').length;
+  log(naBarraDepois === 4, 'a barra cresce de um', naBarraDepois + ' tópicos na barra');
 
   clicar(alfinete('beads'));
   log(!nodes.topics.outerHTML.includes('Prayer Beads'), 'desalfinetar tira do menu', 'saiu');
@@ -273,17 +288,24 @@ async function rodar(log) {
   log(aberta && semBeco, 'desalfinetar a aba aberta volta ao estado limpo',
     'abriu=' + aberta + ', fechou=' + semBeco);
 
-  ctx.selecionarAba('*');
-  const tudo = !secao('bosses').hidden && !secao('beads').hidden && !secao('essentials').hidden;
-  log(tudo, '"All" traz todas as seções de volta', 'nenhuma escondida');
+  // "Items" é um tópico que reúne seis seções: escolher ele traz todas de uma
+  // vez, e as de item vêm antes das outras.
+  ctx.selecionarAba('Items');
+  const grupo = !secao('beads').hidden && !secao('seeds').hidden && !secao('essentials').hidden;
+  log(grupo, 'o tópico "Items" abre todas as seções de item',
+    grupo ? 'contas, sementes e essenciais juntas' : 'faltou alguma');
+  log(!secao('bosses').hidden === false, '"Items" não arrasta os chefes junto',
+    'bosses hidden=' + secao('bosses').hidden);
+  const ordemCerta = Number(secao('beads').style.order) < Number(secao('essentials').style.order);
+  log(ordemCerta, 'dentro do grupo as contas vêm antes dos essenciais',
+    'beads order=' + secao('beads').style.order + ', essentials order=' + secao('essentials').style.order);
 
-  // Em "All" o acordeão volta ao normal: fechar uma seção não pode derrubar
-  // a página inteira para o estado limpo.
-  ctx.setOpen(secao('bosses'), 'bosses');
-  const allIntacto = !secao('beads').hidden && !secao('essentials').hidden;
-  log(allIntacto, 'em "All" fechar uma seção não fecha as outras',
-    allIntacto ? 'as demais seguem visíveis' : 'a página se esvaziou');
-  ctx.selecionarAba('*');
+  // Recolher uma seção do grupo não pode derrubar a aba inteira: só a última.
+  ctx.setOpen(secao('beads'), 'beads');
+  const grupoIntacto = !secao('essentials').hidden && !secao('seeds').hidden;
+  log(grupoIntacto, 'fechar uma seção do grupo não fecha as irmãs',
+    grupoIntacto ? 'as demais seguem visíveis' : 'a aba caiu inteira');
+  ctx.selecionarAba(null);
 
   // Aba salva que não existe mais volta ao estado inicial, em vez de abrir numa
   // seção que ninguém pediu.
@@ -364,13 +386,27 @@ async function rodar(log) {
   await carregar(progress, { hostname: 'localhost' });
   const src = fs.readFileSync(PAGINA, 'utf8');
 
-  // A ordem pedida: mortes, depois os dois quadrados, depois os chefes.
+  // A ordem pedida: as duas contagens de combate logo abaixo do menu, depois
+  // as mortes, e por último conquistas e tempo de jogo.
+  const iMenu = src.indexOf('class="topics"');
+  const iCombate = src.indexOf('id="bossPanel"');
+  const iCabeca = src.indexOf('id="headlessPanel"');
   const iMortes = src.indexOf('class="deaths-panel"');
-  const iQuadros = src.indexOf('class="dois-quadrados"');
-  const iChefes = src.indexOf('class="boss-panel"');
-  log(iMortes > 0 && iMortes < iQuadros && iQuadros < iChefes,
-    'ordem dos blocos: mortes, quadrados, chefes',
-    'posições ' + iMortes + ' < ' + iQuadros + ' < ' + iChefes);
+  const iAnel = src.indexOf('class="quadro quadro-anel"');
+  const iTempo = src.indexOf('id="quadroTempo"');
+  const ordem = [iMenu, iCombate, iCabeca, iMortes, iAnel, iTempo];
+  log(ordem.every((p, i) => p > 0 && (i === 0 || p > ordem[i - 1])),
+    'ordem dos blocos: chefes e Headless, mortes, conquistas e tempo',
+    ordem.join(' < '));
+  // Os quadrados de combate e os de medida são duas fileiras, não uma grade só.
+  const fileiras = (src.match(/class="dois-quadrados"/g) || []).length;
+  log(fileiras === 2, 'são duas fileiras de quadrados', fileiras + ' fileiras');
+  // A lista tem de nascer entre as duas fileiras: é o que faz abrir empurrar o
+  // resto da página para baixo e fechar devolver tudo ao lugar.
+  const iLista = src.indexOf('id="bossLista"');
+  log(iLista > iCabeca && iLista < iMortes,
+    'a lista dos chefes fica entre as contagens e o resto',
+    'lista em ' + iLista + ', entre ' + iCabeca + ' e ' + iMortes);
 
   const t = progress.playtime;
   log(!!t && t.horas > 0, 'o tempo de jogo chega do Steam',
@@ -485,8 +521,14 @@ async function rodar(log) {
   // O nome manda no bloco do chefe.
   log(/\.boss-card-nome \{[^}]*font-family: var\(--font-display\)/.test(src),
     "o título do bloco de chefe ganhou destaque", "fonte de display, maior");
-  log(!/>boss kills</.test(src), "o texto saiu do cabeçalho de boss kills",
-    "só o kanji, o número e a seta");
+  // Fechado, o bloco é só contagem: kanji, número e o rótulo do bloco. O que
+  // saiu foi o parágrafo de explicação que morava no cabeçalho — a ressalva
+  // sobre o jogo não guardar contagem por chefe vive no title, no hover.
+  const dentroDoQuadro = stripTags(nodes.bossPanel.outerHTML).replace(/\s+/g, ' ').trim();
+  log(dentroDoQuadro.length < 40, 'o bloco de chefes fechado é só a contagem',
+    '"' + dentroDoQuadro + '"');
+  log(!/no readable flag|goes from undone/.test(src.slice(src.indexOf('id="bossPanel"'), src.indexOf('id="bossLista"'))),
+    'nenhum parágrafo de explicação na marcação do bloco', 'só kanji, número e rótulo');
 
   // O bloco tem de recolher de verdade. O atributo `hidden` sozinho não basta
   // quando a classe declara display: a regra do autor vence a do navegador, e
@@ -505,16 +547,86 @@ async function rodar(log) {
   // O número de chefes agora é o maior da página, e não mais do mesmo porte
   // que o de mortes.
   const numMortes = /\.deaths-count \{[^}]*font-size: ([\d.]+)rem/.exec(src);
-  const numChefes = /\.boss-num \{[^}]*font-size: clamp\([\d.]+rem, [\d.]+vw, ([\d.]+)rem\)/.exec(src);
+  const numChefes = /\.quadro-botao \.quadro-num \{[^}]*font-size: clamp\([\d.]+rem, [\d.]+vw, ([\d.]+)rem\)/.exec(src);
   log(numMortes && numChefes && Number(numChefes[1]) > Number(numMortes[1]),
     'o número de chefes é maior que o de mortes',
     (numMortes && numMortes[1]) + 'rem vs até ' + (numChefes && numChefes[1]) + 'rem');
-  log(/\.boss-head \{[^}]*justify-content: center/.test(src),
-    'o número fica centralizado no bloco', 'cabeçalho centrado');
-  log(/.boss-seta {[^}]*position: absolute/.test(src),
-    "a seta sai do fluxo para não desequilibrar o centro", "posicionada à direita");
-  log(/.boss-panel::after {[^}]*--blood-bright/.test(src),
-    "as cantoneiras do bloco são de sangue", "mesma moldura do de mortes, outra cor");
+  log(/\.quadro-abre \{[^}]*justify-content: center/.test(src),
+    'o número fica centralizado no bloco', 'conteúdo do quadrado centrado');
+  log(/\.quadro-botao::after \{[^}]*position: absolute/.test(src),
+    "a seta sai do fluxo para não desequilibrar o centro", "posicionada no canto");
+  // A moldura viva: sangue no de chefes, roxo no de Headless, cada uma com a
+  // sua animação.
+  log(/\.boss-quadro::before \{[^}]*animation: sangue-borda/.test(src),
+    "a moldura do bloco de chefes sangra", "border-image animado");
+  log(/\.headless-quadro::before \{[^}]*animation: medo-borda/.test(src),
+    "a moldura do bloco de Headless é roxa e pulsa", "border-image animado em roxo");
+
+  // O susto do bloco de Headless: mais forte, mas na mesma cadência. O que
+  // define a cadência é onde a janela do tremor começa dentro do ciclo — se
+  // ela crescer, os sustos ficam mais frequentes, que não é o que se pediu.
+  const tremorCss = /@keyframes tremor \{([\s\S]*?)\n  \}/.exec(src);
+  const saltos = tremorCss
+    ? [...tremorCss[1].matchAll(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)/g)]
+      .map((m) => Math.max(Math.abs(Number(m[1])), Math.abs(Number(m[2]))))
+    : [];
+  const pico = saltos.length ? Math.max(...saltos) : 0;
+  log(pico >= 5, 'o tremor do Headless é violento', 'pico de ' + pico + 'px');
+
+  // Medo, e não agitação: todo vetor aponta para o sul, alternando entre
+  // sudoeste e sudeste, e a escala só encolhe. Um salto para cima leria como
+  // energia — como algo batendo na caixa por dentro, que é o oposto.
+  const vetores = tremorCss
+    ? [...tremorCss[1].matchAll(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)/g)]
+      .map((m) => ({ x: Number(m[1]), y: Number(m[2]) }))
+      .filter((v) => v.x !== 0 || v.y !== 0)
+    : [];
+  const todosAoSul = vetores.length > 0 && vetores.every((v) => v.y > 0);
+  log(todosAoSul, 'todo vetor do susto aponta para o sul',
+    vetores.map((v) => v.y).join(', '));
+  const alterna = vetores.every((v, i) => (i % 2 === 0 ? v.x < 0 : v.x > 0));
+  log(alterna, 'e alterna entre sudoeste e sudeste',
+    vetores.map((v) => (v.x < 0 ? 'SO' : 'SE')).join(' '));
+  const escalas = tremorCss
+    ? [...tremorCss[1].matchAll(/scale\(([\d.]+)\)/g)].map((m) => Number(m[1]))
+    : [];
+  log(escalas.every((s) => s <= 1), 'e o bloco só encolhe, nunca incha',
+    'maior escala: ' + Math.max(...escalas));
+  const janela = tremorCss ? /0%, (\d+)%, 100%/.exec(tremorCss[1]) : null;
+  log(janela && Number(janela[1]) === 88,
+    'e a janela do susto não mudou: o intervalo entre um e outro é o mesmo',
+    janela ? 'começa em ' + janela[1] + '% do ciclo' : 'não achei a janela');
+  const ciclo = /\.headless-quadro \{[^}]*animation: tremor ([\d.]+)s/.exec(src);
+  log(ciclo && Number(ciclo[1]) === 6.1, 'e o ciclo continua de 6,1s',
+    ciclo ? ciclo[1] + 's' : 'não achei o ciclo');
+  log(saltos.length >= 8, 'o susto tem mais solavancos dentro da mesma janela',
+    saltos.length + ' solavancos');
+
+  // O número do Headless precisa contrastar com o fundo roxo do próprio bloco:
+  // roxo sobre roxo sumia. O topo do gradiente é claro e frio, a raiz segue
+  // roxa para não sair do tema.
+  const gradHeadless = /\.headless-num \{[^}]*background-image: linear-gradient\(180deg,\s*(#[0-9a-f]{6})/i.exec(src);
+  const claro = gradHeadless ? gradHeadless[1] : '';
+  const brilho = claro
+    ? (parseInt(claro.slice(1, 3), 16) + parseInt(claro.slice(3, 5), 16) + parseInt(claro.slice(5, 7), 16)) / 3
+    : 0;
+  log(brilho > 200, 'o número do Headless contrasta com o fundo do bloco',
+    claro + ' (brilho médio ' + brilho.toFixed(0) + ')');
+  const azulado = claro && parseInt(claro.slice(5, 7), 16) >= parseInt(claro.slice(1, 3), 16);
+  log(azulado, 'e o tom é frio, não mais o roxo do fundo', 'topo do gradiente puxa para o azul');
+  log(/\.headless-num \{[^}]*#2a1550/.test(src), 'a raiz do gradiente continua roxa',
+    'o número resolve na cor do bloco, então segue no tema');
+
+  // O menu não pode precisar de arrasto: no celular o último item ficava
+  // cortado na borda e só aparecia se você puxasse de lado.
+  const menuCel = /@media \(max-width: 460px\) \{[\s\S]*?\n  \}/.exec(src);
+  const menuCelCss = menuCel ? menuCel[0] : '';
+  log(!/\.topics \{[^}]*overflow-x: auto/.test(menuCelCss), 'o menu não rola de lado no celular',
+    'sem overflow-x na barra');
+  log(/\.topics \{[^}]*flex-wrap: wrap/.test(menuCelCss), 'ele quebra em duas colunas',
+    'flex-wrap: wrap na largura de celular');
+  log(/\.topics > \.topic \{[^}]*flex: 1 1 calc\(50% - 6px\)/.test(menuCelCss),
+    'cada tópico ocupa meia largura', 'dois por fileira, nada cortado na borda');
 
   // O ponto de sync foi para a faixa do topo, à esquerda; o botão de tema
   // continua à direita.

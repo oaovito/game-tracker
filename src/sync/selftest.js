@@ -307,128 +307,124 @@ check('anuncia e regrava o QR quando a rede aparece depois do boot', () => {
 });
 
 /*
- * 7. A busca do contador de mortes.
+ * 7. Leitura da memória do jogo.
  *
- * Não dá para morrer no jogo de dentro de um teste, então aqui o save é
- * sintético: um payload com um contador de mortes de verdade num offset
- * conhecido, mais três iscas que existem em save real e que a busca precisa
- * recusar — um contador de gravações (sobe sempre), um contador de inimigos
- * mortos (dá saltos) e o Sen (desce). Se a busca escolher uma isca, ou se ela
- * decidir com evidência insuficiente, o teste falha.
+ * O contador de mortes deixou de sair do save. O save não guarda essa conta —
+ * a busca antiga rodou, eliminou todos os candidatos e provou isso —, então
+ * agora quem conta é o próprio jogo, lido da memória do processo.
+ *
+ * O que se testa aqui é o que dá para testar sem o jogo aberto: que o pedido é
+ * montado direito, que a recusa é limpa quando o processo não existe, e que o
+ * handle é pedido SOMENTE PARA LEITURA. Esse último é o que mais importa: o
+ * projeto inteiro se apoia em nunca escrever no jogo nem no save.
+ *
+ * Com o jogo aberto, o teste vai além e resolve os ponteiros de verdade.
  */
-console.log('\n  === 7. Busca do contador de mortes ===');
+console.log('\n  === 7. Leitura da memória do jogo ===');
 
-const deathsMod = require('./deaths');
+const memoria = require('./memoria');
+const deathsmem = require('./deathsmem');
 
-const OFF_SEN = 0x344d0;
-const OFF_MORTES = 0x34500;   // o que a busca tem de achar
-const OFF_SAVES = 0x34510;    // isca: sobe em toda gravação
-const OFF_KILLS = 0x34520;    // isca: sobe em saltos
-const TAM = 0x35000;
+check('o handle é pedido somente para leitura', () => {
+  // Sem os comentários: o cabeçalho do arquivo explica que não há escrita, e
+  // medir a prosa em vez do código daria falso positivo justo na checagem que
+  // mais importa.
+  const bruto = fs.readFileSync(path.join(__dirname, 'mem.ps1'), 'utf8');
+  const codigo = bruto
+    .split(/\r?\n/)
+    .filter((l) => !/^\s*(#|\/\/)/.test(l))
+    .join('\n')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
 
-function simular(passos, arquivoEstado) {
-  deathsMod.reset();
-  if (fs.existsSync(arquivoEstado)) fs.unlinkSync(arquivoEstado);
-  const mundo = { sen: 5000, mortes: 0, saves: 0, kills: 0, goods: new Map([[4000, 1]]), weapons: new Set([70000]) };
-  let estado = null;
-  const aplicar = (passo) => {
-    mundo.saves++;
-    if (passo.tipo === 'morte') { mundo.mortes++; mundo.sen = Math.floor(mundo.sen / 2); }
-    if (passo.tipo === 'compra') { mundo.sen -= 100; mundo.goods.set(4000, (mundo.goods.get(4000) || 0) + 1); }
-    if (passo.tipo === 'ganho') { mundo.sen += 300; mundo.kills += 7; }
-    if (passo.tipo === 'descanso') { mundo.kills += 2; }
-    const p = Buffer.alloc(TAM);
-    p.writeUInt32LE(mundo.sen, OFF_SEN);
-    p.writeUInt32LE(mundo.mortes, OFF_MORTES);
-    p.writeUInt32LE(mundo.saves, OFF_SAVES);
-    p.writeUInt32LE(mundo.kills, OFF_KILLS);
-    // Ruído estável, para a primeira poda não ficar artificialmente pequena.
-    for (let o = 0; o < 0x30000; o += 4) p.writeUInt32LE((o * 7919) % 5000 + mundo.saves % 2, o);
-    estado = deathsMod.observar({
-      payload: p, goods: mundo.goods, weapons: mundo.weapons, slot: 1,
-      senOffset: OFF_SEN, stateFile: arquivoEstado,
-    });
-  };
-  for (const passo of passos) aplicar(passo);
-  return { estado, mundo };
+  // A primeira ocorrência é a declaração do P/Invoke, que não tem constante
+  // nenhuma. A que interessa é a chamada.
+  const todas = [...codigo.matchAll(/OpenProcess\(([^)]*)\)/g)];
+  const chamada = todas.find((m) => /PROCESS_/.test(m[1]));
+  assert(chamada, 'não achei a chamada de OpenProcess com constantes');
+  assert(/PROCESS_VM_READ/.test(chamada[1]), 'não pede leitura');
+  assert(/PROCESS_QUERY_INFORMATION/.test(chamada[1]), 'não pede consulta');
+  assert(!/WRITE|OPERATION|ALL_ACCESS/.test(chamada[1]), 'pede mais que leitura: ' + chamada[1]);
+  assert(!/WriteProcessMemory|VirtualProtectEx|CreateRemoteThread/.test(codigo),
+    'importa função que escreve no processo');
+  return 'OpenProcess(' + chamada[1].trim() + ')';
+});
+
+check('os padrões de busca são os documentados, com curinga', () => {
+  const nomes = Object.keys(memoria.PADROES);
+  assert(nomes.length >= 3, `só ${nomes.length} padrões`);
+  for (const [n, p] of Object.entries(memoria.PADROES)) {
+    assert(/^[0-9a-fA-F? ]+$/.test(p.padrao), `${n}: padrão com caractere estranho`);
+    assert(p.padrao.includes('?'), `${n}: sem curinga, quebraria a cada versão do jogo`);
+    assert(typeof p.desloc === 'number' && typeof p.instrucao === 'number', `${n}: sem deslocamento`);
+  }
+  return nomes.join(', ');
+});
+
+const jogoAberto = memoria.conectar();
+
+check('diz claramente quando o jogo está fechado', () => {
+  if (jogoAberto.ok) return 'jogo aberto agora; caminho de recusa exercitado por processo inexistente';
+  assert(jogoAberto.erro, 'falhou sem dizer o motivo');
+  return jogoAberto.erro;
+});
+
+check('processo inexistente não derruba nada', () => {
+  const r = memoria.executar([], { processo: 'processo-que-nao-existe-xyz' });
+  assert(r.ok === false, 'disse que conseguiu abrir um processo inexistente');
+  assert(typeof r.erro === 'string' && r.erro.length > 0, 'não explicou');
+  return r.erro;
+});
+
+if (jogoAberto.ok) {
+  check('acha o módulo do jogo', () => {
+    assert(jogoAberto.base > 0, 'base zerada');
+    assert(jogoAberto.tamanho > 1024 * 1024, 'módulo pequeno demais para ser o jogo');
+    return `pid ${jogoAberto.pid}, base 0x${jogoAberto.base.toString(16)}, ` +
+      `${(jogoAberto.tamanho / 1048576).toFixed(1)} MB`;
+  });
+
+  check('resolve os ponteiros por varredura de padrão', () => {
+    const r = memoria.resolverPonteiros();
+    assert(r.ok, r.erro || 'falhou');
+    const achados = Object.entries(r.res || {}).filter(([, v]) => v && v.alvo);
+    assert(achados.length >= 2, `só ${achados.length} ponteiros resolvidos`);
+    for (const [n, v] of achados) {
+      assert(v.alvo > jogoAberto.base && v.alvo < jogoAberto.base + jogoAberto.tamanho,
+        `${n} resolveu para fora do módulo`);
+    }
+    return achados.map(([n, v]) => n + '@0x' + v.alvo.toString(16)).join('  ');
+  });
+
+  check('lê bytes do processo', () => {
+    const b = memoria.ler(jogoAberto.base, 64);
+    assert(b && b.length === 64, 'não leu');
+    // Todo PE começa com "MZ": se não vier isso, não é o módulo do jogo.
+    assert(b[0] === 0x4d && b[1] === 0x5a, 'o início do módulo não é um PE');
+    return 'cabeçalho MZ conferido na base do módulo';
+  });
+} else {
+  console.log('   --    (jogo fechado: os testes contra o processo vivo ficam de fora)');
 }
 
-const ARQ = path.join(__dirname, 'deaths-test.json');
-const PASSOS = [
-  { tipo: 'descanso' }, { tipo: 'morte' }, { tipo: 'ganho' }, { tipo: 'descanso' },
-  { tipo: 'compra' }, { tipo: 'morte' }, { tipo: 'ganho' }, { tipo: 'descanso' },
-  { tipo: 'morte' }, { tipo: 'ganho' }, { tipo: 'descanso' }, { tipo: 'compra' },
-];
-
-let simulado = null;
-try {
-  simulado = simular(PASSOS, ARQ);
-} catch (err) {
-  simulado = { erro: err };
-}
-
-check('acha o offset do contador de mortes sem ninguém contar nada', () => {
-  if (simulado.erro) throw simulado.erro;
-  const e = simulado.estado;
-  assert(e.fase === 'resolvido', `não resolveu: fase "${e.fase}", ${e.offs.length} candidatos`);
-  assert(
-    e.offset === OFF_MORTES,
-    `achou 0x${(e.offset || 0).toString(16)} em vez de 0x${OFF_MORTES.toString(16)}`
-  );
-  return `0x${e.offset.toString(16)} após ${e.gravacoes} gravações e ${e.mortesCertas} mortes`;
+check('a contagem por memória se cala quando não está calibrada', () => {
+  const e = deathsmem.estado();
+  const c = deathsmem.contagem();
+  if (e.calibrado) {
+    assert(c && typeof c.mortes === 'number', 'calibrado mas não devolveu número');
+    return `calibrado: ${c.mortes} mortes`;
+  }
+  assert(c === null, 'devolveu número sem estar calibrado');
+  return 'sem offset ainda, devolve null em vez de inventar';
 });
 
-check('recusa o contador de gravações, que também sobe de 1 em 1', () => {
-  if (simulado.erro) throw simulado.erro;
-  assert(simulado.estado.offset !== OFF_SAVES, 'escolheu o contador de gravações');
-  return 'eliminado por nunca ficar parado';
+check('o save é a reserva enquanto a memória não fecha', () => {
+  const p = parse.buildProgress({});
+  assert(p.deaths, 'sem contagem nenhuma');
+  const vias = ['memoria', 'counted', 'learning'];
+  assert(vias.includes(p.deaths.how), `via desconhecida: ${p.deaths.how}`);
+  return `via "${p.deaths.how}"` + (p.deaths.count !== null ? `, ${p.deaths.count} mortes` : '');
 });
 
-check('recusa contador que dá saltos e campo que desce', () => {
-  if (simulado.erro) throw simulado.erro;
-  assert(simulado.estado.offset !== OFF_KILLS, 'escolheu o contador de inimigos mortos');
-  assert(simulado.estado.offset !== OFF_SEN, 'escolheu o Sen');
-  return 'saltos e quedas eliminados pela regra 0-ou-1';
-});
-
-check('a contagem lida bate com quantas mortes de fato houve', () => {
-  if (simulado.erro) throw simulado.erro;
-  const p = Buffer.alloc(TAM);
-  p.writeUInt32LE(simulado.mundo.mortes, simulado.estado.offset);
-  const r = deathsMod.paraProgresso(simulado.estado, p, { deathCount: { offset: null } });
-  assert(r.known === true, 'devolveu known=false com offset resolvido');
-  assert(r.count === simulado.mundo.mortes, `leu ${r.count}, houve ${simulado.mundo.mortes}`);
-  assert(r.how === 'discovered', `how veio "${r.how}"`);
-  return `${r.count} mortes, ${r.confidence}`;
-});
-
-check('sem offset resolvido, não inventa zero', () => {
-  const r = deathsMod.paraProgresso(
-    { fase: 'baseline', gravacoes: 2, mortesCertas: 0 },
-    Buffer.alloc(TAM),
-    { deathCount: { offset: null } }
-  );
-  assert(r.known === false, 'disse que sabia');
-  assert(r.count === null, `devolveu count=${r.count} em vez de null`);
-  return 'devolve null, e a página mostra um traço';
-});
-
-check('não conta releitura do mesmo save como observação', () => {
-  const arq = path.join(__dirname, 'deaths-test2.json');
-  if (fs.existsSync(arq)) fs.unlinkSync(arq);
-  deathsMod.reset();
-  const p = Buffer.alloc(TAM);
-  p.writeUInt32LE(1000, OFF_SEN);
-  const arg = { payload: p, goods: new Map(), weapons: new Set(), slot: 1, senOffset: OFF_SEN, stateFile: arq };
-  deathsMod.observar(arg);
-  const e = deathsMod.observar({ ...arg, payload: Buffer.from(p) });
-  if (fs.existsSync(arq)) fs.unlinkSync(arq);
-  assert(e.gravacoes === 0, `contou ${e.gravacoes} gravação(ões) para um save idêntico`);
-  return 'payload idêntico é ignorado';
-});
-
-for (const f of [ARQ, ARQ + '.tmp']) if (fs.existsSync(f)) fs.unlinkSync(f);
-deathsMod.reset();
 
 /*
  * 8. O nome na rede local.

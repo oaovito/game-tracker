@@ -10,7 +10,7 @@ file paths and no account identifiers.
 
 ## Trackers
 
-- **Sekiro: Shadows Die Twice** — https://oaovito.github.io/game-tracker/
+- **Sekiro: Shadows Die Twice** — https://oaovito.github.io/trackeroao/
 
 More titles will be added here as their save formats are worked out. Each one
 gets its own page and its own snapshot; the structure above is meant to grow.

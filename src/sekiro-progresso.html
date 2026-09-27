@@ -330,14 +330,23 @@
     transition: width 0.4s ease;
   }
 
-  /* --- bloco 2: dois quadrados 1:1 --- */
-  /* Quatro quadrados: progresso, tempo, chefes e Headless. auto-fit cai para
-     dois por linha quando não cabem quatro. */
+  /* --- os quadrados 1:1 --- */
+  /* São duas fileiras de dois: chefes e Headless logo abaixo do menu, e
+     conquistas e tempo de jogo no fim. O teto de 320px existe porque, com só
+     dois quadrados por fileira, 1fr numa tela larga faria cada um virar um
+     painel de 330px de altura; centralizados e limitados eles ficam do mesmo
+     tamanho em qualquer largura. No celular o teto não pega e continua sendo
+     dois por linha, como antes. */
   .dois-quadrados {
     display: grid;
+    /* O teto vai no contêiner, não na faixa: com `minmax(148px, 320px)` o
+       auto-fit conta as colunas pelo máximo, e no celular dava uma coluna só —
+       os quadrados deixavam de ficar lado a lado. Com 1fr ele conta pelo
+       mínimo e continuam sendo dois por linha em qualquer largura. */
     grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    max-width: 652px;
+    margin: 0 auto 20px;
     gap: 12px;
-    margin-bottom: 20px;
   }
   /* Sem moldura e sem fundo: estes dois não são placas como os de mortes e
      chefes, só precisam se parecer um com o outro. */
@@ -562,27 +571,113 @@
     38%      { opacity: 1;    filter: saturate(2) brightness(1.5); }
     52%      { opacity: 0.55; filter: saturate(1.2) brightness(1); }
   }
-  /* Tremor curto e irregular: sustos, não balanço. */
+  /* Tremor curto e irregular: sustos, não balanço.
+     O susto ficou mais violento — deslocamento cerca de quatro vezes maior,
+     com giro e um empurrão de escala. O que não mudou foi a janela: ela
+     continua sendo a mesma fatia do ciclo de 6,1s, de 88% a 100%. É isso que
+     mantém igual o intervalo de espera entre um susto e o próximo; a
+     intensidade subiu pelo tamanho e pela quantidade de solavancos dentro da
+     janela, não por ela ter esticado. */
+  /* Os vetores do susto apontam todos para baixo — sudoeste e sudeste,
+     alternando —, e a escala só encolhe. Isso é o que faz o movimento
+     comunicar medo em vez de agitação: quem se assusta se encolhe e recua
+     para baixo, não pula para cima. Um tremor com componente para o norte
+     lia como energia, como um bicho batendo na caixa por dentro. */
   @keyframes tremor {
-    0%, 88%, 100% { transform: translate(0, 0); }
-    89%  { transform: translate(-1.5px, 1px); }
-    91%  { transform: translate(2px, -1.5px); }
-    93%  { transform: translate(-2px, -1px); }
-    95%  { transform: translate(1.5px, 1.5px); }
-    97%  { transform: translate(-1px, 0); }
+    0%, 88%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    88.7% { transform: translate(-7px, 5px) rotate(-1.4deg) scale(0.984); }
+    90%   { transform: translate(6px, 6px)  rotate(1.2deg)  scale(0.978); }
+    91.2% { transform: translate(-8px, 4px) rotate(-1.6deg) scale(0.974); }
+    92.4% { transform: translate(7px, 5px)  rotate(1.4deg)  scale(0.981); }
+    93.6% { transform: translate(-6px, 3px) rotate(-1.1deg) scale(0.987); }
+    94.8% { transform: translate(5px, 4px)  rotate(0.9deg)  scale(0.99); }
+    96%   { transform: translate(-4px, 2px) rotate(-0.7deg) scale(0.994); }
+    97.2% { transform: translate(3px, 2px)  rotate(0.5deg)  scale(0.997); }
+    98.4% { transform: translate(-2px, 1px) rotate(-0.3deg) scale(0.999); }
   }
   .headless-kanji { color: #b06bf0; text-shadow: 0 0 16px rgba(176,107,240,0.9), 0 0 38px rgba(124,58,186,0.6); }
+  /* O número era roxo sobre fundo roxo: de longe sumia dentro do próprio
+     bloco. Agora é luz de espírito — branco frio puxando para o azul em cima,
+     resolvendo em violeta escuro embaixo. Contrasta com o fundo por
+     temperatura e por brilho, continua no tema porque a raiz do gradiente e o
+     halo em volta seguem roxos, e não se confunde com o vermelho do bloco de
+     chefes ao lado. */
   .headless-num {
     background-image: linear-gradient(180deg,
-      #e9d4ff 0%, #b06bf0 24%, #7c3aba 46%, #3d1361 72%, #150a22 100%);
+      #f6fdff 0%, #c3ecff 20%, #86caf2 42%, #6470d8 66%, #2a1550 100%);
     background-size: 100% 300%;
     -webkit-background-clip: text; background-clip: text;
     color: transparent; -webkit-text-fill-color: transparent;
     animation: escorrer-forte 4.3s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px rgba(176,107,240,0.8)) drop-shadow(0 2px 2px rgba(0,0,0,0.8));
+    filter: drop-shadow(0 0 10px rgba(198,236,255,0.85))
+            drop-shadow(0 0 26px rgba(176,107,240,0.75))
+            drop-shadow(0 2px 2px rgba(0,0,0,0.85));
   }
   .headless-quadro .pingo {
     background: linear-gradient(180deg, #b06bf0, #3d1361 60%, transparent);
+  }
+
+  /* --- a lista que os dois quadrados abrem --- */
+  /* Fica fora da grade dos quadrados, logo depois dela: aberta, empurra o que
+     vem abaixo pelo fluxo normal do documento; fechada, devolve tudo ao lugar.
+     Nada de medir altura nem animar no script. */
+  .boss-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    gap: 10px;
+    margin: -6px 0 22px;
+  }
+  /* `hidden` sozinho não vence `display: grid` do autor: sem esta regra a
+     lista continuava aberta mesmo marcada como escondida. */
+  .boss-lista[hidden] { display: none; }
+
+  .boss-card {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    padding: 10px 10px 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+  /* Quem ainda não caiu fica apagado, e não ausente: a lista continua sendo o
+     mapa inteiro, não só o que já foi feito. */
+  .boss-card.zero { opacity: 0.42; }
+  .boss-card-n {
+    position: absolute; top: 5px; right: 7px;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    color: var(--blood-bright);
+    font-variant-numeric: tabular-nums;
+  }
+  .headless-lista .boss-card-n { color: #b06bf0; }
+  .boss-icone {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    font-size: 1.7rem;
+    color: var(--text-dim);
+    overflow: hidden;
+  }
+  /* Com arte o kanji sai e a imagem preenche o quadrado; o enquadramento de
+     cada chefe vem do JSON, porque as ilustrações não têm o mesmo corte. */
+  .boss-icone.com-arte { font-size: 0; background-color: #0b0908; }
+  .boss-card-nome {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--text);
+  }
+  .boss-card-area {
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
   }
 
   /* --- menu de tópicos --- */
@@ -952,17 +1047,28 @@
     .skill { font-size: 2.1rem; }
     .boss-lista { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .topic-n { margin-left: 5px; font-size: 0.6rem; }
-    /* Na largura de celular os onze tópicos quebrariam em quatro ou cinco
-       linhas, o que é peso demais para um menu. Uma linha só, que rola de lado.
-       A rolagem fica contida no nav, então não volta a dar overflow na página. */
+    /* A rolagem lateral aqui era de quando o menu tinha onze tópicos e nenhuma
+       gaveta. Com três tópicos e os três risquinhos ela só atrapalha: no
+       celular o último item ficava cortado na borda e era preciso arrastar
+       para descobrir que existia. Agora o menu quebra em duas colunas e cabe
+       inteiro na tela, sem nada escondido fora do quadro. Duas colunas em vez
+       de uma linha apertada continuam valendo se algum item for afixado. */
     .topics {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
+      flex-wrap: wrap;
+      row-gap: 6px;
     }
-    .topics::-webkit-scrollbar { display: none; }
+    /* Só os filhos diretos: o botão da gaveta também tem a classe `topic`, e
+       ele precisa continuar com os três risquinhos empilhados. */
+    .topics > .topic {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+    }
+    /* A gaveta não vira meia tela: fica do tamanho dela, encostada à direita
+       da última fileira. */
+    .topics .gaveta { flex: 0 0 auto; margin-left: auto; }
     .deaths-count { font-size: 2.3rem; }
     .deaths-kanji { font-size: 1.6rem; }
     /* Pino menor e recuo menor: no celular a pista é curta e o rosto grande
@@ -1005,6 +1111,34 @@
 
   <nav class="topics" id="topics" aria-label="Sections" hidden></nav>
 
+  <!-- Bloco 1: as duas contagens de combate, logo abaixo do menu. São o que
+       se olha primeiro, então vêm primeiro. -->
+  <div class="dois-quadrados">
+    <!-- Contador de chefes: mesma proporção dos outros, e abre a lista. -->
+    <section class="quadro quadro-botao boss-quadro" id="bossPanel" hidden>
+      <button class="quadro-abre" id="bossHead" type="button" aria-expanded="false" aria-controls="bossLista">
+        <span class="quadro-kanji boss-kanji">討</span>
+        <span class="quadro-num boss-num" id="bossNum">—</span>
+        <span class="quadro-rot">boss kills</span>
+      </button>
+    </section>
+
+    <!-- Headless: roxo, e a moldura treme. -->
+    <section class="quadro quadro-botao headless-quadro" id="headlessPanel" hidden>
+      <button class="quadro-abre" id="headlessHead" type="button" aria-expanded="false" aria-controls="headlessLista">
+        <span class="quadro-kanji headless-kanji">首</span>
+        <span class="quadro-num headless-num" id="headlessNum">—</span>
+        <span class="quadro-rot">headless</span>
+      </button>
+    </section>
+  </div>
+
+  <!-- Fora da grade de propósito: aberta, empurra o que vem abaixo; fechada,
+       devolve tudo ao lugar. Fluxo normal do documento, sem script. -->
+  <div class="boss-lista" id="bossLista" hidden></div>
+  <div class="boss-lista headless-lista" id="headlessLista" hidden></div>
+
+  <!-- Bloco 2: mortes. -->
   <section class="deaths-panel" id="deaths" hidden>
     <div class="deaths-head" role="group" aria-label="Deaths">
       <span class="deaths-kanji">死</span>
@@ -1027,7 +1161,7 @@
     <div class="deaths-note" id="deathsNote"></div>
   </section>
 
-  <!-- Bloco 2: progresso e tempo de jogo, lado a lado, quadrados. -->
+  <!-- Bloco 3: progresso e tempo de jogo, lado a lado, quadrados. -->
   <div class="dois-quadrados">
     <!-- Anel em vez de barra: num quadrado 1:1 a barra fina deixava a maior
          parte do espaço vazio, e o anel ocupa o quadrado inteiro dizendo a
@@ -1058,30 +1192,7 @@
         <div class="marcos-esc"><span>0</span><span>100h</span><span>200h</span></div>
       </div>
     </section>
-
-    <!-- Contador de chefes: mesma proporção dos outros, e abre a lista. -->
-    <section class="quadro quadro-botao boss-quadro" id="bossPanel" hidden>
-      <button class="quadro-abre" id="bossHead" type="button" aria-expanded="false" aria-controls="bossLista">
-        <span class="quadro-kanji boss-kanji">討</span>
-        <span class="quadro-num boss-num" id="bossNum">—</span>
-        <span class="quadro-rot">boss kills</span>
-      </button>
-    </section>
-
-    <!-- Headless: roxo, e a moldura treme. -->
-    <section class="quadro quadro-botao headless-quadro" id="headlessPanel" hidden>
-      <button class="quadro-abre" id="headlessHead" type="button" aria-expanded="false" aria-controls="headlessLista">
-        <span class="quadro-kanji headless-kanji">首</span>
-        <span class="quadro-num headless-num" id="headlessNum">—</span>
-        <span class="quadro-rot">headless</span>
-      </button>
-    </section>
   </div>
-
-  <!-- Fora da grade de propósito: aberta, empurra o que vem abaixo; fechada,
-       devolve tudo ao lugar. Fluxo normal do documento, sem script. -->
-  <div class="boss-lista" id="bossLista" hidden></div>
-  <div class="boss-lista headless-lista" id="headlessLista" hidden></div>
 
 
   <div id="novidades"></div>
@@ -1233,10 +1344,20 @@ function setOpen(section, idx) {
   const open = section.classList.toggle("open");
   if (open) openState.add(idx);
   else openState.delete(idx);
-  // Com uma aba escolhida, fechar a seção é fechar a aba: a página volta ao
-  // menu e ao estado limpo. Deixar a seção ali, aberta-mas-vazia, não seria
-  // ter fechado nada. Em "All" vale o acordeão de sempre.
-  if (!open && abaAtual) selecionarAba(null);
+  // Com uma aba escolhida, fechar a última seção dela é fechar a aba: a página
+  // volta ao menu e ao estado limpo. Deixar a seção ali, aberta-mas-vazia, não
+  // seria ter fechado nada.
+  //
+  // "Última" é o que importa desde que um tópico passou a reunir várias
+  // seções: em "Items" são seis, e recolher as contas de oração para ler o
+  // resto não pode derrubar a aba inteira. Enquanto sobrar uma irmã aberta,
+  // vale o acordeão de sempre.
+  if (!open && abaAtual) {
+    const irmas = secoesDoTopico(abaAtual);
+    const sobrou = topicos.some((t) => irmas.indexOf(t.nome) >= 0 &&
+      t.section !== section && t.section.classList.contains("open"));
+    if (!sobrou) selecionarAba(null);
+  }
 }
 
 /* ------------------------------------------------------------------- abas */
@@ -1375,9 +1496,18 @@ function renderTopicos() {
   if (!topicos.length) { nav.hidden = true; return; }
   nav.hidden = false;
 
+  // A barra é os três tópicos de sempre mais o que foi alfinetado. Uma seção
+  // alfinetada entra como tópico próprio: ela não pertence a nenhum dos três
+  // grupos, então mostra a si mesma. Sem isto o alfinete não fazia nada — o
+  // menu tinha virado uma lista fixa e o botão de alfinetar continuava lá,
+  // acendendo e apagando sem efeito nenhum.
+  const alfinetados = [...fixadas].filter(
+    (n) => ORDEM_MENU.indexOf(n) < 0 && !GAVETA[n] && topicos.some((t) => t.nome === n));
+  const BARRA = ORDEM_MENU.concat(alfinetados);
+
   // Estado inicial: nenhuma aba. A página abre só com o menu, e a área abaixo
   // fica vazia até alguém escolher. Aba guardada que sumiu volta para cá.
-  const conhecidos = ORDEM_MENU.concat(Object.keys(GAVETA));
+  const conhecidos = BARRA.concat(Object.keys(GAVETA));
   if (abaAtual && conhecidos.indexOf(abaAtual) < 0) abaAtual = null;
 
   // A contagem de um tópico é a soma das seções que ele reúne.
@@ -1410,14 +1540,11 @@ function renderTopicos() {
     return b;
   };
 
-  for (const nome of ORDEM_MENU) {
+  for (const nome of BARRA) {
     if (!secoesDoTopico(nome).some((x) => topicos.some((t) => t.nome === x))) continue;
     const b = fazerBotao(nome, "topic");
     b.addEventListener("click", () => selecionarAba(nome === abaAtual ? null : nome));
     nav.appendChild(b);
-    if (nome === abaAtual && b.scrollIntoView) {
-      try { b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) { /* antigo */ }
-    }
   }
 
   // A gaveta: o que não merece vaga fixa no menu, mas precisa existir.

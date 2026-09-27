@@ -16,12 +16,12 @@ const https = require('https');
 const RAIZ = path.join(__dirname, '..');
 const SITE = path.join(RAIZ, 'site');
 const SAIDA = path.join(RAIZ, 'auditoria-publica.txt');
-const BASE = 'https://oaovito.github.io/game-tracker';
-const REPO = 'oaovito/game-tracker';
+const BASE = 'https://oaovito.github.io/trackeroao';
+const REPO = 'oaovito/trackeroao';
 
 function buscar(url) {
   return new Promise((resolve) => {
-    https.get(url, { headers: { 'User-Agent': 'game-tracker-audit' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'trackeroao-audit' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
         return resolve(buscar(res.headers.location));
@@ -56,7 +56,7 @@ async function montar() {
   const L = [];
   const add = (s) => L.push(s === undefined ? '' : s);
 
-  add('AUDITORIA DO QUE ESTÁ PÚBLICO — game-tracker');
+  add('AUDITORIA DO QUE ESTÁ PÚBLICO — trackeroao');
   add('gerado em ' + new Date().toISOString());
   add('='.repeat(72));
   add();
