@@ -323,11 +323,26 @@
   }
 
   /* --- bloco 3: mortes de chefe --- */
+  /* Mais sangrento que os outros blocos, de propósito: este conta o que custou
+     caro. O fio vermelho no topo e o respingo no canto dizem isso antes de
+     qualquer texto. */
   .boss-panel {
+    position: relative;
     border: 1px solid var(--line);
+    border-top: 2px solid var(--blood);
     background: var(--bg-panel);
     margin-bottom: 26px;
+    overflow: hidden;
   }
+  .boss-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 70px;
+    background: radial-gradient(120% 100% at 12% 0%, rgba(168,50,31,0.22), transparent 70%);
+    pointer-events: none;
+  }
+  .boss-panel.aberto { border-top-color: var(--blood-bright); }
   /* O cabeçalho é o botão inteiro: alvo grande, sem risco de errar no celular. */
   .boss-head {
     width: 100%;
@@ -354,8 +369,20 @@
     font-size: 0.68rem; color: var(--text-dim);
     letter-spacing: 0.1em; text-transform: uppercase; flex: 1;
   }
-  .boss-seta { color: var(--text-dim); font-size: 0.8rem; transition: transform 0.2s ease; }
+  /* O convite fica escrito, e não só numa seta: "dá para abrir" tem de ser
+     legível sem hover e sem adivinhação. */
+  .boss-abre {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line); border-radius: 2px;
+    padding: 5px 9px;
+    font-size: 0.63rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .boss-head:hover .boss-abre { color: var(--text); border-color: var(--gold); }
+  .boss-seta { font-size: 0.7rem; transition: transform 0.2s ease; display: inline-block; }
   .boss-panel.aberto .boss-seta { transform: rotate(180deg); }
+  .boss-panel.aberto .boss-abre { color: #d8d2c6; border-color: #4a443e; }
 
   /* Aberto, o bloco vira cimento queimado: é a cor do lugar onde se apanha. */
   .boss-panel.aberto {
@@ -382,13 +409,25 @@
   .boss-card.zero { opacity: 0.45; }
   /* Vaga do ícone: fica reservada mesmo sem imagem, para o layout não pular
      quando as artes entrarem. */
+  /* Emblema em kanji, escolhido pelo que o chefe é. Não é arte de wiki: as
+     artes de chefe são da FromSoftware, e republicá-las num repositório público
+     seria violação. Quem tiver arte com direito de uso põe o arquivo em
+     site/icones/<key>.png e ela entra por cima daqui. */
   .boss-icone {
-    width: 44px; height: 44px; margin: 0 auto 8px;
+    width: 46px; height: 46px; margin: 0 auto 9px;
     display: flex; align-items: center; justify-content: center;
     border: 1px solid #4a443e; border-radius: 50%;
-    font-family: var(--font-display); font-size: 1.1rem; color: #8a8076;
     background: #2a2724;
+    overflow: hidden;
   }
+  .boss-icone span {
+    font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
+    line-height: 1; color: #b9ad9c;
+  }
+  .boss-card:not(.zero) .boss-icone { border-color: var(--blood); }
+  .boss-card:not(.zero) .boss-icone span { color: #e3d6c2; }
+  .boss-icone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .boss-icone.com-arte { border-color: #5a524a; }
   .boss-card-nome {
     font-size: 0.74rem; line-height: 1.3; color: #ded8cc;
     word-break: break-word;
@@ -831,7 +870,7 @@
       <span class="boss-kanji">討</span>
       <span class="boss-num" id="bossNum">—</span>
       <span class="boss-rot">boss kills</span>
-      <span class="boss-seta" id="bossSeta">▾</span>
+      <span class="boss-abre"><span id="bossAbreTxt">see each boss</span><span class="boss-seta">▾</span></span>
     </button>
     <div class="boss-lista" id="bossLista" hidden></div>
     <div class="boss-nota" id="bossNota"></div>
@@ -1664,15 +1703,51 @@ function renderBossKills() {
   for (const b of kills) {
     const card = document.createElement("div");
     card.className = "boss-card" + (b.vezes ? "" : " zero");
-    // A vaga do ícone existe desde já: quando houver arte, ela entra aqui sem
-    // mexer no resto. Por ora, a inicial do nome.
-    const inicial = (b.label || "?").replace(/^(The|Inner|Great|Lady|Divine)\s+/i, "").charAt(0);
-    card.innerHTML =
-      '<span class="boss-card-n">' + (b.vezes || 0) + "</span>" +
-      '<div class="boss-icone">' + inicial + "</div>" +
-      '<div class="boss-card-nome">' + b.label + "</div>" +
-      (b.area ? '<div class="boss-card-area">' + b.area + "</div>" : "");
-    if (b.semeado) card.title = "Counted as 1 because it was already done when tracking started.";
+    // Montado com nós de verdade, e não por innerHTML seguido de querySelector:
+    // assim a vaga do emblema é uma referência que já se tem em mãos.
+    const n = document.createElement("span");
+    n.className = "boss-card-n";
+    n.textContent = b.vezes || 0;
+
+    const slot = document.createElement("div");
+    slot.className = "boss-icone";
+    const kanji = document.createElement("span");
+    kanji.textContent = b.emblema || "?";
+    slot.appendChild(kanji);
+
+    const nome = document.createElement("div");
+    nome.className = "boss-card-nome";
+    nome.textContent = b.label;
+
+    card.appendChild(n);
+    card.appendChild(slot);
+    card.appendChild(nome);
+    if (b.area) {
+      const area = document.createElement("div");
+      area.className = "boss-card-area";
+      area.textContent = b.area;
+      card.appendChild(area);
+    }
+
+    // Se houver arte com direito de uso em icones/<key>.png, ela entra por cima
+    // do kanji — e só depois de carregar, para um arquivo ausente não deixar um
+    // quadrado vazio no lugar do emblema.
+    if (typeof Image === "function") {
+      const img = new Image();
+      img.alt = b.label;
+      img.addEventListener("load", () => {
+        slot.innerHTML = "";
+        slot.appendChild(img);
+        slot.classList.add("com-arte");
+      });
+      img.src = "icones/" + b.key + ".png";
+    }
+
+    card.title = [
+      b.emblemaPorque ? b.emblema + " — " + b.emblemaPorque : "",
+      b.semeado ? "Counted as 1: already done when tracking started." : "",
+      b.vezes && !b.semeado ? "Counted here, " + b.vezes + "×." : "",
+    ].filter(Boolean).join(" ");
     lista.appendChild(card);
   }
 
@@ -1694,6 +1769,7 @@ function ligarBossPanel() {
     lista.hidden = !abrir;
     painel.classList.toggle("aberto", abrir);
     head.setAttribute("aria-expanded", abrir ? "true" : "false");
+    document.getElementById("bossAbreTxt").textContent = abrir ? "hide" : "see each boss";
   });
 }
 
