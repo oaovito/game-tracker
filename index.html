@@ -29,15 +29,9 @@
     --text: var(--paper);
     --text-dim: var(--paper-dim);
   }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #ece4d3;
-      --bg-panel: #ddd2b8;
-      --text: #201a12;
-      --text-dim: #4a3f2d;
-      --line: rgba(32,26,18,0.14);
-    }
-  }
+  /* Não há regra seguindo prefers-color-scheme de propósito: o site é escuro
+     por padrão, e só fica claro se a pessoa pedir. Sem isto, quem usa o sistema
+     no claro abriria no claro. */
   :root[data-theme="light"] {
     --bg: #ece4d3;
     --bg-panel: #ddd2b8;
@@ -222,16 +216,30 @@
   .deaths-panel.unknown .therm-pin::after { background: var(--line); }
   /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". */
   .deaths-panel.over .therm-scale span:last-child { color: var(--blood-bright); }
+  /* Faixa do botão de tema: colada no topo, alinhada à direita. */
+  .topbar { display: flex; justify-content: flex-end; padding-bottom: 6px; }
   .theme-toggle {
     background: none;
-    border: 1px solid var(--line);
+    border: 0;
     color: var(--text-dim);
     font-family: var(--font-body);
-    font-size: 0.75rem;
-    padding: 6px 10px;
-    border-radius: 3px;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 2px 4px;
     cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+  }
+  .theme-toggle:hover { opacity: 1; color: var(--text); }
+  /* Assinatura: presente, mas sem puxar o olho para longe do progresso. */
+  .assinatura {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+    opacity: 0.65;
     white-space: nowrap;
+    align-self: flex-end;
   }
   .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
 
@@ -426,15 +434,35 @@
     gap: 6px;
     flex-wrap: wrap;
   }
+  /* O ponto é um botão. Ele mostra 6px, mas a área de clique é 20px: num
+     celular ninguém acerta um alvo de seis pixels. A margem negativa põe o
+     ponto de volta exatamente onde ele estava antes de virar botão. */
   .sync-dot {
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    margin: -7px 0 -7px -7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sync-dot::before {
+    content: "";
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--text-dim);
-    flex-shrink: 0;
+    transition: transform 0.15s ease;
   }
-  .sync-dot.on { background: var(--gold); }
-  .sync-dot.off { background: var(--blood); }
+  .sync-dot:hover::before { transform: scale(1.5); }
+  .sync-dot.on::before { background: var(--gold); }
+  .sync-dot.off::before { background: var(--blood); }
+  .sync-dot[aria-expanded="true"]::before { transform: scale(1.5); }
   .item .tag.auto { color: var(--gold); border-color: var(--gold); }
 
   /* --- contadores da seção de itens essenciais --- */
@@ -573,15 +601,23 @@
 <body>
 <div class="wrap">
 
+  <!-- Faixa só para o botão de tema, no extremo topo à direita: fora do
+       cabeçalho, para não disputar espaço com o título nem com a assinatura. -->
+  <div class="topbar">
+    <button class="theme-toggle" id="themeToggle" type="button" title="Switch theme" aria-label="Switch theme">◐</button>
+  </div>
+
   <header class="top">
     <div>
       <h1>Sekiro<span> 進捗</span></h1>
+      <!-- O estado do sync fica dentro do ponto: a cor já diz se está tudo
+           certo, e o texto só aparece quando se clica nele. -->
       <div class="sync-line" id="syncLine">
-        <span class="sync-dot" id="syncDot"></span>
-        <span id="syncText">looking for the save…</span>
+        <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
+        <span id="syncText" hidden>looking for the save…</span>
       </div>
     </div>
-    <button class="theme-toggle" id="themeToggle">light mode</button>
+    <div class="assinatura">oaovito game progress</div>
   </header>
 
   <nav class="topics" id="topics" aria-label="Sections" hidden></nav>
@@ -1327,10 +1363,24 @@ function renderDeaths() {
       : "Waiting for the first death.");
 }
 
+/** Liga o clique do ponto uma vez só: dentro do render, cada leitura
+ *  empilharia mais um ouvinte e o texto piscaria a cada clique. */
+function ligarPontoDeSync() {
+  const dot = document.getElementById("syncDot");
+  const text = document.getElementById("syncText");
+  dot.addEventListener("click", () => {
+    const mostrar = text.hidden;
+    text.hidden = !mostrar;
+    dot.setAttribute("aria-expanded", mostrar ? "true" : "false");
+  });
+}
+
 function renderSyncLine() {
   const dot = document.getElementById("syncDot");
   const text = document.getElementById("syncText");
+  const aberto = dot.getAttribute("aria-expanded") === "true";
   dot.className = "sync-dot";
+  dot.setAttribute("aria-expanded", aberto ? "true" : "false");
   if (!sync) {
     dot.classList.add("off");
     // Não mandar rodar nada: o serviço sobe sozinho no login. Se esta linha
@@ -1358,6 +1408,18 @@ function renderSyncLine() {
   const slot = sync.source ? sync.source.slot : "?";
   text.textContent = "synced with the save · slot " + slot + " · saved at " + when;
 }
+
+// O rótulo do botão acompanha o texto escondido. Envolver é o jeito certo:
+// renderSyncLine sai por vários `return` diferentes, e pôr isto no fim do corpo
+// cobriria só o último caminho.
+const renderSyncLineCru = renderSyncLine;
+renderSyncLine = function () {
+  renderSyncLineCru();
+  const dot = document.getElementById("syncDot");
+  const text = document.getElementById("syncText");
+  dot.setAttribute("aria-label", "Sync status: " + text.textContent);
+  dot.title = text.textContent;
+};
 
 /* ------------------------------------------------------- itens essenciais */
 
@@ -1530,25 +1592,23 @@ render = function() {
 };
 
 // theme toggle
-function temaDoSistema() {
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light" : "dark";
-}
+// Escuro é o padrão, não o do sistema: o visual da página foi feito para o
+// escuro, e quem abre pela primeira vez tem de ver isso. O claro continua
+// disponível, mas é escolha explícita e fica guardada.
 function applyTheme(t) {
-  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  else document.documentElement.removeAttribute("data-theme");
-  // Sem nada salvo, quem manda é o sistema — o rótulo tem que refletir o que
-  // está na tela, senão o primeiro clique não muda nada.
-  const efetivo = (t === "light" || t === "dark") ? t : temaDoSistema();
-  document.getElementById("themeToggle").textContent =
-    (efetivo === "light") ? "dark mode" : "light mode";
+  const efetivo = t === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", efetivo);
+  const botao = document.getElementById("themeToggle");
+  const proximo = efetivo === "light" ? "dark" : "light";
+  botao.title = "Switch to " + proximo + " mode";
+  botao.setAttribute("aria-label", botao.title);
 }
 let savedTheme = null;
 try { savedTheme = localStorage.getItem(THEME_KEY); } catch (e) {}
 applyTheme(savedTheme);
+ligarPontoDeSync();
 document.getElementById("themeToggle").addEventListener("click", () => {
-  const current = document.documentElement.getAttribute("data-theme") || temaDoSistema();
-  const next = current === "light" ? "dark" : "light";
+  const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
   try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
   applyTheme(next);
 });
