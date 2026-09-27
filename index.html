@@ -1967,11 +1967,15 @@ async function pollProgress() {
     if (stamp === lastStamp) return;
     lastStamp = stamp;
     sync = data;
-    render();
+    // Fora do try: um erro de desenho não é falha de rede, e tratá-lo como tal
+    // fazia a página dizer "não estou sincronizando" enquanto o problema real
+    // era um erro de script — que ficava invisível.
   } catch (e) {
     // Aberto como file://, ou servidor fora do ar.
     cair(null);
+    return;
   }
+  render();
 }
 
 // open first category by default
