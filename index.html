@@ -339,10 +339,14 @@
      dois por linha, como antes. */
   .dois-quadrados {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(148px, 320px));
-    justify-content: center;
+    /* O teto vai no contêiner, não na faixa: com `minmax(148px, 320px)` o
+       auto-fit conta as colunas pelo máximo, e no celular dava uma coluna só —
+       os quadrados deixavam de ficar lado a lado. Com 1fr ele conta pelo
+       mínimo e continuam sendo dois por linha em qualquer largura. */
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    max-width: 652px;
+    margin: 0 auto 20px;
     gap: 12px;
-    margin-bottom: 20px;
   }
   /* Sem moldura e sem fundo: estes dois não são placas como os de mortes e
      chefes, só precisam se parecer um com o outro. */
@@ -606,6 +610,69 @@
   }
   .headless-quadro .pingo {
     background: linear-gradient(180deg, #b06bf0, #3d1361 60%, transparent);
+  }
+
+  /* --- a lista que os dois quadrados abrem --- */
+  /* Fica fora da grade dos quadrados, logo depois dela: aberta, empurra o que
+     vem abaixo pelo fluxo normal do documento; fechada, devolve tudo ao lugar.
+     Nada de medir altura nem animar no script. */
+  .boss-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    gap: 10px;
+    margin: -6px 0 22px;
+  }
+  /* `hidden` sozinho não vence `display: grid` do autor: sem esta regra a
+     lista continuava aberta mesmo marcada como escondida. */
+  .boss-lista[hidden] { display: none; }
+
+  .boss-card {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    padding: 10px 10px 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+  /* Quem ainda não caiu fica apagado, e não ausente: a lista continua sendo o
+     mapa inteiro, não só o que já foi feito. */
+  .boss-card.zero { opacity: 0.42; }
+  .boss-card-n {
+    position: absolute; top: 5px; right: 7px;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    color: var(--blood-bright);
+    font-variant-numeric: tabular-nums;
+  }
+  .headless-lista .boss-card-n { color: #b06bf0; }
+  .boss-icone {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    font-size: 1.7rem;
+    color: var(--text-dim);
+    overflow: hidden;
+  }
+  /* Com arte o kanji sai e a imagem preenche o quadrado; o enquadramento de
+     cada chefe vem do JSON, porque as ilustrações não têm o mesmo corte. */
+  .boss-icone.com-arte { font-size: 0; background-color: #0b0908; }
+  .boss-card-nome {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--text);
+  }
+  .boss-card-area {
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
   }
 
   /* --- menu de tópicos --- */
