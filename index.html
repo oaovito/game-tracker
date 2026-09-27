@@ -269,6 +269,142 @@
     transition: width 0.4s ease;
   }
 
+  /* --- bloco 2: dois quadrados 1:1 --- */
+  .dois-quadrados {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .quadro {
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .quadro-topo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .quadro-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 2.1rem;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .quadro-rot {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .quadro-pe { width: 100%; }
+  /* O emoji ocupa o meio do quadrado: é a leitura de relance. */
+  .skill { font-size: 2.6rem; line-height: 1; text-align: center; flex: 1;
+           display: flex; align-items: center; justify-content: center; }
+
+  /* Marcos de 25 em 25 horas até 200. */
+  .marcos { display: flex; gap: 2px; height: 8px; }
+  .marcos i {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 1px;
+  }
+  .marcos i.cheio { background: var(--gold); border-color: var(--gold); }
+  .marcos i.parcial { background: linear-gradient(90deg, var(--gold) var(--p), transparent var(--p)); }
+  .marcos-esc {
+    display: flex; justify-content: space-between;
+    font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;
+  }
+
+  /* --- bloco 3: mortes de chefe --- */
+  .boss-panel {
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    margin-bottom: 26px;
+  }
+  /* O cabeçalho é o botão inteiro: alvo grande, sem risco de errar no celular. */
+  .boss-head {
+    width: 100%;
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 16px 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-body);
+  }
+  .boss-kanji {
+    font-family: var(--font-display); font-weight: 800; font-size: 1.5rem;
+    line-height: 1; color: var(--blood-bright);
+  }
+  .boss-num {
+    font-family: var(--font-display); font-weight: 800; font-size: 2.2rem;
+    line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .boss-rot {
+    font-size: 0.68rem; color: var(--text-dim);
+    letter-spacing: 0.1em; text-transform: uppercase; flex: 1;
+  }
+  .boss-seta { color: var(--text-dim); font-size: 0.8rem; transition: transform 0.2s ease; }
+  .boss-panel.aberto .boss-seta { transform: rotate(180deg); }
+
+  /* Aberto, o bloco vira cimento queimado: é a cor do lugar onde se apanha. */
+  .boss-panel.aberto {
+    background: #2e2b28;
+    border-color: #3d3935;
+  }
+  .boss-panel.aberto .boss-num,
+  .boss-panel.aberto .boss-rot,
+  .boss-panel.aberto .boss-seta { color: #d8d2c6; }
+  .boss-lista {
+    padding: 0 12px 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  .boss-card {
+    position: relative;
+    border: 1px solid #423d38;
+    background: #35312d;
+    padding: 12px 10px 10px;
+    text-align: center;
+    min-width: 0;
+  }
+  .boss-card.zero { opacity: 0.45; }
+  /* Vaga do ícone: fica reservada mesmo sem imagem, para o layout não pular
+     quando as artes entrarem. */
+  .boss-icone {
+    width: 44px; height: 44px; margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #4a443e; border-radius: 50%;
+    font-family: var(--font-display); font-size: 1.1rem; color: #8a8076;
+    background: #2a2724;
+  }
+  .boss-card-nome {
+    font-size: 0.74rem; line-height: 1.3; color: #ded8cc;
+    word-break: break-word;
+  }
+  .boss-card-area { font-size: 0.62rem; color: #8a8076; margin-top: 3px; }
+  /* A contagem no topo à direita do bloco do chefe. */
+  .boss-card-n {
+    position: absolute; top: 6px; right: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+    color: var(--blood-bright); font-variant-numeric: tabular-nums;
+  }
+  .boss-card.zero .boss-card-n { color: #6c645b; }
+  .boss-nota { padding: 0 18px 14px; font-size: 0.7rem; color: var(--text-dim); line-height: 1.5; }
+  .boss-panel.aberto .boss-nota { color: #9a9288; }
+  .boss-nota:empty { display: none; }
+
   /* --- menu de tópicos --- */
   .topics {
     display: flex;
@@ -338,22 +474,30 @@
     width: 0%;
     transition: width 0.4s ease;
   }
+  /* Alfinete desenhado, não emoji: o emoji trazia cor e brilho que não são
+     desta página, e não acompanhava o tema. Alvo de 34px porque o alvo de
+     verdade no celular é o dedo, não o desenho. */
   .cat-header .pin {
     appearance: none;
     background: none;
     border: 0;
-    padding: 2px 3px;
-    font-size: 0.78rem;
-    line-height: 1;
+    padding: 0;
+    width: 34px;
+    height: 34px;
+    margin: -8px -6px -8px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
     order: 1;
-    opacity: 0.22;
-    filter: grayscale(1);
-    transition: opacity 0.15s ease;
+    color: var(--text-dim);
+    opacity: 0.45;
+    transition: opacity 0.15s ease, color 0.15s ease;
   }
-  .cat-header .pin:hover { opacity: 0.65; }
-  .cat-header .pin.on { opacity: 1; filter: none; }
+  .cat-header .pin svg { width: 13px; height: 13px; display: block; }
+  .cat-header .pin:hover { opacity: 0.9; }
+  .cat-header .pin.on { opacity: 1; color: var(--gold); }
   .cat-header .chevron { order: 2; }
 
   .chevron {
@@ -568,7 +712,17 @@
      e a página passa a rolar para o lado. A contagem por seção continua. */
   @media (max-width: 460px) {
     .deaths-panel { padding: 18px 16px 14px; }
-    .topic { font-size: 0.66rem; padding: 8px 9px 7px; letter-spacing: 0.06em; }
+    /* Dedo, não cursor: linha do menu e cabeçalho de seção ficam mais altos,
+       e o alfinete ganha folga do chevron para não haver clique trocado. */
+    .topic { font-size: 0.66rem; padding: 12px 11px 11px; letter-spacing: 0.06em; }
+    .cat-header { padding: 16px 0; gap: 8px; }
+    .cat-header .pin { width: 40px; height: 40px; margin: -10px -8px -10px 0; }
+    .chevron { padding: 8px 0 8px 6px; }
+    .dois-quadrados { gap: 10px; }
+    .quadro { padding: 13px 14px; }
+    .quadro-num { font-size: 1.7rem; }
+    .skill { font-size: 2.1rem; }
+    .boss-lista { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .topic-n { margin-left: 5px; font-size: 0.6rem; }
     /* Na largura de celular os onze tópicos quebrariam em quatro ou cinco
        linhas, o que é peso demais para um menu. Uma linha só, que rola de lado.
@@ -644,13 +798,44 @@
     <div class="deaths-note" id="deathsNote"></div>
   </section>
 
-  <div class="overall">
-    <div class="overall-row">
-      <span class="count" id="overallCount">0 / 0</span>
-      <span class="label" id="overallLabel">complete</span>
-    </div>
-    <div class="bar-track"><div class="bar-fill" id="overallBar"></div></div>
+  <!-- Bloco 2: progresso e tempo de jogo, lado a lado, quadrados. -->
+  <div class="dois-quadrados">
+    <section class="quadro">
+      <div class="quadro-topo">
+        <span class="quadro-num" id="overallCount">—</span>
+        <span class="quadro-rot" id="overallLabel">complete</span>
+      </div>
+      <div class="quadro-pe">
+        <div class="bar-track"><div class="bar-fill" id="overallBar"></div></div>
+      </div>
+    </section>
+
+    <section class="quadro" id="quadroTempo">
+      <div class="quadro-topo">
+        <span class="quadro-num" id="tempoNum">—</span>
+        <span class="quadro-rot">hours played</span>
+      </div>
+      <!-- O emoji é a leitura rápida; a barra abaixo diz onde isso cai numa
+           escala de 0 a 200 horas, com marca a cada 25. -->
+      <div class="skill" id="skillEmote" aria-hidden="true">🌱</div>
+      <div class="quadro-pe">
+        <div class="marcos" id="marcos"></div>
+        <div class="marcos-esc"><span>0</span><span>100h</span><span>200h</span></div>
+      </div>
+    </section>
   </div>
+
+  <!-- Bloco 3: quantas vezes cada chefe caiu. -->
+  <section class="boss-panel" id="bossPanel" hidden>
+    <button class="boss-head" id="bossHead" type="button" aria-expanded="false" aria-controls="bossLista">
+      <span class="boss-kanji">討</span>
+      <span class="boss-num" id="bossNum">—</span>
+      <span class="boss-rot">boss kills</span>
+      <span class="boss-seta" id="bossSeta">▾</span>
+    </button>
+    <div class="boss-lista" id="bossLista" hidden></div>
+    <div class="boss-nota" id="bossNota"></div>
+  </section>
 
   <div id="novidades"></div>
 
@@ -867,7 +1052,13 @@ function aplicarPins() {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "pin" + (fixo ? " on" : "");
-    b.textContent = "📌";
+    // Alfinete desenhado, e não o emoji: o emoji trazia cor e brilho que não
+    // são desta página e não acompanhava o tema. Este herda `currentColor`.
+    b.innerHTML =
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M6 1.8h4l-.7 4.1 2.4 2.3H4.3l2.4-2.3z"/>' +
+      '<path d="M8 8.2V14"/></svg>';
     const rotulo = fixo ? "Remove from the menu" : "Add to the menu";
     b.title = rotulo;
     b.setAttribute("aria-label", rotulo);
@@ -1332,10 +1523,24 @@ function renderDeaths() {
     num.textContent = d.count;
     fill.style.width = pct + "%";
     pin.style.left = pct + "%";
-    nota.textContent = d.how === "discovered"
-      ? "Field found by watching the save, so this is the whole life of the character — not just since the tracker started." +
-        (d.count > TOPO ? " Past the end of the scale." : "")
-      : "Read straight from the save.";
+    // O jogo não guarda contagem de mortes: a busca pelo campo confirmou isso
+    // na prática, depois de dez gravações. Então o número é contado por nós, e
+    // o texto diz exatamente o que ele é — inclusive o que ele não pega.
+    box.title =
+      d.how === "counted"
+        ? "Counted by watching the save since " +
+          (d.desde ? new Date(d.desde).toLocaleDateString() : "tracking started") +
+          ". A death only shows up when it costs Sen, and Unseen Aid cancels that loss sometimes."
+        : "Read straight from the save.";
+    nota.textContent =
+      d.how === "counted"
+        ? "Sekiro keeps no death counter of its own, so this one is counted here, from " +
+          (d.desde ? new Date(d.desde).toLocaleDateString() : "when tracking started") +
+          " onwards. It is a floor, not a lifetime total."
+        : d.how === "discovered"
+        ? "Field found by watching the save, so this is the whole life of the character." +
+          (d.count > TOPO ? " Past the end of the scale." : "")
+        : "Read straight from the save.";
     return;
   }
 
@@ -1372,6 +1577,123 @@ function ligarPontoDeSync() {
     const mostrar = text.hidden;
     text.hidden = !mostrar;
     dot.setAttribute("aria-expanded", mostrar ? "true" : "false");
+  });
+}
+
+/* ------------------------------------------- tempo de jogo e maestria */
+
+// A escala vai até 200 horas, em oito marcos de 25. O emoji é a leitura de
+// relance: quanto mais tempo, mais ele insiste na ideia de domínio.
+const HORAS_MAX = 200;
+const MARCOS = 8;
+const ESCADA = [
+  [0, "🌱", "just off the boat"],
+  [25, "🗡️", "finding your footing"],
+  [50, "⚔️", "holding your own"],
+  [75, "🔥", "dangerous"],
+  [100, "🐺", "wolf"],
+  [125, "🥷", "shinobi"],
+  [150, "👹", "feared"],
+  [175, "🏆", "master"],
+  [200, "🐉", "sword saint"],
+];
+
+function degrau(horas) {
+  let atual = ESCADA[0];
+  for (const d of ESCADA) if (horas >= d[0]) atual = d;
+  return atual;
+}
+
+function renderTempo() {
+  const num = document.getElementById("tempoNum");
+  const emote = document.getElementById("skillEmote");
+  const marcos = document.getElementById("marcos");
+  const t = temSync() ? sync.playtime : null;
+
+  if (!t) {
+    num.textContent = "—";
+    emote.textContent = "🌱";
+    marcos.innerHTML = "";
+    document.getElementById("quadroTempo").title =
+      "Playtime comes from Steam's own record. Not available right now.";
+    return;
+  }
+
+  const horas = t.horas;
+  num.textContent = horas >= 100 ? Math.round(horas) : horas.toFixed(1);
+  const d = degrau(horas);
+  emote.textContent = d[1];
+
+  // Oito blocos de 25h. O bloco onde você está fica preenchido em parte, para a
+  // barra andar dentro do marco em vez de saltar só ao completá-lo.
+  marcos.innerHTML = "";
+  for (let i = 0; i < MARCOS; i++) {
+    const de = (HORAS_MAX / MARCOS) * i;
+    const ate = de + HORAS_MAX / MARCOS;
+    const el = document.createElement("i");
+    if (horas >= ate) el.className = "cheio";
+    else if (horas > de) {
+      el.className = "parcial";
+      el.style.setProperty("--p", ((horas - de) / (ate - de) * 100) + "%");
+    }
+    el.title = de + "h – " + ate + "h";
+    marcos.appendChild(el);
+  }
+
+  document.getElementById("quadroTempo").title =
+    horas.toFixed(1) + " hours — " + d[2] +
+    ". From Steam's own record, so it updates when Steam syncs, not mid-session.";
+}
+
+/* --------------------------------------------------- mortes de chefe */
+
+function renderBossKills() {
+  const painel = document.getElementById("bossPanel");
+  const lista = document.getElementById("bossLista");
+  const num = document.getElementById("bossNum");
+  const nota = document.getElementById("bossNota");
+  const kills = temSync() && Array.isArray(sync.bossKills) ? sync.bossKills : null;
+
+  if (!kills || !kills.length) { painel.hidden = true; return; }
+  painel.hidden = false;
+
+  const total = kills.reduce((a, b) => a + (b.vezes || 0), 0);
+  num.textContent = total;
+
+  lista.innerHTML = "";
+  for (const b of kills) {
+    const card = document.createElement("div");
+    card.className = "boss-card" + (b.vezes ? "" : " zero");
+    // A vaga do ícone existe desde já: quando houver arte, ela entra aqui sem
+    // mexer no resto. Por ora, a inicial do nome.
+    const inicial = (b.label || "?").replace(/^(The|Inner|Great|Lady|Divine)\s+/i, "").charAt(0);
+    card.innerHTML =
+      '<span class="boss-card-n">' + (b.vezes || 0) + "</span>" +
+      '<div class="boss-icone">' + inicial + "</div>" +
+      '<div class="boss-card-nome">' + b.label + "</div>" +
+      (b.area ? '<div class="boss-card-area">' + b.area + "</div>" : "");
+    if (b.semeado) card.title = "Counted as 1 because it was already done when tracking started.";
+    lista.appendChild(card);
+  }
+
+  const semeados = kills.filter((b) => b.semeado).length;
+  nota.textContent =
+    "The game keeps no per-boss kill count — the flags are just done or not done. " +
+    "This counts every time a boss goes from undone to done, which is what happens on each NG+. " +
+    (semeados
+      ? semeados + " were already done when tracking started, so they count as one: a floor, not a total."
+      : "");
+}
+
+function ligarBossPanel() {
+  const painel = document.getElementById("bossPanel");
+  const head = document.getElementById("bossHead");
+  const lista = document.getElementById("bossLista");
+  head.addEventListener("click", () => {
+    const abrir = lista.hidden;
+    lista.hidden = !abrir;
+    painel.classList.toggle("aberto", abrir);
+    head.setAttribute("aria-expanded", abrir ? "true" : "false");
   });
 }
 
@@ -1499,6 +1821,8 @@ function renderEssentials() {
 function render() {
   renderSyncLine();
   renderDeaths();
+  renderTempo();
+  renderBossKills();
   renderNovidades();
   renderEssentials();
   const listas = [renderBeads(), renderSeeds()].filter(Boolean);
@@ -1607,6 +1931,7 @@ let savedTheme = null;
 try { savedTheme = localStorage.getItem(THEME_KEY); } catch (e) {}
 applyTheme(savedTheme);
 ligarPontoDeSync();
+ligarBossPanel();
 document.getElementById("themeToggle").addEventListener("click", () => {
   const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
   try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
