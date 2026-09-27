@@ -114,13 +114,18 @@ function arquivar(opts) {
 
 /** Tira a tarefa agendada, que é o que faria o serviço voltar no próximo login. */
 function removerTarefa() {
-  try {
-    execFileSync('schtasks', ['/Delete', '/TN', TAREFA, '/F'],
-      { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
-    return { ok: true };
-  } catch (e) {
+  const removidas = [];
+  for (const nome of TAREFAS) {
+    try {
+      execFileSync('schtasks', ['/Delete', '/TN', nome, '/F'],
+        { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+      removidas.push(nome);
+    } catch (e) { /* esta não existe nesta máquina; a outra pode existir */ }
+  }
+  if (!removidas.length) {
     return { ok: false, erro: 'a tarefa não existia ou não pôde ser removida' };
   }
+  return { ok: true, removidas };
 }
 
-module.exports = { arquivar, removerTarefa, ARQUIVO, TAREFA, GUARDAR };
+module.exports = { arquivar, removerTarefa, ARQUIVO, TAREFA, TAREFAS, GUARDAR };

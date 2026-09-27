@@ -1,12 +1,21 @@
 <#
-Remove a tarefa agendada do sincronizador do Sekiro e encerra qualquer
-instancia em execucao. Nao apaga progress.json nem o offsets.json.
+Remove a tarefa agendada do sincronizador e encerra qualquer instancia em
+execucao. Nao apaga progress.json nem o offsets.json.
+
+Sao dois nomes porque o projeto mudou de nome: uma maquina onde o servico foi
+instalado antes disso ainda tem a tarefa registrada como 'SekiroProgressSync'.
+Remover so o nome novo deixaria a antiga de pe, voltando no proximo logon.
 #>
 
-$taskName = 'SekiroProgressSync'
+$taskNames = @('TrackeroaoSync', 'SekiroProgressSync')
 
-Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
-Write-Host "Tarefa agendada '$taskName' removida." -ForegroundColor Green
+foreach ($taskName in $taskNames) {
+    $tarefa = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    if ($tarefa) {
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+        Write-Host "Tarefa agendada '$taskName' removida." -ForegroundColor Green
+    }
+}
 
 $achou = $false
 Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |

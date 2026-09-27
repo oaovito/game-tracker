@@ -74,7 +74,7 @@ Um boot saudável tem ~20 linhas e termina com o estado do jogo:
   [watch] monitorando C:\Users\...\S0000.sl2
 ```
 
-Para ver se a tarefa está de pé: `Get-ScheduledTask SekiroProgressSync`.
+Para ver se a tarefa está de pé: `Get-ScheduledTask TrackeroaoSync`.
 
 ## O que a página lê do save
 
@@ -274,7 +274,7 @@ tools/completionist/
 - **a página diz "sem sincronização"** — ela não está falando com o serviço.
   Causas, da mais comum para a menos: o PC está desligado ou dormindo; o
   serviço caiu (veja `sync/sekiro-sync.log` e
-  `Get-ScheduledTask SekiroProgressSync`); ou você abriu o arquivo HTML direto
+  `Get-ScheduledTask TrackeroaoSync`); ou você abriu o arquivo HTML direto
   por `file://`, e aí o `fetch('progress.json')` não funciona — use o endereço
   do servidor.
 - **números errados** — provavelmente é o slot. Veja qual o terminal escolheu

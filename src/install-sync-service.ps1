@@ -10,7 +10,12 @@ para o usuario errado.
 
 $ErrorActionPreference = 'Stop'
 
-$taskName   = 'SekiroProgressSync'
+# O nome antigo fica listado porque o projeto mudou de nome: numa maquina onde
+# o servico ja estava instalado, a tarefa continua registrada como
+# 'SekiroProgressSync'. Reinstalar sem remove-la deixaria duas tarefas subindo
+# dois servicos na mesma porta.
+$taskName   = 'TrackeroaoSync'
+$taskAntigo = 'SekiroProgressSync'
 $mainScript = Join-Path $PSScriptRoot 'sync\main.js'
 $nircmdPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'nircmd\nircmd.exe'
 
@@ -61,10 +66,12 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Write-Host "Instancia anterior (PID $($_.ProcessId)) encerrada." -ForegroundColor DarkGray
     }
 
-Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+foreach ($n in @($taskName, $taskAntigo)) {
+    Unregister-ScheduledTask -TaskName $n -Confirm:$false -ErrorAction SilentlyContinue
+}
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
     -Principal $principal -Settings $settings -Description `
-    'Serve o tracker de progresso do Sekiro e le o save enquanto o jogo estiver aberto' | Out-Null
+    'Serve a pagina de progresso e le o save enquanto o jogo estiver aberto' | Out-Null
 
 Write-Host "Tarefa agendada '$taskName' criada (inicia oculta no login)." -ForegroundColor Green
 

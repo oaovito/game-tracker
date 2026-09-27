@@ -1,8 +1,8 @@
 {
-  "name": "sekiro-progresso-sync",
+  "name": "trackeroao",
   "version": "1.0.0",
   "private": true,
-  "description": "Le o save do Sekiro (somente leitura) e alimenta o tracker de progresso em HTML.",
+  "description": "Le o save do jogo (somente leitura) e alimenta a pagina de progresso em HTML.",
   "scripts": {
     "start": "node sync/main.js",
     "sync": "node sync/parse.js",
