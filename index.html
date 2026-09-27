@@ -303,6 +303,32 @@
     text-transform: uppercase;
   }
   .quadro-pe { width: 100%; }
+
+  /* Anel de progresso: enche o quadrado, que era o problema da barra. */
+  .quadro-anel { align-items: center; justify-content: center; gap: 10px; }
+  .anel { position: relative; width: 100%; max-width: 172px; aspect-ratio: 1 / 1; }
+  .anel svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+  .anel circle { fill: none; stroke-width: 9; }
+  .anel-trilho { stroke: var(--bg); }
+  .anel-fio {
+    stroke: var(--blood-bright);
+    stroke-linecap: butt;
+    /* 2πr com r=42. O dasharray é o anel inteiro; o offset é o que falta. */
+    stroke-dasharray: 263.89;
+    stroke-dashoffset: 263.89;
+    transition: stroke-dashoffset 0.6s ease;
+  }
+  .anel-meio {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
+  }
+  .anel-pct {
+    font-family: var(--font-display); font-weight: 800; font-size: 2.1rem;
+    line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .anel-num { font-size: 0.72rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .quadro-rot-centro { text-align: center; }
   /* O emoji ocupa o meio do quadrado: é a leitura de relance. */
   .skill { font-size: 2.6rem; line-height: 1; text-align: center; flex: 1;
            display: flex; align-items: center; justify-content: center; }
@@ -839,14 +865,21 @@
 
   <!-- Bloco 2: progresso e tempo de jogo, lado a lado, quadrados. -->
   <div class="dois-quadrados">
-    <section class="quadro">
-      <div class="quadro-topo">
-        <span class="quadro-num" id="overallCount">—</span>
-        <span class="quadro-rot" id="overallLabel">complete</span>
+    <!-- Anel em vez de barra: num quadrado 1:1 a barra fina deixava a maior
+         parte do espaço vazio, e o anel ocupa o quadrado inteiro dizendo a
+         mesma coisa. O número vive no meio dele. -->
+    <section class="quadro quadro-anel">
+      <div class="anel">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="anel-trilho" cx="50" cy="50" r="42"/>
+          <circle class="anel-fio" id="anelFio" cx="50" cy="50" r="42"/>
+        </svg>
+        <div class="anel-meio">
+          <span class="anel-pct" id="overallPct">—</span>
+          <span class="anel-num" id="overallCount">—</span>
+        </div>
       </div>
-      <div class="quadro-pe">
-        <div class="bar-track"><div class="bar-fill" id="overallBar"></div></div>
-      </div>
+      <span class="quadro-rot quadro-rot-centro" id="overallLabel">complete</span>
     </section>
 
     <section class="quadro" id="quadroTempo">
@@ -1972,9 +2005,14 @@ function render() {
   for (const e of extras) { totalDone += e.feitos; totalAll += e.total; }
 
   const ok = temSync();
-  document.getElementById("overallCount").textContent = ok ? `${totalDone} / ${totalAll}` : "—";
+  const pct = ok && totalAll ? totalDone / totalAll * 100 : 0;
+  document.getElementById("overallPct").textContent = ok ? Math.round(pct) + "%" : "—";
+  document.getElementById("overallCount").textContent = ok ? `${totalDone} / ${totalAll}` : "";
   document.getElementById("overallLabel").textContent = ok ? "complete" : "waiting for the save";
-  document.getElementById("overallBar").style.width = (ok && totalAll ? totalDone/totalAll*100 : 0) + "%";
+  // O anel anda pelo offset: o traço inteiro mede 263.89 (2πr, r=42), e o que
+  // sobra é o que falta. Sem save lido, fica vazio em vez de fechado em zero.
+  const VOLTA = 263.89;
+  document.getElementById("anelFio").style.strokeDashoffset = VOLTA - (VOLTA * pct / 100);
 }
 
 const origRender = render;
