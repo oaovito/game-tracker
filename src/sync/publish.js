@@ -131,7 +131,18 @@ function montar(destino) {
  * marcador. É a diferença entre falar de um endereço e escrever o seu.
  */
 const FORA = new Set(['node_modules', '.git', 'site', 'docs', 'redirect', 'snapshots', 'icones']);
-const EXTS = new Set(['.js', '.ps1', '.json', '.html', '.md', '.bat', '.gitignore']);
+const EXTS = new Set(['.js', '.ps1', '.html', '.md', '.bat', '.gitignore']);
+/*
+ * JSON é a exceção, e por lista fechada.
+ *
+ * A pasta tem dois tipos de JSON: os que são projeto (as dependências, a
+ * tabela de offsets do save) e os que são estado (o que já foi contado, e
+ * quando). Os de estado carregam carimbo de hora — `iniciadoEm`, `ultima`,
+ * `contandoDesde` —, que é a mesma informação que a data da última partida,
+ * justamente o que não vai para o ar. Como a diferença não está na extensão,
+ * ela precisa estar escrita: entra quem está aqui, o resto fica.
+ */
+const JSON_DE_PROJETO = new Set(['package.json', path.join('sync', 'offsets.json')]);
 
 function copiarFontes(destino) {
   const copiados = [];
@@ -144,10 +155,12 @@ function copiarFontes(destino) {
       const st = fs.statSync(cheio);
       if (st.isDirectory()) { anda(cheio, path.join(para, nome)); continue; }
       const ext = path.extname(nome) || nome;
-      if (!EXTS.has(ext)) continue;
-      // O log traz caminho de máquina em cada linha, e o progresso cru traz o
-      // save inteiro; nenhum dos dois é código.
-      if (/\.log(\.\d+)?$/.test(nome) || nome === 'progress.json') continue;
+      const relativo = path.relative(RAIZ, cheio);
+      if (ext === '.json') {
+        if (!JSON_DE_PROJETO.has(relativo)) continue;
+      } else if (!EXTS.has(ext)) continue;
+      // O log traz caminho de máquina em cada linha.
+      if (/\.log(\.\d+)?$/.test(nome)) continue;
       const texto = fs.readFileSync(cheio, 'utf8');
       const achados = vazamentosNoCodigo(texto);
       if (achados.length) { recusados.push({ arquivo: path.relative(RAIZ, cheio), achados }); continue; }
@@ -201,7 +214,13 @@ function ipsDaMaquina() {
  */
 function vazamentosNoCodigo(texto) {
   const achados = [];
-  if (/\b7656119\d{10}\b/.test(texto)) achados.push('Steam ID');
+  // 76561197960265728 é a base universal da Steam, a constante que se subtrai
+  // de um SteamID64 para chegar no id de conta. Ela está em qualquer
+  // documentação e não identifica ninguém; qualquer outro número dessa forma,
+  // sim. Sem esta ressalva o próprio conversor seria recusado.
+  for (const m of texto.matchAll(/7656119\d{10}/g)) {
+    if (m[0] !== '76561197960265728') { achados.push('Steam ID'); break; }
+  }
 
   // A pasta pessoal, escrita por extenso. Não se procura pelo nome da conta do
   // Windows: aqui ela se chama igual ao apelido que o site publica de

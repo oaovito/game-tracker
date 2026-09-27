@@ -649,6 +649,83 @@ check('o público não recebe quando a pessoa jogou', () => {
   return limpo.playtime.horas.toFixed(1) + ' h publicadas, sem quando';
 });
 
+/*
+ * 11. O código-fonte que vai junto do site.
+ *
+ * O repositório mostrava "HTML 100%", porque só a página estava versionada
+ * nele. O GitHub mede linguagem pelo que está lá, e o que estava lá não
+ * descrevia o projeto. A cópia do fonte resolve isso, mas cria um risco novo:
+ * é fácil publicar código de casa com o caminho de casa dentro. Por isso a
+ * cópia é refeita a cada publicação e passa por uma conferência própria.
+ */
+console.log('\n  === 11. O fonte publicado junto do site ===');
+
+check('a cópia do fonte cobre as linguagens do projeto', () => {
+  const dir = path.join(RAIZ_PROJETO, 'site', 'src');
+  assert(fs.existsSync(dir), 'não há cópia do fonte no site');
+  const porExt = {};
+  const anda = (d) => {
+    for (const n of fs.readdirSync(d)) {
+      const c = path.join(d, n);
+      if (fs.statSync(c).isDirectory()) { anda(c); continue; }
+      const e = path.extname(n) || n;
+      porExt[e] = (porExt[e] || 0) + fs.statSync(c).size;
+    }
+  };
+  anda(dir);
+  for (const e of ['.js', '.ps1', '.html']) assert(porExt[e] > 0, 'nenhum ' + e + ' publicado');
+  return Object.entries(porExt).sort((a, b) => b[1] - a[1])
+    .map(([e, b]) => e + ' ' + (b / 1024).toFixed(0) + 'KB').join(', ');
+});
+
+check('a cópia é refeita, e não envelhece à parte', () => {
+  const daqui = fs.readFileSync(path.join(RAIZ_PROJETO, 'sekiro-progresso.html'), 'utf8');
+  const dali = fs.readFileSync(path.join(RAIZ_PROJETO, 'site', 'src', 'sekiro-progresso.html'), 'utf8');
+  assert(daqui === dali, 'a cópia divergiu do arquivo que está rodando');
+  return 'idêntica ao arquivo em uso';
+});
+
+check('nada de máquina, conta ou rede foi junto no fonte', () => {
+  const dir = path.join(RAIZ_PROJETO, 'site', 'src');
+  const sujos = [];
+  const anda = (d) => {
+    for (const n of fs.readdirSync(d)) {
+      const c = path.join(d, n);
+      if (fs.statSync(c).isDirectory()) { anda(c); continue; }
+      const v = publish.vazamentosNoCodigo(fs.readFileSync(c, 'utf8'));
+      if (v.length) sujos.push(path.relative(dir, c) + ': ' + v.join(', '));
+    }
+  };
+  anda(dir);
+  assert(sujos.length === 0, sujos.join(' | '));
+  return 'sem pasta pessoal, Steam ID ou IP desta máquina';
+});
+
+check('a conferência do fonte sabe distinguir falar de um caminho e escrever o seu', () => {
+  const os = require('os');
+  // Falar do formato passa; escrever o caminho desta máquina, não. Sem essa
+  // distinção o detector recusaria justamente o parser, que precisa dizer
+  // onde o save mora.
+  assert(publish.vazamentosNoCodigo('o save fica em AppData/Roaming/Sekiro/<steamid64>/S0000.sl2').length === 0,
+    'recusou a descrição do formato');
+  assert(publish.vazamentosNoCodigo('C:\\Users\\<usuario>\\AppData').length === 0,
+    'recusou o marcador de usuário');
+  assert(publish.vazamentosNoCodigo('const BASE_STEAMID64 = 76561197960265728n;').length === 0,
+    'recusou a constante pública da Steam');
+  // Montados em pedaços de propósito: escritos inteiros, estes dois exemplos
+  // fariam o detector recusar este próprio arquivo na hora de copiar o fonte
+  // para o site — o teste da regra tropeçando na regra.
+  const caminhoFalso = 'C:\\Users\\' + 'ful' + 'ano\\AppData';
+  const idFalso = '7656119' + '8000000001';
+  assert(publish.vazamentosNoCodigo(caminhoFalso).length > 0,
+    'deixou passar um caminho com nome de gente');
+  assert(publish.vazamentosNoCodigo(idFalso).length > 0,
+    'deixou passar um Steam ID de verdade');
+  assert(publish.vazamentosNoCodigo(os.homedir()).length > 0,
+    'deixou passar a pasta pessoal desta máquina');
+  return 'seis casos, os três que passam e os três que não';
+});
+
 function resumo() {
   console.log('');
   console.log(`  === Resultado: ${pass} ok, ${fail} falha(s) ===`);
