@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Progress — Sekiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16130f;
+    --ink-soft: #23201a;
+    --paper: #ece4d3;
+    --paper-dim: #cfc4ab;
+    --blood: #7a1f1f;
+    --blood-bright: #a8321f;
+    --gold: #a8853d;
+    --line: rgba(236,228,211,0.14);
+    --font-display: 'Shippori Mincho', serif;
+    --font-body: 'Zen Kaku Gothic New', sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) {
+    --bg: var(--ink);
+    --bg-panel: var(--ink-soft);
+    --text: var(--paper);
+    --text-dim: var(--paper-dim);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #ece4d3;
+      --bg-panel: #ddd2b8;
+      --text: #201a12;
+      --text-dim: #4a3f2d;
+      --line: rgba(32,26,18,0.14);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #ece4d3;
+    --bg-panel: #ddd2b8;
+    --text: #201a12;
+    --text-dim: #4a3f2d;
+    --line: rgba(32,26,18,0.14);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(122,31,31,0.18), transparent 60%);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.9rem;
+    letter-spacing: 0.03em;
+    margin: 0;
+    line-height: 1.15;
+  }
+  h1 span { color: var(--blood-bright); }
+
+  /* Discreto mas legível: o mesmo tom apagado das outras notas, com um fio
+     acima para separar. Não usa opacidade baixa, que some no tema claro. */
+  .made-by {
+    margin-top: 44px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.14em;
+    text-transform: lowercase;
+  }
+
+  /* --- contador de mortes: campo próprio, abaixo do cabeçalho --- */
+  /* Moldura de placa: fio externo, um segundo fio dourado por dentro e quatro
+     cantoneiras. É o vocabulário de moldura do jogo — canto sempre reforçado,
+     nunca arredondado — feito com a paleta que a página já tem, sem cor nova.
+     Cantos retos de propósito: o raio de 3px amolecia a peça. */
+  .deaths-panel {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    border-radius: 0;
+    padding: 20px 22px 18px;
+    margin-bottom: 26px;
+  }
+  .deaths-panel::before,
+  .deaths-panel::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+  /* fio interno */
+  .deaths-panel::before {
+    inset: 5px;
+    border: 1px solid var(--gold);
+    opacity: 0.3;
+  }
+  /* cantoneiras: oito faixas, duas por canto */
+  .deaths-panel::after {
+    inset: 0;
+    background:
+      linear-gradient(var(--gold), var(--gold)) 0 0 / 16px 2px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 0 0 / 2px 16px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 100% 0 / 16px 2px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 100% 0 / 2px 16px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 0 100% / 16px 2px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 0 100% / 2px 16px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 100% 100% / 16px 2px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 100% 100% / 2px 16px no-repeat;
+  }
+  .deaths-head { display: flex; align-items: baseline; gap: 12px; }
+  .deaths-kanji {
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--blood-bright);
+    line-height: 1;
+  }
+  .deaths-count {
+    font-family: var(--font-display);
+    font-size: 2.9rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .deaths-note {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  .deaths-note:empty { display: none; }
+
+  /* Termômetro de 0 a 1000. O recuo lateral é metade da largura do pino, para
+     ele não vazar do campo nos extremos da escala. */
+  /* O recuo é metade da largura do pino, para ele não vazar do campo nos
+     extremos. A pista interna tem a largura exata do tubo, e é isso que deixa o
+     pino ser posicionado só com uma porcentagem — sem conta em pixel no script,
+     que quebraria quando o rosto muda de tamanho no celular. */
+  .therm { margin-top: 20px; padding: 0 22px; }
+  .therm-rail { position: relative; padding-top: 40px; }
+  .therm-track {
+    height: 12px;
+    border-radius: 99px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .therm-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    /* Frio para quente sem sair da paleta: papel apagado, ouro, sangue. */
+    background: linear-gradient(90deg, var(--paper-dim), var(--gold) 38%, var(--blood) 72%, var(--blood-bright));
+    transition: width 0.5s ease;
+  }
+  .therm-pin {
+    position: absolute;
+    top: 0;
+    left: 0%;
+    width: 40px;
+    height: 40px;
+    transform: translateX(-50%);
+    transition: left 0.5s ease;
+  }
+  .therm-skull {
+    display: block;
+    font-size: 30px;
+    line-height: 40px;
+    text-align: center;
+    /* Pedir a fonte de emoji do sistema é o ponto: cada aparelho desenha a
+       caveira dele, e no iPhone sai a da Apple. */
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  }
+  /* Haste ligando o rosto ao tubo, para a leitura ser exata e não aproximada. */
+  .therm-pin::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 1px;
+    height: 10px;
+    margin-left: -0.5px;
+    background: var(--blood-bright);
+  }
+  .therm-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 7px;
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Sem offset calibrado o número é desconhecido, não zero: o rosto sai de cena
+     e o tubo fica vazio, em vez de fingir uma leitura em 0. */
+  .deaths-panel.unknown .deaths-count,
+  .deaths-panel.unknown .deaths-kanji { color: var(--text-dim); }
+  .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
+  .deaths-panel.unknown .therm-pin::after { background: var(--line); }
+  /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". */
+  .deaths-panel.over .therm-scale span:last-child { color: var(--blood-bright); }
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
+
+  .overall {
+    margin-bottom: 30px;
+  }
+  .overall-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-display);
+    margin-bottom: 8px;
+  }
+  .overall-row .count { font-size: 1.4rem; font-weight: 700; }
+  .overall-row .label { font-size: 0.85rem; color: var(--text-dim); font-family: var(--font-body); }
+  .bar-track {
+    height: 6px;
+    background: var(--bg-panel);
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blood), var(--blood-bright));
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* --- menu de tópicos --- */
+  .topics {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 24px;
+  }
+  .topic {
+    appearance: none;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;          /* encosta no fio do menu */
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 13px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .topic:hover { color: var(--text); }
+  .topic.on { color: var(--text); border-bottom-color: var(--blood-bright); }
+  .topic-n {
+    margin-left: 7px;
+    font-size: 0.66rem;
+    letter-spacing: 0;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .topic.on .topic-n { color: var(--gold); }
+
+  section.category {
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  /* `hidden` sozinho não vence a especificidade de section.category em alguns
+     navegadores; explicitar evita a aba trocar e nada sumir. */
+  section.category[hidden] { display: none; }
+  .cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    cursor: pointer;
+    user-select: none;
+    gap: 14px;
+  }
+  .cat-title-group { display: flex; align-items: baseline; gap: 10px; flex: 1; min-width: 0; }
+  .cat-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+  .cat-progress-text { font-size: 0.78rem; color: var(--text-dim); white-space: nowrap; }
+  .cat-mini-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--bg-panel);
+    min-width: 30px;
+  }
+  .cat-mini-fill {
+    height: 100%;
+    background: var(--gold);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .cat-header .pin {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 2px 3px;
+    font-size: 0.78rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    order: 1;
+    opacity: 0.22;
+    filter: grayscale(1);
+    transition: opacity 0.15s ease;
+  }
+  .cat-header .pin:hover { opacity: 0.65; }
+  .cat-header .pin.on { opacity: 1; filter: none; }
+  .cat-header .chevron { order: 2; }
+
+  .chevron {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  .category.open .chevron { transform: rotate(90deg); }
+
+  .items {
+    display: none;
+    padding: 0 0 18px 0;
+  }
+  .category.open .items { display: block; }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 9px 2px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .item:last-child { border-bottom: none; }
+  .item input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-top: 2px;
+    border: 1px solid var(--gold);
+    background: transparent;
+    cursor: default;
+    position: relative;
+    border-radius: 2px;
+  }
+  .item input[type="checkbox"]:disabled { opacity: 1; }
+  .item input[type="checkbox"]:checked {
+    background: var(--blood-bright);
+    border-color: var(--blood-bright);
+  }
+  .item input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--paper);
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+  .item label {
+    flex: 1;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    cursor: default;
+  }
+  .item.done label { color: var(--text-dim); text-decoration: line-through; text-decoration-color: var(--blood); }
+  .item .loc { display: block; font-size: 0.72rem; color: var(--text-dim); margin-top: 1px; }
+  .item .tag {
+    font-size: 0.68rem;
+    color: var(--gold);
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 2px;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  /* --- sincronização com o save (mesma linguagem visual das tags) --- */
+  .sync-line {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .sync-dot.on { background: var(--gold); }
+  .sync-dot.off { background: var(--blood); }
+  .item .tag.auto { color: var(--gold); border-color: var(--gold); }
+
+  /* --- contadores da seção de itens essenciais --- */
+  .item.counter { align-items: center; }
+  .count-ctl { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .count-val {
+    min-width: 34px;
+    text-align: right;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .count-ctl .of { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; min-width: 26px; }
+  .sub-head {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 14px 2px 4px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .item .tag.pending { color: var(--text-dim); border-color: var(--line); }
+  .item input[type="checkbox"].pending { border-style: dashed; opacity: .45; }
+  .cat-aviso {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    padding: 10px 2px 2px;
+    line-height: 1.5;
+  }
+
+  /* --- novidades desde a última visita --- */
+  .novidades {
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 12px 14px 10px;
+    margin-bottom: 26px;
+  }
+  .nov-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .nov-titulo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--gold);
+  }
+  .nov-lista { list-style: none; margin: 0; padding: 0; }
+  .nov-lista li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.82rem;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .nov-lista li:last-child { border-bottom: none; }
+  .nov-lista .nov-tipo {
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 74px;
+    flex-shrink: 0;
+  }
+  .nov-lista .nov-label { flex: 1; min-width: 0; }
+  .nov-lista .nov-texto { color: var(--gold); white-space: nowrap; }
+  .nov-mais { font-size: 0.72rem; color: var(--text-dim); padding-top: 6px; }
+  .visto-btn {
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    padding: 4px 9px;
+    border-radius: 2px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .visto-btn:hover { background: var(--gold); color: var(--ink); }
+  .item .novo {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    align-self: center;
+  }
+  .cat-novo {
+    font-size: 0.66rem;
+    color: var(--ink);
+    background: var(--gold);
+    border-radius: 8px;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  /* Em tela estreita o título longo + a barrinha decorativa estouram a largura
+     e a página passa a rolar para o lado. A contagem por seção continua. */
+  @media (max-width: 460px) {
+    .deaths-panel { padding: 18px 16px 14px; }
+    .topic { font-size: 0.66rem; padding: 8px 9px 7px; letter-spacing: 0.06em; }
+    .topic-n { margin-left: 5px; font-size: 0.6rem; }
+    /* Na largura de celular os onze tópicos quebrariam em quatro ou cinco
+       linhas, o que é peso demais para um menu. Uma linha só, que rola de lado.
+       A rolagem fica contida no nav, então não volta a dar overflow na página. */
+    .topics {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .topics::-webkit-scrollbar { display: none; }
+    .deaths-count { font-size: 2.3rem; }
+    .deaths-kanji { font-size: 1.6rem; }
+    /* Pino menor e recuo menor: no celular a pista é curta e o rosto grande
+       comeria boa parte dela. */
+    .therm { padding: 0 18px; }
+    .therm-rail { padding-top: 34px; }
+    .therm-pin { width: 32px; height: 32px; }
+    .therm-skull { font-size: 24px; line-height: 32px; }
+    .therm-scale { font-size: 0.6rem; }
+    .cat-mini-bar { display: none; }
+    .cat-title { white-space: normal; }
+    .cat-title-group { min-width: 0; }
+  }
+
+  a, button, input { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: var(--blood); color: var(--paper); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Sekiro<span> 進捗</span></h1>
+      <div class="sync-line" id="syncLine">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">looking for the save…</span>
+      </div>
+    </div>
+    <button class="theme-toggle" id="themeToggle">light mode</button>
+  </header>
+
+  <nav class="topics" id="topics" aria-label="Sections" hidden></nav>
+
+  <section class="deaths-panel" id="deaths" hidden>
+    <div class="deaths-head" role="group" aria-label="Deaths">
+      <span class="deaths-kanji">死</span>
+      <span class="deaths-count" id="deathsCount">—</span>
+    </div>
+
+    <div class="therm" id="therm">
+     <div class="therm-rail">
+      <!-- A caveira é o emoji do sistema, não um desenho nosso: assim cada
+           aparelho renderiza a dele, e no iPhone sai a caveira da Apple. -->
+      <div class="therm-pin" id="thermPin"><span class="therm-skull" role="img" aria-label="deaths">💀</span></div>
+
+      <div class="therm-track"><div class="therm-fill" id="thermFill"></div></div>
+      <div class="therm-scale">
+        <span>0</span><span>250</span><span>500</span><span>750</span><span>1000</span>
+      </div>
+     </div>
+    </div>
+
+    <div class="deaths-note" id="deathsNote"></div>
+  </section>
+
+  <div class="overall">
+    <div class="overall-row">
+      <span class="count" id="overallCount">0 / 0</span>
+      <span class="label" id="overallLabel">complete</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="overallBar"></div></div>
+  </div>
+
+  <div id="novidades"></div>
+
+  <div id="essentials"></div>
+  <div id="beads"></div>
+  <div id="seeds"></div>
+  <div id="bosses"></div>
+  <div id="minibosses"></div>
+  <div id="headless"></div>
+  <div id="idols"></div>
+  <div id="categories"></div>
+
+  <footer class="made-by">made by oaovito</footer>
+
+</div>
+
+<script>
+// O 4º campo de cada item é a chave de sincronização: "<chave>" para memória de
+// chefe, "flag:" para event flag, "tool:"/"art:" para registro de arma e
+// "good:" para posse de item. Toda linha tem uma — nada aqui é marcado à mão.
+// Chefes, mini-chefes e Headless saem das secoes proprias, montadas a partir
+// do save: nomes, areas e drops vem do config verificado, nao daqui. O que
+// sobra aqui e o que nenhuma delas cobre.
+const DATA = [
+  { name: "Other Encounters", items: [
+    ["Great Serpent", "Sunken Valley", "", "good:greatSerpent"],
+  ]},
+  { name: "Prosthetic Tools", items: [
+    ["Loaded Axe", "", "", "tool:loadedAxe"],
+    ["Sabimaru", "", "", "tool:sabimaru"],
+    ["Loaded Spear", "", "", "tool:loadedSpear"],
+    ["Shinobi Firecracker", "", "", "tool:shinobiFirecracker"],
+    ["Flame Vent", "", "", "tool:flameVent"],
+    ["Loaded Shuriken", "", "", "tool:loadedShuriken"],
+    ["Loaded Umbrella", "", "", "tool:loadedUmbrella"],
+    ["Mist Raven's Feathers", "", "", "tool:mistRaven"],
+    ["Lazulite Sacred Flame", "Flame Vent upgrade", "", "tool:lazuliteFlame"],
+    ["Finger Whistle", "", "", "tool:fingerWhistle"],
+    ["Divine Abduction", "", "", "tool:divineAbduction"],
+    ["Puppeteer Ninjutsu", "", "ninjutsu", "good:puppeteerNinjutsu"],
+    ["Phoenix's Lilac Umbrella", "Loaded Umbrella upgrade", "", "tool:phoenixUmbrella"],
+  ]},
+  { name: "Key Combat Arts", items: [
+    ["Mortal Draw", "", "", "art:mortalDraw"],
+    ["Ichimonji", "", "", "art:ichimonji"],
+    ["Ichimonji: Double", "", "", "art:ichimonjiDouble"],
+    ["Shadowrush", "", "", "art:shadowrush"],
+    ["Whirlwind Slash", "", "", "art:whirlwindSlash"],
+    ["One Mind", "", "", "art:oneMind"],
+    ["Nightjar Slash", "", "", "art:nightjarSlash"],
+    ["Empowered Mortal Draw", "", "", "art:empoweredMortalDraw"],
+    ["Mikiri Counter", "", "", "art:mikiriCounter"],
+    ["High Monk", "", "", "art:highMonk"],
+    ["Ashina Cross", "", "", "art:ashinaCross"],
+    ["Dragon Flash", "", "", "art:dragonFlash"],
+    ["Praying Strikes", "", "", "art:prayingStrikes"],
+    ["Floating Passage", "", "", "art:floatingPassage"],
+  ]},
+];
+
+// Itens essenciais. `auto` diz de onde o valor vem no progress.json.
+const ESSENTIALS = [
+  { group: "Vitality and healing" },
+  { key: "prayerBeads", label: "Prayer Beads", hint: "raise vitality and posture", auto: "beads", total: 40 },
+  { key: "prayerNecklaces", label: "Prayer Necklaces", hint: "4 beads = 1 necklace", auto: "necklaces", total: 10 },
+  { key: "gourdSeeds", label: "Gourd Seeds", hint: "raise healing charges", auto: "seeds", total: 9 },
+  { key: "gourdCharges", label: "Healing Gourd charges", hint: "1 to start, +1 per seed given to Emma", auto: "charges", total: 10 },
+  { group: "Prosthetic materials" },
+  { key: "scrapIron", label: "Scrap Iron", hint: "common scrap", auto: "mat:scrapIron" },
+  { key: "scrapMagnetite", label: "Scrap Magnetite", hint: "tier 2 scrap", auto: "mat:scrapMagnetite" },
+  { key: "blackGunpowder", label: "Black Gunpowder", hint: "tier 1 gunpowder", auto: "mat:blackGunpowder" },
+  { key: "yellowGunpowder", label: "Yellow Gunpowder", hint: "tier 2 gunpowder", auto: "mat:yellowGunpowder" },
+  { key: "lumpOfFatWax", label: "Lump of Fat Wax", hint: "tier 2 wax", auto: "mat:lumpOfFatWax" },
+  { key: "lumpOfGraveWax", label: "Lump of Grave Wax", hint: "tier 3 wax", auto: "mat:lumpOfGraveWax" },
+  { key: "adamantiteScrap", label: "Adamantite Scrap", hint: "tier 3 scrap", auto: "mat:adamantiteScrap" },
+  { key: "fulminatedMercury", label: "Fulminated Mercury", hint: "tier 3 gunpowder", auto: "mat:fulminatedMercury" },
+  { key: "lapisLazuli", label: "Lapis Lazuli", hint: "endgame material", auto: "mat:lapisLazuli" },
+];
+
+const THEME_KEY = "sekiro-progresso-theme";
+// Quando este aparelho viu as novidades pela última vez. É estado de leitura,
+// por aparelho — não é progresso, que continua vindo só do save.
+const VISTO_KEY = "sekiro-progresso-visto";
+
+// Último progress.json lido. null = o servidor ainda não respondeu.
+// A página inteira é um reflexo disto: não existe estado marcado à mão.
+let sync = null;
+const temSync = () => !!(sync && sync.ok);
+
+let visto = null;
+try { visto = localStorage.getItem(VISTO_KEY); } catch (e) { visto = null; }
+
+// Prefixo que liga uma mudança do histórico à chave usada nas linhas do DATA.
+const PREFIXO = {
+  "boss": "",
+  "mini-boss": "flag:",
+  "headless": "headless:",
+  "prayer-bead": "prayerBeadList:",
+  "gourd-seed": "gourdSeedList:",
+  "prosthetic": "tool:",
+  "art": "art:",
+  "item": "good:",
+};
+
+// Chave da linha -> item que aquele chefe larga. Vem do progress.json para
+// ficar numa fonte só: a config do leitor, não duplicado aqui.
+function dropMap() {
+  const map = {};
+  if (!temSync()) return map;
+  for (const b of sync.bosses || []) if (b.drop) map[b.key] = b.drop;
+  for (const m of sync.miniBosses || []) if (m.drop) map["flag:" + m.key] = m.drop;
+  for (const g of sync.goodsUnlocks || []) if (g.drop) map["good:" + g.key] = g.drop;
+  return map;
+}
+
+function novidades() {
+  if (!temSync() || !Array.isArray(sync.history)) return [];
+  if (!visto) return sync.history.slice();
+  return sync.history.filter((h) => h.at > visto);
+}
+
+/** Chaves (do DATA) e rótulos (dos contadores) que mudaram e ainda não foram vistos. */
+function marcasNovas() {
+  const linhas = new Set();
+  const contadores = new Set();
+  for (const h of novidades()) {
+    if (h.tipo === "counter") contadores.add(h.label);
+    else if (PREFIXO[h.tipo] !== undefined) linhas.add(PREFIXO[h.tipo] + h.chave);
+  }
+  return { linhas, contadores };
+}
+
+function marcarVisto() {
+  const lista = novidades();
+  const maisNovo = lista.length ? lista[lista.length - 1].at : new Date().toISOString();
+  visto = maisNovo;
+  try { localStorage.setItem(VISTO_KEY, visto); } catch (e) {}
+  render();
+}
+
+function slug(catIdx, itemIdx) { return "c" + catIdx + "i" + itemIdx; }
+
+// Quais seções estão abertas. Guardado fora do DOM porque a página é
+// redesenhada inteira a cada sincronização (a cada poucos segundos), e sem
+// isso a seção que você abriu se fecharia sozinha na próxima atualização.
+const openState = new Set();
+function setOpen(section, idx) {
+  const open = section.classList.toggle("open");
+  if (open) openState.add(idx);
+  else openState.delete(idx);
+  // Com uma aba escolhida, fechar a seção é fechar a aba: a página volta ao
+  // menu e ao estado limpo. Deixar a seção ali, aberta-mas-vazia, não seria
+  // ter fechado nada. Em "All" vale o acordeão de sempre.
+  if (!open && abaAtual && abaAtual !== ABA_TUDO) selecionarAba(null);
+}
+
+/* ------------------------------------------------------------------- abas */
+
+/**
+ * Menu de tópicos no topo.
+ *
+ * Cada função de render registra a seção que acabou de montar, em vez de o
+ * menu sair varrendo o DOM atrás de `.cat-title`. Isso importa por dois
+ * motivos: o menu nunca lista uma seção que não foi desenhada (o que aconteceu
+ * de haver, porque seção sem dado nenhum não é montada), e continua verificável
+ * fora do navegador.
+ */
+const ABA_TUDO = "*";
+const ABA_CHAVE = "sekiro-progresso-aba";
+const FIX_CHAVE = "sekiro-progresso-fixadas";
+// Ordem de quem vem primeiro no menu. O resto entra depois, na ordem da página.
+const ORDEM_MENU = ["Bosses", "Mini-bosses", "Essential Items"];
+let topicos = [];
+let abaAtual = null;
+try { abaAtual = localStorage.getItem(ABA_CHAVE); } catch (e) { abaAtual = null; }
+
+/** Quais seções aparecem no menu. Começa nas três e muda pelo alfinete. */
+let fixadas = new Set(ORDEM_MENU);
+try {
+  const salvo = JSON.parse(localStorage.getItem(FIX_CHAVE));
+  if (Array.isArray(salvo)) fixadas = new Set(salvo);
+} catch (e) { /* nada salvo, ou storage bloqueado */ }
+
+function gravarFixadas() {
+  try { localStorage.setItem(FIX_CHAVE, JSON.stringify([...fixadas])); } catch (e) { /* aba anônima */ }
+}
+
+function alternarPin(nome) {
+  if (fixadas.has(nome)) {
+    fixadas.delete(nome);
+    // A seção aberta acabou de sair do menu. Deixá-la aberta sem botão que a
+    // feche seria um beco sem saída, então volta ao estado limpo.
+    if (abaAtual === nome) { abaAtual = null; try { localStorage.removeItem(ABA_CHAVE); } catch (e) {} }
+  } else {
+    fixadas.add(nome);
+  }
+  gravarFixadas();
+  renderTopicos();
+}
+
+/**
+ * O alfinete vai no cabeçalho de cada seção.
+ *
+ * Posto aqui, e não nas cinco funções de render, porque todas montam o
+ * cabeçalho como primeiro filho da seção — então dá para fazer uma vez só.
+ * O clique precisa parar de subir: o cabeçalho inteiro abre e fecha a seção, e
+ * sem isso alfinetar fecharia a seção junto.
+ */
+function aplicarPins() {
+  for (const t of topicos) {
+    const header = t.section.children[0];
+    if (!header) continue;
+    const fixo = fixadas.has(t.nome);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pin" + (fixo ? " on" : "");
+    b.textContent = "📌";
+    const rotulo = fixo ? "Remove from the menu" : "Add to the menu";
+    b.title = rotulo;
+    b.setAttribute("aria-label", rotulo);
+    b.setAttribute("aria-pressed", fixo ? "true" : "false");
+    b.addEventListener("click", (ev) => {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      alternarPin(t.nome);
+    });
+    header.appendChild(b);
+  }
+}
+
+function registrarTopico(nome, contagem, section) {
+  topicos.push({ nome, contagem, section });
+}
+
+/** `null` fecha a aba: volta ao menu e à página limpa. */
+function selecionarAba(chave) {
+  abaAtual = chave;
+  try {
+    // Gravar o nulo daria a string "null" na próxima visita, que não casa com
+    // tópico nenhum — funcionaria por acidente. Apagar é o que diz a verdade.
+    if (chave === null) localStorage.removeItem(ABA_CHAVE);
+    else localStorage.setItem(ABA_CHAVE, chave);
+  } catch (e) { /* aba anônima */ }
+  renderTopicos();
+}
+
+function aplicarAba() {
+  for (const t of topicos) {
+    const mostrar = abaAtual === ABA_TUDO || t.nome === abaAtual;
+    t.section.hidden = !mostrar;
+    // A aba escolhida já vem aberta: escolher no menu e ainda ter de clicar no
+    // cabeçalho para ver o conteúdo seria um passo a mais sem motivo.
+    if (mostrar && abaAtual !== ABA_TUDO) {
+      t.section.classList.add("open");
+      openState.add(t.section.dataset.idx);
+    }
+  }
+}
+
+function renderTopicos() {
+  const nav = document.getElementById("topics");
+  nav.innerHTML = "";
+  aplicarPins();
+  if (!topicos.length) { nav.hidden = true; return; }
+  nav.hidden = false;
+
+  // Estado inicial: nenhuma aba escolhida. A página abre só com o menu, e a
+  // área abaixo fica vazia até alguém escolher um tópico. `abaAtual` nulo não
+  // casa com nome nenhum, então nada é mostrado e nenhum botão fica marcado.
+  //
+  // O mesmo vale para uma aba guardada que não existe mais — o que há para
+  // mostrar muda conforme o save: melhor voltar ao estado inicial do que abrir
+  // numa seção que a pessoa não pediu.
+  const existe = topicos.some((t) => t.nome === abaAtual);
+  if (abaAtual !== ABA_TUDO && !existe) abaAtual = null;
+
+  // O menu é atalho, não índice: lista só o que está alfinetado. Começa nas
+  // três, e cresce ou encolhe pelo alfinete no cabeçalho de cada seção. O que
+  // não está aqui continua existindo e aparece em "All".
+  const nomes = ORDEM_MENU.filter((n) => fixadas.has(n))
+    .concat(topicos.map((t) => t.nome).filter((n) => fixadas.has(n) && !ORDEM_MENU.includes(n)));
+  const itens = nomes
+    .map((nome) => topicos.find((t) => t.nome === nome))
+    .filter(Boolean)
+    .map((t) => ({ nome: t.nome, contagem: t.contagem }));
+  itens.push({ nome: ABA_TUDO, rotulo: "All", contagem: "" });
+
+  for (const it of itens) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "topic" + (it.nome === abaAtual ? " on" : "");
+    b.innerHTML = (it.rotulo || it.nome) +
+      (it.contagem ? '<span class="topic-n">' + it.contagem + "</span>" : "");
+    // Clicar no tópico já marcado fecha a aba, o mesmo que fechar a seção.
+    b.addEventListener("click", () => selecionarAba(it.nome === abaAtual ? null : it.nome));
+    nav.appendChild(b);
+    // No celular o menu é uma linha que rola de lado, e a aba escolhida pode
+    // estar fora de vista ao abrir a página. `block: "nearest"` é o que impede
+    // isso de arrastar a página inteira junto.
+    if (it.nome === abaAtual && b.scrollIntoView) {
+      try { b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) { /* navegador antigo */ }
+    }
+  }
+  aplicarAba();
+}
+
+/* ---------------------------------------------------------- sincronização */
+
+// Tudo que o save consegue confirmar sozinho, numa chave só:
+//   "<chave>"      memória de chefe
+//   "tool:<chave>" ferramenta protética
+//   "art:<chave>"  arte de combate
+function autoUnlockMap() {
+  const map = {};
+  if (!sync || !sync.ok) return map;
+  for (const b of sync.bosses || []) if (b.defeated) map[b.key] = true;
+  for (const t of sync.tools || []) if (t.unlocked) map["tool:" + t.key] = true;
+  for (const a of sync.arts || []) if (a.unlocked) map["art:" + a.key] = true;
+  for (const m of sync.miniBosses || []) if (m.defeated) map["flag:" + m.key] = true;
+  for (const g of sync.goodsUnlocks || []) if (g.unlocked) map["good:" + g.key] = true;
+  return map;
+}
+
+// Valor automático de um contador, ou null quando o save não sabe responder.
+function autoCount(spec) {
+  if (!temSync() || !sync.essentials) return null;
+  const e = sync.essentials;
+  // Um progress.json parcial devolveria undefined aqui, e quem consome testa
+  // `=== null` — o que imprimiria "undefined" e contaminaria a soma com NaN.
+  const num = (v) => (typeof v === "number" && isFinite(v) ? v : null);
+  if (spec === "beads") return e.prayerBeads ? num(e.prayerBeads.collected) : null;
+  if (spec === "necklaces") return e.prayerBeads ? num(e.prayerBeads.necklaces) : null;
+  // A semente desaparece da bolsa quando é entregue à Emma, então `held` conta
+  // as não entregues, não o progresso. `collected` vem das nove flags de coleta.
+  if (spec === "seeds") return e.gourdSeeds ? num(e.gourdSeeds.collected) : null;
+  if (spec === "charges") return e.gourdSeeds ? num(e.gourdSeeds.charges) : null;
+  if (spec && spec.indexOf("mat:") === 0) {
+    const key = spec.slice(4);
+    const found = (e.materials || []).filter(function (m) { return m.key === key; })[0];
+    return found ? num(found.qty) : null;
+  }
+  return null;
+}
+
+const MAX_NOV = 12;
+
+function renderNovidades() {
+  const root = document.getElementById("novidades");
+  root.innerHTML = "";
+  const lista = novidades();
+  if (!lista.length) return;
+
+  const cx = document.createElement("div");
+  cx.className = "novidades";
+
+  const head = document.createElement("div");
+  head.className = "nov-head";
+  const quantas = lista.length;
+  head.innerHTML = '<span class="nov-titulo">' + quantas +
+    (quantas === 1 ? " update" : " updates") + "</span>";
+  const btn = document.createElement("button");
+  btn.className = "visto-btn";
+  btn.textContent = "mark as seen";
+  btn.addEventListener("click", marcarVisto);
+  head.appendChild(btn);
+  cx.appendChild(head);
+
+  const ul = document.createElement("ul");
+  ul.className = "nov-lista";
+  // Mais recentes primeiro: é o que interessa ao abrir.
+  const mostrar = lista.slice().reverse().slice(0, MAX_NOV);
+  for (const h of mostrar) {
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<span class="nov-tipo">' + h.tipo + "</span>" +
+      '<span class="nov-label">' + h.label + "</span>" +
+      '<span class="nov-texto">' + h.texto + "</span>";
+    ul.appendChild(li);
+  }
+  cx.appendChild(ul);
+
+  if (lista.length > MAX_NOV) {
+    const mais = document.createElement("div");
+    mais.className = "nov-mais";
+    mais.textContent = (lista.length - MAX_NOV) + " more before these";
+    cx.appendChild(mais);
+  }
+  root.appendChild(cx);
+}
+
+/**
+ * Checklists de item colecionável: Prayer Beads e Gourd Seeds.
+ *
+ * Cada unidade tem flag própria no save, então a lista é nominal: não é "você
+ * tem 39 de 40", é "falta esta". Faltando vem primeiro, que é o motivo de abrir
+ * a lista.
+ */
+function renderChecklist(containerId, campo, titulo, resumoExtra) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = "";
+  const lista = temSync() && Array.isArray(sync[campo]) ? sync[campo] : null;
+  if (!lista || !lista.length) return null;
+
+  const feitos = lista.filter((x) => x.collected).length;
+  const faltam = lista.filter((x) => !x.collected);
+  const novas = marcasNovas();
+  const novasAqui = lista.filter((x) => novas.linhas.has(campo + ":" + x.key)).length;
+
+  const section = document.createElement("section");
+  section.className = "category";
+  section.dataset.idx = campo;
+
+  const header = document.createElement("div");
+  header.className = "cat-header";
+  header.innerHTML = `
+    <div class="cat-title-group">
+      <span class="cat-title">${titulo}</span>
+      <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${feitos / lista.length * 100}%"></div></div>
+    </div>
+    ${novasAqui ? `<span class="cat-novo">${novasAqui} new</span>` : ""}
+    <span class="cat-progress-text">${feitos}/${lista.length}</span>
+    <span class="chevron">▸</span>
+  `;
+  header.addEventListener("click", () => setOpen(section, campo));
+  section.appendChild(header);
+
+  const wrap = document.createElement("div");
+  wrap.className = "items";
+
+  const resumo = document.createElement("div");
+  resumo.className = "cat-aviso";
+  const porOrigem = {};
+  for (const x of faltam) porOrigem[x.from] = (porOrigem[x.from] || 0) + 1;
+  const partes = Object.keys(porOrigem).map((k) => porOrigem[k] + " " + k);
+  resumo.textContent = faltam.length
+    ? faltam.length + " missing (" + partes.join(", ") + ")."
+    : "All " + lista.length + " collected.";
+  if (resumoExtra) resumo.textContent += " " + resumoExtra;
+  wrap.appendChild(resumo);
+
+  const grupos = [
+    { titulo: "Still missing", itens: faltam },
+    { titulo: "Already collected", itens: lista.filter((x) => x.collected) },
+  ];
+  for (const g of grupos) {
+    if (!g.itens.length) continue;
+    const h = document.createElement("div");
+    h.className = "sub-head";
+    h.textContent = g.titulo + " (" + g.itens.length + ")";
+    wrap.appendChild(h);
+    for (const x of g.itens) {
+      const detalhe = [x.area, x.where].filter(Boolean).join(" · ");
+      const row = document.createElement("div");
+      row.className = "item" + (x.collected ? " done" : "");
+      row.innerHTML = `
+        <input type="checkbox" ${x.collected ? "checked" : ""} disabled>
+        <label>${x.label}${detalhe ? '<span class="loc">' + detalhe + "</span>" : ""}</label>
+        <span class="tag auto">auto</span>
+        ${novas.linhas.has(campo + ":" + x.key) ? '<span class="novo" title="new since your last visit"></span>' : ""}
+      `;
+      wrap.appendChild(row);
+    }
+  }
+
+  section.appendChild(wrap);
+  root.appendChild(section);
+  registrarTopico(titulo, feitos + "/" + lista.length, section);
+  return { feitos, total: lista.length };
+}
+
+function renderBeads() {
+  return renderChecklist("beads", "prayerBeadList", "Prayer Beads",
+    "Four beads make one Prayer Necklace, ten necklaces in all.");
+}
+
+function renderSeeds() {
+  const gs = (temSync() && sync.essentials && sync.essentials.gourdSeeds) || null;
+  const extra = gs
+    ? "The Healing Gourd is at " + gs.charges + " of " + gs.maxCharges + " charges" +
+      (gs.held ? ", and " + gs.held + " seed(s) are still unspent in your bag." : ".")
+    : null;
+  return renderChecklist("seeds", "gourdSeedList", "Gourd Seeds", extra);
+}
+
+/**
+ * As três listas de inimigos: chefes, mini-chefes e Headless. São a mesma
+ * forma — agrupadas por área, na ordem do jogo — então dividem um renderizador.
+ *
+ * `detected: false` significa "o save não conta isso", e não "está vivo". Nesse
+ * caso a linha sai com a caixa tracejada, igual aos ídolos sem calibração: não
+ * saber não é a mesma coisa que não ter feito.
+ */
+function renderEnemies(containerId, campo, titulo, prefixo, detalheExtra) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = "";
+  const lista = temSync() && Array.isArray(sync[campo]) ? sync[campo] : null;
+  if (!lista || !lista.length) return 0;
+
+  const rastreaveis = lista.filter((x) => x.detected !== false);
+  const feitos = rastreaveis.filter((x) => x.defeated === true).length;
+  const semPista = lista.length - rastreaveis.length;
+  const novas = marcasNovas();
+  const ehNova = (x) => novas.linhas.has(prefixo + x.key);
+  const novasAqui = lista.filter(ehNova).length;
+
+  const section = document.createElement("section");
+  section.className = "category";
+  section.dataset.idx = campo;
+
+  const header = document.createElement("div");
+  header.className = "cat-header";
+  header.innerHTML = `
+    <div class="cat-title-group">
+      <span class="cat-title">${titulo}</span>
+      <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${rastreaveis.length ? (feitos / rastreaveis.length * 100) : 0}%"></div></div>
+    </div>
+    ${novasAqui ? `<span class="cat-novo">${novasAqui} new</span>` : ""}
+    <span class="cat-progress-text">${feitos}/${rastreaveis.length}</span>
+    <span class="chevron">▸</span>
+  `;
+  header.addEventListener("click", () => setOpen(section, campo));
+  section.appendChild(header);
+
+  const wrap = document.createElement("div");
+  wrap.className = "items";
+
+  const faltam = rastreaveis.filter((x) => x.defeated !== true);
+  const resumo = document.createElement("div");
+  resumo.className = "cat-aviso";
+  if (!faltam.length) {
+    resumo.textContent = "All " + rastreaveis.length + " done.";
+  } else if (faltam.length <= 6) {
+    resumo.textContent = faltam.length + " left: " +
+      faltam.map((x) => x.label + " (" + x.area + ")").join("; ");
+  } else {
+    resumo.textContent = faltam.length + " of " + rastreaveis.length + " left.";
+  }
+  if (semPista) {
+    resumo.textContent += " " + semPista + " more " + (semPista === 1 ? "is" : "are") +
+      " not recorded anywhere the save can be read from, so " +
+      (semPista === 1 ? "it is" : "they are") + " left unmarked.";
+  }
+  wrap.appendChild(resumo);
+
+  let areaAtual = null;
+  for (const x of lista) {
+    if (x.area !== areaAtual) {
+      areaAtual = x.area;
+      const g = document.createElement("div");
+      g.className = "sub-head";
+      g.textContent = areaAtual || "—";
+      wrap.appendChild(g);
+    }
+    const rastreado = x.detected !== false;
+    const marcado = rastreado && x.defeated === true;
+    const detalhe = [x.drop ? "drops " + x.drop : "", detalheExtra ? detalheExtra(x) : ""]
+      .filter(Boolean).join(" · ");
+    const row = document.createElement("div");
+    row.className = "item" + (marcado ? " done" : "");
+    row.innerHTML = `
+      <input type="checkbox" ${marcado ? "checked" : ""} ${rastreado ? "" : 'class="pending"'} disabled>
+      <label>${x.label}${detalhe ? '<span class="loc">' + detalhe + "</span>" : ""}</label>
+      ${rastreado ? '<span class="tag auto">auto</span>' : '<span class="tag pending">not tracked</span>'}
+      ${ehNova(x) ? '<span class="novo" title="new since your last visit"></span>' : ""}
+    `;
+    wrap.appendChild(row);
+  }
+
+  section.appendChild(wrap);
+  root.appendChild(section);
+  registrarTopico(titulo, feitos + "/" + rastreaveis.length, section);
+  return { feitos, total: rastreaveis.length };
+}
+
+function renderBosses() {
+  return renderEnemies("bosses", "bosses", "Bosses", "", (b) =>
+    b.memory === "used" ? "memory spent" : b.memory === "held" ? "memory in the bag" : "");
+}
+
+function renderMiniBosses() {
+  return renderEnemies("minibosses", "miniBosses", "Mini-bosses", "flag:", null);
+}
+
+function renderHeadless() {
+  return renderEnemies("headless", "headless", "Headless", "headless:", null);
+}
+
+function renderIdols() {
+  const root = document.getElementById("idols");
+  root.innerHTML = "";
+  if (!temSync() || !Array.isArray(sync.idols) || !sync.idols.length) return;
+
+  const lista = sync.idols;
+  const cal = sync.idolCalibration || { blocos: 0, total: 0 };
+  const calibrado = cal.blocos > 0 && cal.blocos === cal.total;
+  const acesos = lista.filter((i) => i.detected && i.unlocked).length;
+
+  const section = document.createElement("section");
+  section.className = "category";
+  section.dataset.idx = "idols";
+
+  const header = document.createElement("div");
+  header.className = "cat-header";
+  header.innerHTML = `
+    <div class="cat-title-group">
+      <span class="cat-title">Sculptor's Idols</span>
+      <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${calibrado ? (acesos / lista.length * 100) : 0}%"></div></div>
+    </div>
+    <span class="cat-progress-text">${calibrado ? acesos : "—"}/${lista.length}</span>
+    <span class="chevron">▸</span>
+  `;
+  header.addEventListener("click", () => setOpen(section, "idols"));
+  section.appendChild(header);
+
+  const wrap = document.createElement("div");
+  wrap.className = "items";
+
+  if (!calibrado) {
+    const aviso = document.createElement("div");
+    aviso.className = "cat-aviso";
+    aviso.textContent =
+      "Each region keeps its idol flags in its own block, and those block " +
+      "offsets are not known yet (" + cal.blocos + " of " + cal.total + " calibrated). " +
+      "Rest at an idol you have not used before, then run: npm run discover idol";
+    wrap.appendChild(aviso);
+  }
+
+  let areaAtual = null;
+  for (const i of lista) {
+    if (i.area !== areaAtual) {
+      areaAtual = i.area;
+      const g = document.createElement("div");
+      g.className = "sub-head";
+      g.textContent = areaAtual;
+      wrap.appendChild(g);
+    }
+    const marcado = i.detected && i.unlocked;
+    const row = document.createElement("div");
+    row.className = "item" + (marcado ? " done" : "");
+    row.innerHTML = `
+      <input type="checkbox" ${marcado ? "checked" : ""} ${i.detected ? "" : 'class="pending"'} disabled>
+      <label>${i.label}</label>
+      ${i.detected ? '<span class="tag auto">auto</span>' : '<span class="tag pending">not calibrated</span>'}
+    `;
+    wrap.appendChild(row);
+  }
+
+  section.appendChild(wrap);
+  root.appendChild(section);
+  registrarTopico("Sculptor's Idols", (calibrado ? acesos : "—") + "/" + lista.length, section);
+}
+
+/**
+ * Contador de mortes no cabeçalho.
+ *
+ * O jogo não guarda essa conta em nenhum lugar conhecido do save, então
+ * enquanto o offset não for descoberto o número é um traço, não zero — dizer
+ * "0 deaths" seria afirmar algo que não sabemos.
+ */
+function renderDeaths() {
+  const box = document.getElementById("deaths");
+  const num = document.getElementById("deathsCount");
+  const d = temSync() ? sync.deaths : null;
+
+  if (!d) {                       // sem save lido ainda: não ocupar o cabeçalho
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const nota = document.getElementById("deathsNote");
+  const fill = document.getElementById("thermFill");
+  const pin = document.getElementById("thermPin");
+  const TOPO = 1000;
+
+  if (d.known) {
+    // Acima de 1000 o pino encosta no fim: a escala é essa, e esticá-la
+    // silenciosamente faria as leituras anteriores mudarem de lugar.
+    const pct = Math.min(d.count, TOPO) / TOPO * 100;
+    box.className = "deaths-panel" + (d.count > TOPO ? " over" : "");
+    num.textContent = d.count;
+    fill.style.width = pct + "%";
+    pin.style.left = pct + "%";
+    nota.textContent = d.how === "discovered"
+      ? "Field found by watching the save, so this is the whole life of the character — not just since the tracker started." +
+        (d.count > TOPO ? " Past the end of the scale." : "")
+      : "Read straight from the save.";
+    return;
+  }
+
+  box.className = "deaths-panel unknown";
+  num.textContent = "—";
+  fill.style.width = "0%";
+  pin.style.left = "0%";
+
+  const p = d.progresso || {};
+  if (d.how === "not-in-save") {
+    nota.textContent = "The save does not record deaths.";
+    box.title = p.motivo || "";
+    return;
+  }
+  // Ainda procurando. O traço já diz que não se sabe; explicar isso em texto
+  // fixo no painel só ocupava espaço. O andamento fica no title, para quem
+  // quiser saber por que ainda não tem número.
+  nota.textContent = "";
+  box.title =
+    "Sekiro has no death counter of its own, so the tracker is working out which " +
+    "field it is by watching the save. " +
+    (p.mortes
+      ? p.mortes + " death" + (p.mortes === 1 ? "" : "s") + " seen so far" +
+        (p.candidatos ? ", " + p.candidatos + " candidate fields left." : ".")
+      : "Waiting for the first death.");
+}
+
+function renderSyncLine() {
+  const dot = document.getElementById("syncDot");
+  const text = document.getElementById("syncText");
+  dot.className = "sync-dot";
+  if (!sync) {
+    dot.classList.add("off");
+    // Não mandar rodar nada: o serviço sobe sozinho no login. Se esta linha
+    // aparece, ou o PC está desligado/dormindo, ou o serviço caiu.
+    text.textContent = "not syncing — the service is not responding";
+    return;
+  }
+  if (!sync.ok) {
+    dot.classList.add("off");
+    text.textContent = "save not read: " + (sync.message || sync.error || "erro");
+    return;
+  }
+  if (sync.stale) {
+    // Os números são de uma leitura boa anterior — o save ficou indisponível
+    // depois dela. Melhor mostrar o progresso conhecido e avisar do que zerar.
+    dot.classList.add("off");
+    const quando = new Date(sync.stale.leituraDe).toLocaleString();
+    text.textContent = "save unavailable — showing the reading from " + quando;
+    return;
+  }
+  dot.classList.add("on");
+  const when = sync.source && sync.source.saveModified
+    ? new Date(sync.source.saveModified).toLocaleString()
+    : "?";
+  const slot = sync.source ? sync.source.slot : "?";
+  text.textContent = "synced with the save · slot " + slot + " · saved at " + when;
+}
+
+/* ------------------------------------------------------- itens essenciais */
+
+function essentialsProgress() {
+  // Só contas e sementes contam como progresso: materiais são consumíveis
+  // e a contagem deles sobe e desce conforme você melhora as próteses.
+  let done = 0, total = 0;
+  for (const row of ESSENTIALS) {
+    if (row.group || !row.total) continue;
+    if (row.key === "prayerNecklaces") continue; // já representado pelas contas
+    const auto = autoCount(row.auto);
+    done += Math.min(auto === null ? 0 : auto, row.total);
+    total += row.total;
+  }
+  return { done, total };
+}
+
+function renderEssentials() {
+  const novas = marcasNovas();
+  const root = document.getElementById("essentials");
+  root.innerHTML = "";
+
+  const section = document.createElement("section");
+  section.className = "category";
+  section.dataset.idx = "essentials";
+
+  const prog = essentialsProgress();
+  const header = document.createElement("div");
+  header.className = "cat-header";
+  header.innerHTML = `
+    <div class="cat-title-group">
+      <span class="cat-title">Essential Items</span>
+      <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${(temSync() && prog.total ? prog.done / prog.total * 100 : 0)}%"></div></div>
+    </div>
+    <span class="cat-progress-text">${temSync() ? prog.done : "—"}/${prog.total}</span>
+    <span class="chevron">▸</span>
+  `;
+  header.addEventListener("click", () => setOpen(section, "essentials"));
+  section.appendChild(header);
+
+  const itemsWrap = document.createElement("div");
+  itemsWrap.className = "items";
+
+  for (const row of ESSENTIALS) {
+    if (row.group) {
+      const g = document.createElement("div");
+      g.className = "sub-head";
+      g.textContent = row.group;
+      itemsWrap.appendChild(g);
+      continue;
+    }
+
+    const auto = autoCount(row.auto);
+
+    const el = document.createElement("div");
+    el.className = "item counter";
+    el.innerHTML = `
+      <label>${row.label}${row.hint ? `<span class="loc">${row.hint}</span>` : ""}</label>
+      <span class="tag auto">auto</span>
+      ${novas.contadores.has(row.label) ? `<span class="novo" title="changed since your last visit"></span>` : ""}
+      <div class="count-ctl">
+        <span class="count-val">${auto === null ? "—" : auto}</span>
+        <span class="of">${row.total ? "/ " + row.total : ""}</span>
+      </div>
+    `;
+
+    itemsWrap.appendChild(el);
+  }
+
+  section.appendChild(itemsWrap);
+  root.appendChild(section);
+  registrarTopico("Essential Items", (temSync() ? prog.done : "—") + "/" + prog.total, section);
+}
+
+/* ------------------------------------------------------------ checklists */
+
+function render() {
+  renderSyncLine();
+  renderDeaths();
+  renderNovidades();
+  renderEssentials();
+  const listas = [renderBeads(), renderSeeds()].filter(Boolean);
+  // Estas três seções também contam para o total geral, senão a barra passaria
+  // a medir só próteses e artes de combate.
+  const extras = listas.concat([renderBosses(), renderMiniBosses(), renderHeadless()].filter(Boolean));
+  renderIdols();
+
+  const autoUnlocked = autoUnlockMap();
+  const novas = marcasNovas();
+  const drops = dropMap();
+  const root = document.getElementById("categories");
+  root.innerHTML = "";
+  let totalDone = 0, totalAll = 0;
+
+  DATA.forEach((cat, ci) => {
+    const section = document.createElement("section");
+    section.className = "category";
+    section.dataset.idx = ci;
+
+    const isDone = (ii) => {
+      const autoKey = cat.items[ii][3];
+      return !!(autoKey && autoUnlocked[autoKey]);
+    };
+
+    const doneInCat = cat.items.filter((_, ii) => isDone(ii)).length;
+    const novasNaCat = cat.items.filter((it) => it[3] && novas.linhas.has(it[3])).length;
+    totalDone += doneInCat;
+    totalAll += cat.items.length;
+
+    const header = document.createElement("div");
+    header.className = "cat-header";
+    header.innerHTML = `
+      <div class="cat-title-group">
+        <span class="cat-title">${cat.name}</span>
+        <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${(temSync() && (doneInCat/cat.items.length*100))||0}%"></div></div>
+      </div>
+      ${novasNaCat ? `<span class="cat-novo">${novasNaCat} new</span>` : ""}
+      <span class="cat-progress-text">${temSync() ? doneInCat : "—"}/${cat.items.length}</span>
+      <span class="chevron">▸</span>
+    `;
+    header.addEventListener("click", () => setOpen(section, String(ci)));
+    section.appendChild(header);
+
+    const itemsWrap = document.createElement("div");
+    itemsWrap.className = "items";
+
+    cat.items.forEach((item, ii) => {
+      const [name, loc, tag, autoKey] = item;
+      const id = slug(ci, ii);
+      const drop = autoKey ? drops[autoKey] : null;
+      const detalhe = [loc, drop ? "drops " + drop : ""].filter(Boolean).join(" · ");
+      const checked = isDone(ii);
+      const row = document.createElement("div");
+      row.className = "item" + (checked ? " done" : "");
+      // Toda linha tem fonte no save, então toda linha é somente leitura e
+      // carrega a etiqueta. A etiqueta descritiva (mini-chefe, NG+) continua.
+      row.innerHTML = `
+        <input type="checkbox" id="${id}" ${checked ? "checked" : ""} disabled>
+        <label for="${id}">${name}${detalhe ? `<span class="loc">${detalhe}</span>` : ""}</label>
+        ${tag ? `<span class="tag">${tag}</span>` : ""}
+        ${autoKey ? `<span class="tag auto">auto</span>` : ""}
+        ${autoKey && novas.linhas.has(autoKey) ? `<span class="novo" title="new since your last visit"></span>` : ""}
+      `;
+      itemsWrap.appendChild(row);
+    });
+
+    section.appendChild(itemsWrap);
+    root.appendChild(section);
+    registrarTopico(cat.name, (temSync() ? doneInCat : "—") + "/" + cat.items.length, section);
+  });
+
+  // Sem save lido, nada aqui é medição — mostrar "0 / 62" faria parecer que o
+  // progresso é zero, quando na verdade é desconhecido.
+  for (const e of extras) { totalDone += e.feitos; totalAll += e.total; }
+
+  const ok = temSync();
+  document.getElementById("overallCount").textContent = ok ? `${totalDone} / ${totalAll}` : "—";
+  document.getElementById("overallLabel").textContent = ok ? "complete" : "waiting for the save";
+  document.getElementById("overallBar").style.width = (ok && totalAll ? totalDone/totalAll*100 : 0) + "%";
+}
+
+const origRender = render;
+render = function() {
+  topicos = [];          // a página é redesenhada inteira; a lista também
+  origRender();
+  document.querySelectorAll(".category").forEach(sec => {
+    if (openState.has(sec.dataset.idx)) sec.classList.add("open");
+  });
+  renderTopicos();
+};
+
+// theme toggle
+function temaDoSistema() {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light" : "dark";
+}
+function applyTheme(t) {
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+  // Sem nada salvo, quem manda é o sistema — o rótulo tem que refletir o que
+  // está na tela, senão o primeiro clique não muda nada.
+  const efetivo = (t === "light" || t === "dark") ? t : temaDoSistema();
+  document.getElementById("themeToggle").textContent =
+    (efetivo === "light") ? "dark mode" : "light mode";
+}
+let savedTheme = null;
+try { savedTheme = localStorage.getItem(THEME_KEY); } catch (e) {}
+applyTheme(savedTheme);
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") || temaDoSistema();
+  const next = current === "light" ? "dark" : "light";
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  applyTheme(next);
+});
+
+/* --------------------------------------------- leitura do progress.json */
+
+let lastStamp = null;
+
+function cair(motivo) {
+  // Zerar lastStamp junto é obrigatório: sem isso, quando o progress.json
+  // voltar idêntico, a comparação de carimbo corta o caminho antes de
+  // reatribuir `sync` e a página fica presa no erro até recarregar.
+  lastStamp = null;
+  if (sync !== null || motivo) { sync = motivo || null; render(); }
+}
+
+async function pollProgress() {
+  try {
+    const res = await fetch("progress.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) {
+      // O servidor devolve 404 com corpo {ok:false,...} quando o arquivo ainda
+      // não existe. Esse corpo diz o motivo real, então vale lê-lo em vez de
+      // culpar o servidor.
+      let corpo = null;
+      try { corpo = await res.json(); } catch (e2) { corpo = null; }
+      cair(corpo && corpo.ok === false ? corpo : null);
+      return;
+    }
+    const data = await res.json();
+    const stamp = JSON.stringify([data.ok, data.generatedAt, data.error]);
+    if (stamp === lastStamp) return;
+    lastStamp = stamp;
+    sync = data;
+    render();
+  } catch (e) {
+    // Aberto como file://, ou servidor fora do ar.
+    cair(null);
+  }
+}
+
+// open first category by default
+openState.add("essentials");
+render();
+pollProgress();
+setInterval(pollProgress, 5000);
+</script>
+</body>
+</html>
