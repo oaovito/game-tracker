@@ -354,6 +354,7 @@ console.log('\n  === 7. Leitura da memória do jogo ===');
 
 const memoria = require('./memoria');
 const deathsmem = require('./deathsmem');
+const tempo = require('./tempo');
 
 check('o handle é pedido somente para leitura', () => {
   // Sem os comentários: o cabeçalho do arquivo explica que não há escrita, e
@@ -447,6 +448,43 @@ check('a contagem por memória se cala quando não está calibrada', () => {
   return 'sem offset ainda, devolve null em vez de inventar';
 });
 
+check('a contagem é da jornada inteira, não da sessão', () => {
+  const j = deathsmem.daJornada();
+  if (!j) return 'jogo fechado ou no menu principal; nada a ler';
+  // O ponto do teste é a distinção. Um contador da região estática do módulo
+  // zera quando o jogo abre, e mediria só a noite de hoje; este vem da struct
+  // que o save carrega. Se a página voltar a mostrar o de sessão, isto falha.
+  assert(j.escopo === 'jornada', 'escopo "' + j.escopo + '"');
+  const p = parse.buildProgress({});
+  assert(p.deaths.escopo === 'jornada',
+    'a página está publicando escopo "' + p.deaths.escopo + '"');
+  assert(p.deaths.count === j.mortes,
+    'página diz ' + p.deaths.count + ', a struct diz ' + j.mortes);
+  // A conferência que provou a struct: o tempo de jogo interno é campo dela, e
+  // tem de ser plausível contra as horas de relógio da Steam — menor, porque
+  // não conta menu nem carregamento, e não muito menor.
+  const t = tempo.tempoDeJogo();
+  if (t && j.igtHoras) {
+    assert(j.igtHoras < t.horas, `IGT ${j.igtHoras.toFixed(1)}h não pode passar do relógio ${t.horas}h`);
+    assert(j.igtHoras > t.horas * 0.3, `IGT ${j.igtHoras.toFixed(1)}h baixo demais para ${t.horas}h de relógio`);
+    return `${j.mortes} mortes, IGT ${j.igtHoras.toFixed(1)}h contra ${t.horas}h de relógio`;
+  }
+  return `${j.mortes} mortes na jornada`;
+});
+
+check('a contagem de sessão continua existindo como reserva', () => {
+  const s = deathsmem.daSessao();
+  const j = deathsmem.daJornada();
+  if (!s) return 'sem offset de sessão calibrado';
+  assert(s.escopo === 'sessao', 'escopo "' + s.escopo + '"');
+  if (j) {
+    assert(s.mortes <= j.mortes,
+      'a sessão (' + s.mortes + ') não pode passar da jornada (' + j.mortes + ')');
+    return `sessão ${s.mortes} dentro da jornada ${j.mortes}`;
+  }
+  return `sessão ${s.mortes}`;
+});
+
 check('calibrado e com o jogo aberto, quem manda é a memória', () => {
   const e = deathsmem.estado();
   const c = deathsmem.contagem();
@@ -463,7 +501,9 @@ check('calibrado e com o jogo aberto, quem manda é a memória', () => {
   assert(p.deaths.count === c.mortes,
     'a página diz ' + p.deaths.count + ' e a memória diz ' + c.mortes);
   assert(p.deaths.confidence === 'high', 'confiança "' + p.deaths.confidence + '", esperada "high"');
-  return `${c.mortes} mortes, lidas de 0x${e.offset.toString(16)}`;
+  // O offset calibrado é o da sessão; a contagem que chega à página vem da
+  // struct da jornada. Dizer o offset aqui sugeriria que ele produziu o número.
+  return `${c.mortes} mortes, escopo "${c.escopo}"`;
 });
 
 check('o save é a reserva enquanto a memória não fecha', () => {

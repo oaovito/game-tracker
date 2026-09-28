@@ -31,6 +31,35 @@ const PADROES = {
     padrao: '48 8b 0d ? ? ? ? 48 89 5c 24 50 48 89 6c 24 58 48 89 74 24 60',
     desloc: 3, instrucao: 7,
   },
+  /*
+   * GameDataMan: a struct que guarda o que sobrevive ao fechar o jogo.
+   *
+   * É daqui que sai a contagem de mortes da jornada inteira, e não a da
+   * sessão. A diferença não é detalhe: um contador solto na região estática
+   * do módulo zera toda vez que o jogo abre, então mediria só a noite de hoje.
+   * Este é carregado do save, então conta desde o primeiro carregamento
+   * daquele arquivo.
+   *
+   * O padrão é o que o SoulSplitter usa para achar o tempo de jogo (IGT), e o
+   * IGT é um campo desta mesma struct — o que dá uma conferência de graça:
+   * lendo os dois, o tempo tem de bater de forma plausível com as horas que a
+   * Steam registra, e foi assim que se confirmou que a struct é esta.
+   *
+   * Procurar por padrão, e não por endereço fixo, é o que faz isto sobreviver
+   * a uma atualização do jogo: as duas ferramentas de contagem de mortes que
+   * existem publicamente gravam o endereço direto, e o delas já não resolve
+   * nesta versão — o ponteiro vem nulo.
+   */
+  GameDataMan: {
+    padrao: '48 8b 05 ? ? ? ? 32 d2 48 8b 48 08 48 85 c9 74 13 80 b9 ba',
+    desloc: 3, instrucao: 7,
+  },
+};
+
+/** Campos de GameDataMan, em bytes a partir da instância. */
+const GAME_DATA = {
+  mortes: 0x90,
+  igt: 0x9c,
 };
 
 /**
@@ -95,7 +124,7 @@ function lerVarios(pedidos) {
   return { ok: true, base: r.base, tamanho: r.tamanho, pid: r.pid, res: out };
 }
 
-module.exports = { executar, conectar, resolverPonteiros, ler, lerVarios, PADROES, PROCESSO };
+module.exports = { executar, conectar, resolverPonteiros, ler, lerVarios, PADROES, GAME_DATA, PROCESSO };
 
 if (require.main === module) {
   const c = conectar();

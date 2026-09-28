@@ -195,8 +195,62 @@ function varrer() {
   };
 }
 
-/** A contagem agora, se já houver offset e o jogo estiver aberto. */
-function contagem() {
+/**
+ * A contagem da jornada inteira, lida da struct que o save carrega.
+ *
+ * Esta é a leitura boa, e a diferença em relação à anterior é a pergunta que
+ * se responde. O offset achado por diferença mora na região estática do
+ * módulo: ele zera toda vez que o jogo abre, então media só a sessão. Uma
+ * noite de cinco mortes aparecia como "5 mortes", com 82 horas de jogo atrás.
+ *
+ * O GameDataMan é carregado do arquivo de save, então a contagem dele vem de
+ * quando aquele save começou — que é o que se quer dizer com "quantas vezes
+ * você morreu neste jogo".
+ *
+ * A struct foi confirmada, não deduzida: o tempo de jogo interno é campo dela,
+ * e leu 54,7 horas contra 82,3 de relógio da Steam. Menu e carregamento
+ * explicam a diferença, e um número desligado da realidade não explicaria.
+ */
+function daJornada() {
+  const c = memoria.conectar();
+  if (!c.ok) return null;
+  const r = memoria.executar([Object.assign(
+    { tipo: 'scanRel', nome: 'g' }, memoria.PADROES.GameDataMan
+  )]);
+  if (!r.ok || !r.res || !r.res.g || !r.res.g.alvo) return null;
+
+  const p = memoria.ler(r.res.g.alvo, 8);
+  if (!p) return null;
+  const inst = Number(p.readBigUInt64LE(0));
+  // No menu principal a instância ainda não existe: não há partida carregada,
+  // e inventar zero aqui apagaria a contagem da página.
+  if (!inst) return null;
+
+  const campo = (off) => {
+    const b = memoria.ler(inst + off, 4);
+    return b ? b.readUInt32LE(0) : null;
+  };
+  const mortes = campo(memoria.GAME_DATA.mortes);
+  const igtMs = campo(memoria.GAME_DATA.igt);
+  if (mortes === null || mortes > 100000) return null;
+
+  return {
+    mortes,
+    fonte: 'memoria',
+    escopo: 'jornada',
+    igtHoras: igtMs === null ? null : igtMs / 3600000,
+    em: new Date().toISOString(),
+  };
+}
+
+/**
+ * A contagem desta sessão, pelo offset achado por diferença.
+ *
+ * Continua aqui como reserva: se uma atualização do jogo mudar o código a
+ * ponto de o padrão do GameDataMan não casar, isto ainda conta — só que a
+ * partir da abertura do jogo, e a página diz isso em vez de fingir o total.
+ */
+function daSessao() {
   const e = carregar();
   if (!e || typeof e.offset !== 'number') return null;
   const c = memoria.conectar();
@@ -205,7 +259,16 @@ function contagem() {
   if (!b) return null;
   const n = b.readUInt32LE(0);
   if (n > 100000) return null;                     // valor absurdo: offset errado
-  return { mortes: n, fonte: 'memoria', offset: e.offset, em: new Date().toISOString() };
+  return { mortes: n, fonte: 'memoria', escopo: 'sessao', offset: e.offset, em: new Date().toISOString() };
+}
+
+/** A melhor contagem disponível: a jornada inteira, ou a sessão como reserva. */
+function contagem() {
+  try {
+    const j = daJornada();
+    if (j) return j;
+  } catch (e) { /* padrão não casou nesta versão; cai na reserva */ }
+  return daSessao();
 }
 
 function estado() {
@@ -219,7 +282,7 @@ function estado() {
   };
 }
 
-module.exports = { marcar, confirmar, varrer, contagem, estado, carregar, ESTADO, FOTO, TETO_MORTES };
+module.exports = { marcar, confirmar, varrer, contagem, daJornada, daSessao, estado, carregar, ESTADO, FOTO, TETO_MORTES };
 
 if (require.main === module) {
   const [cmd, arg] = process.argv.slice(2);

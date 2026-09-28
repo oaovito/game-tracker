@@ -382,7 +382,18 @@ function buildDeaths(payload, config, goods, weapons, slot, opts) {
     m = deathsmem.contagem();
   } catch (e) { /* jogo fechado, ou ainda sem calibração */ }
   if (m) {
-    return { known: true, count: m.mortes, confidence: 'high', how: 'memoria', em: m.em };
+    // `escopo` viaja junto porque muda o que o número significa. "jornada" é a
+    // contagem que o save carrega, desde que aquele arquivo começou; "sessao"
+    // é a reserva, e conta só desde que o jogo abriu. Publicar os dois casos
+    // com a mesma cara faria o segundo parecer o primeiro.
+    return {
+      known: true,
+      count: m.mortes,
+      confidence: m.escopo === 'jornada' ? 'high' : 'likely',
+      how: 'memoria',
+      escopo: m.escopo || 'jornada',
+      em: m.em,
+    };
   }
   return deaths.paraProgresso(estado);
 }
