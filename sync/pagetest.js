@@ -167,10 +167,19 @@ async function rodar(log) {
   log(!/hunting log/i.test(nodes.deaths.outerHTML), 'o texto antigo do cabeçalho saiu',
     'subtítulo removido');
 
-  // Só o 死 e o número: nenhuma palavra "deaths" solta no painel.
-  const semPalavra = !/\bdeaths?\b/i.test(stripTags(nodes.deaths.outerHTML));
-  log(semPalavra, 'painel mostra só o kanji e o número',
-    semPalavra ? 'sem a palavra "deaths"' : 'ainda aparece: ' + stripTags(nodes.deaths.outerHTML).trim().slice(0, 60));
+  // O rótulo "deaths" voltou, ao lado do número — decisão revertida, e o teste
+  // reverte junto em vez de ficar afirmando o contrário do que a página faz.
+  //
+  // Ele é marcação estática, então não aparece no DOM de brinquedo, que só
+  // conhece os ids: procurar aqui dava sempre "passou", por não haver o que
+  // achar. Teste que não pode falhar não é teste, então este olha o arquivo.
+  const marcacao = fs.readFileSync(PAGINA, 'utf8');
+  const linhaMortes = /<div class="deaths-head"[\s\S]*?<\/div>/.exec(marcacao);
+  const dentro = linhaMortes ? linhaMortes[0] : '';
+  log(/deaths-rot">deaths</.test(dentro), 'o rótulo "deaths" está ao lado do número',
+    dentro ? stripTags(dentro).replace(/\s+/g, ' ').trim() : 'não achei o cabeçalho');
+  const rotuloDepois = dentro.indexOf('deathsCount') < dentro.indexOf('deaths-rot');
+  log(rotuloDepois, 'e vem depois do número, não antes', '死 <número> deaths');
 
   // Geometria do termômetro: o pino e o preenchimento têm de sair da contagem,
   // e a escala para em 1000 sem esticar sozinha.
@@ -626,6 +635,63 @@ async function rodar(log) {
   log(/\.headless-num \{[^}]*#2a1550/.test(src), 'a raiz do gradiente continua roxa',
     'o número resolve na cor do bloco, então segue no tema');
 
+  // --- a cortina tem de ler como pano, não como faixa de pedestre ---
+  // A primeira versão era uma fita de 10px com listras de mesma largura: o
+  // desenho exato de uma travessia de rua. O que corrige é proporção e queda,
+  // então é isso que se mede.
+  const curtina = /\.deaths-panel::before \{[\s\S]*?\n  \}/.exec(src);
+  const cssCurtina = curtina ? curtina[0] : '';
+  const altura = /height: (\d+)px/.exec(cssCurtina);
+  log(altura && Number(altura[1]) >= 30, 'a cortina tem altura de pano pendurado',
+    altura ? altura[1] + 'px' : 'não achei a altura');
+  // A queda de luz de cima para baixo é o que dá peso de pano pendurado; sem
+  // ela a faixa fica chapada e volta a ser fita.
+  log(/linear-gradient\(180deg,[\s\S]*?rgba\(0,0,0,0\.[5-9]/.test(cssCurtina),
+    'o pano perde luz para baixo, como cortina pendurada',
+    'gradiente vertical escurecendo até a barra');
+  log(/mask-image/.test(cssCurtina), 'e desbota na barra de baixo',
+    'sem corte reto, que era metade do efeito de fita');
+  log(!/repeating-linear-gradient/.test((/\.deaths-panel::after \{[\s\S]*?\n  \}/.exec(src) || [''])[0]),
+    'a barra do pé não repete o padrão', 'só sombra, sem listra');
+
+  // As almas: três, com tempos que não coincidem.
+  const almas = (src.match(/\.alma\.a\d \{/g) || []).length;
+  log(almas === 3, 'há três almas subindo', almas + ' declaradas');
+  const tempos = [...src.matchAll(/\.alma\.a\d \{[^}]*animation: subir-alma (\d+)s/g)].map((m) => Number(m[1]));
+  const coincidem = tempos.length === 3 && new Set(tempos).size === 3;
+  log(coincidem, 'e com durações diferentes entre si', tempos.join('s, ') + 's');
+  log(/@keyframes subir-alma \{[\s\S]*?opacity: 0;[\s\S]*?\n  \}/.test(src),
+    'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
+
+  // O tempo de jogo: "h" no número, e nenhum nome de metal na tela.
+  log(/\+ "h";/.test(src), 'o número de horas traz o "h"', 'colado no número');
+  log(!/getElementById\("tempoRot"\)\.textContent = d\[1\]/.test(src),
+    'o nome do metal saiu da tela', 'a cor continua evoluindo, a palavra não aparece');
+  const rot = /<span class="quadro-rot" id="tempoRot">([^<]*)</.exec(src);
+  log(rot && !/bronze|iron|steel|silver|gold|lazulite|magnetite|adamantite/i.test(rot[1]),
+    'e o rótulo do bloco não é um material', '"' + (rot ? rot[1] : '?') + '"');
+
+  // O hover abre o número exato. Duas medidas, cada uma na precisão da fonte:
+  // a Steam grava minutos inteiros, então não pode inventar segundo; o tempo
+  // interno vem em milissegundos e pode.
+  const t2 = nodes.quadroTempo.title || '';
+  log(/\d+h \d{2}m on the Steam clock/.test(t2), 'o hover dá o relógio em hora e minuto',
+    (t2.split('\n')[0] || '').slice(0, 60));
+  const temInterno = typeof progress.playtime.internoSegundos === 'number';
+  if (temInterno) {
+    log(/\d+h \d{2}m \d{2}s of in-game time/.test(t2), 'e o tempo interno com segundos',
+      (t2.split('\n')[1] || '').slice(0, 60));
+    log(!/\d+h \d{2}m 00s on the Steam clock/.test(t2),
+      'sem segundo inventado no relógio da Steam', 'a fonte só grava minutos');
+  } else {
+    log(!/in-game time/.test(t2), 'sem tempo interno, o hover não o menciona',
+      'nada de linha vazia');
+  }
+  // Uma segunda atribuição do title apagava a primeira sem deixar rastro.
+  log((src.match(/quadro\.title =/g) || []).length === 2,
+    'o título do bloco de tempo é escrito num lugar só',
+    (src.match(/quadro\.title =/g) || []).length + ' atribuições (a outra é o caso sem dado)');
+
   // --- o bloco de mortes é um velório, não um ferimento ---
   // Os dois contadores dizem coisas diferentes e precisam parecer diferentes:
   // o de chefes é violência e sangra, este é luto e guarda. Sem isto os dois
@@ -633,15 +699,36 @@ async function rodar(log) {
   log(/\.deaths-panel::before \{[^}]*repeating-linear-gradient/.test(src),
     'a moldura do bloco de mortes é a cortina de velório',
     'listras alternadas no topo e no pé');
-  const listras = /\.deaths-panel::before \{[\s\S]*?repeating-linear-gradient\(90deg, (#[0-9a-f]{6}) 0 \d+px, (#[0-9a-f]{6})/i.exec(src);
-  const listraClara = listras ? listras[1] : "";
-  const listraEscura = listras ? listras[2] : "";
+  /*
+   * Estes dois testes mediam a implementação antiga — a cor exata das listras
+   * e a existência de um gradiente de dobra separado. Passavam enquanto o
+   * bloco parecia uma faixa de pedestre, porque "branca e preta" era
+   * exatamente o problema, não a solução.
+   *
+   * O que decide a leitura é contraste e aresta: listra clara contra escura em
+   * degrau reto é desenho gráfico em qualquer tamanho. Então é isso que se
+   * mede agora — que o padrão exista (é o 鯨幕), mas apagado e com as bordas
+   * dissolvidas.
+   */
+  const bloco = /\.deaths-panel::before \{[\s\S]*?\n  \}/.exec(src);
+  const cssBloco = bloco ? bloco[0] : '';
+  const cores = [...cssBloco.matchAll(/#([0-9a-f]{6})/gi)].map((m) => m[1]);
   const brilhoDe = (c) => c
-    ? (parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16)) / 3
+    ? (parseInt(c.slice(0, 2), 16) + parseInt(c.slice(2, 4), 16) + parseInt(c.slice(4, 6), 16)) / 3
     : -1;
-  log(brilhoDe(listraClara) > 190 && brilhoDe(listraEscura) < 40,
-    'e as listras são de fato branca e preta',
-    listraClara + " / " + listraEscura);
+  const brilhos = cores.map(brilhoDe);
+  log(brilhos.some((b) => b > 150) && brilhos.some((b) => b < 40),
+    'a cortina alterna claro e escuro, como o 鯨幕',
+    cores.map((c, i) => '#' + c + '(' + brilhos[i].toFixed(0) + ')').join(' '));
+  const op = /opacity: ([\d.]+)/.exec(cssBloco);
+  log(op && Number(op[1]) <= 0.3,
+    'mas apagada: é o contraste que fazia ler como travessia de rua',
+    op ? 'opacidade ' + op[1] : 'sem opacidade declarada');
+  // Mais de dois pares de paradas por painel quer dizer aresta dissolvida: o
+  // degrau seco é o que desenha a faixa de pedestre.
+  const paradas = (cssBloco.match(/#[0-9a-f]{6} \d+px \d+px|#[0-9a-f]{6} 0 \d+px/gi) || []).length;
+  log(paradas >= 4, 'e com as bordas em gradiente, não em degrau',
+    paradas + ' paradas de cor no padrão');
 
   // O número não pode ter gradiente de sangue: a cor tem de ser de osso.
   const numMorte = /\.deaths-count \{[\s\S]*?background-image: linear-gradient\(\s*180deg,\s*(#[0-9a-f]{6})/i.exec(src);

@@ -118,7 +118,7 @@
       radial-gradient(120% 80% at 50% 0%, rgba(228, 224, 214, 0.05), rgba(10, 10, 11, 0.6) 70%),
       var(--bg-panel);
     border-radius: 0;
-    padding: 26px 22px 18px;
+    padding: 40px 22px 20px;
     margin-bottom: 26px;
     overflow: hidden;
   }
@@ -130,25 +130,114 @@
   }
   /* A cortina: listras de 26px, brancas e pretas, no alto e no pé do bloco.
      A de baixo é mais apagada, como pano no escuro longe da vela. */
+  /*
+   * A cortina, refeita.
+   *
+   * A primeira tentativa era uma fita de 10px de listras alternadas, no topo e
+   * no pé — e lia como faixa de pedestre, não como luto. O erro foi de
+   * proporção: o 鯨幕 é pano PENDURADO, alto, que cai do alto da parede; uma
+   * tira fina com listras de mesma largura é exatamente o desenho de uma
+   * travessia de rua.
+   *
+   * Agora é tecido: alto o bastante para ter queda, com painéis verticais
+   * separados por sombra, uma faixa de luz no alto onde o pano é esticado, e
+   * a barra inferior escurecendo como pano que some na penumbra. O branco
+   * também saiu do puro: linho envelhecido, não tinta.
+   */
   .deaths-panel::before {
     left: 0; right: 0; top: 0;
-    height: 10px;
-    /* Duas camadas: as listras, e por cima um escurecimento de alto a baixo
-       que faz a faixa ler como pano pendurado e não como fita chapada. */
+    height: 30px;
     background:
-      linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0) 45%, rgba(0,0,0,0.45)),
-      repeating-linear-gradient(90deg, #d9d5cb 0 22px, #0b0b0c 22px 44px);
-    opacity: 0.66;
+      /* o pano perde luz para baixo, como cortina pendurada */
+      linear-gradient(180deg,
+        rgba(255,255,255,0.10) 0 2px,
+        rgba(0,0,0,0) 22%,
+        rgba(0,0,0,0.5) 80%,
+        rgba(0,0,0,0.8) 100%),
+      /* As listras com as bordas dissolvidas, e não em degrau. O degrau é o
+         que fazia ler como tecla de piano: contraste duro em aresta reta é
+         desenho gráfico, não pano. Aqui cada painel nasce e morre em
+         gradiente, como vinco de tecido pega a luz. */
+      repeating-linear-gradient(90deg,
+        #b8b3a6 0 14px,
+        #2a2825 20px 24px,
+        #0e0d0f 30px 38px,
+        #2a2825 44px 48px,
+        #b8b3a6 54px 54px);
+    opacity: 0.22;
+    /* Barra desfiada embaixo: a cortina termina em franja, não em corte reto.
+       O corte reto era metade do efeito de fita. */
+    mask-image:
+      repeating-radial-gradient(circle at 50% 0, #000 0 9px, rgba(0,0,0,0.25) 11px 13px),
+      linear-gradient(180deg, #000 0 55%, rgba(0,0,0,0.3) 85%, transparent);
+    -webkit-mask-image:
+      repeating-radial-gradient(circle at 50% 0, #000 0 9px, rgba(0,0,0,0.25) 11px 13px),
+      linear-gradient(180deg, #000 0 55%, rgba(0,0,0,0.3) 85%, transparent);
+    mask-composite: intersect;
+    -webkit-mask-composite: source-in;
   }
+  /* A barra do pé é só a sombra do pano no chão: sem listra, para não repetir
+     o padrão e trazer a zebra de volta. */
   .deaths-panel::after {
     left: 0; right: 0; bottom: 0;
-    height: 6px;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1)),
-      repeating-linear-gradient(90deg, #d9d5cb 0 22px, #0b0b0c 22px 44px);
-    opacity: 0.3;
+    height: 14px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
   }
+  /*
+   * Hitodama (人魂): no folclore japonês, a alma de um morto vista como um
+   * fogo-fátuo que paira. É o fantasma certo para este bloco — o ocidental, de
+   * lençol, seria piada; este é luto.
+   *
+   * Cada alma é um bulbo com um rastro atrás (o ::after), subindo devagar e
+   * desviando de lado, apagando antes de chegar ao topo. Os três tempos são
+   * primos entre si de propósito: 13s, 17s e 19s nunca voltam a coincidir, e é
+   * isso que impede a leitura de "três coisas piscando em fila".
+   */
+  .alma {
+    position: absolute;
+    bottom: 12px;
+    width: 9px; height: 12px;
+    border-radius: 50% 50% 46% 46%;
+    background: radial-gradient(60% 55% at 50% 38%,
+      #f2fbff 0%, #bfe8ff 34%, #7fb9e8 62%, rgba(99,140,200,0) 100%);
+    filter: blur(0.4px) drop-shadow(0 0 7px rgba(170,215,255,0.75));
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* O rastro: some para cima, que é de onde a alma veio. */
+  .alma::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 78%;
+    width: 3px; height: 16px;
+    margin-left: -1.5px;
+    border-radius: 50% 50% 60% 60%;
+    background: linear-gradient(180deg, rgba(191,232,255,0.6), rgba(191,232,255,0));
+  }
+  .alma.a1 { left: 14%; animation: subir-alma 13s ease-in-out infinite; }
+  .alma.a2 { left: 47%; animation: subir-alma 17s ease-in-out 5s infinite; transform: scale(0.8); }
+  .alma.a3 { left: 79%; animation: subir-alma 19s ease-in-out 9s infinite; transform: scale(1.15); }
+  @keyframes subir-alma {
+    0%   { transform: translate(0, 0) scale(0.7);        opacity: 0; }
+    12%  { transform: translate(6px, -14px) scale(1);     opacity: 0.85; }
+    34%  { transform: translate(-8px, -34px) scale(1.04); opacity: 0.7; }
+    58%  { transform: translate(7px, -56px) scale(1);     opacity: 0.5; }
+    80%  { transform: translate(-5px, -74px) scale(0.92); opacity: 0.22; }
+    100% { transform: translate(2px, -92px) scale(0.8);   opacity: 0; }
+  }
+  /* Com o ponteiro em cima elas ganham corpo, sem acelerar: luto não corre. */
+  .deaths-panel:hover .alma, .deaths-panel.animando .alma { filter: blur(0.3px) drop-shadow(0 0 12px rgba(190,230,255,0.95)); }
+
   .deaths-head { display: flex; align-items: baseline; gap: 12px; }
+  /* O rótulo voltou ao lado do número, em inglês como o resto da interface.
+     Ao lado, e não embaixo, para a linha ler como uma frase: 死 221 deaths. */
+  .deaths-rot {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8d887d;
+    align-self: baseline;
+  }
   .deaths-kanji {
     font-family: var(--font-display);
     font-size: 1.9rem;
@@ -1242,9 +1331,16 @@
 
   <!-- Bloco 2: mortes. -->
   <section class="deaths-panel" id="deaths" hidden>
+    <!-- As almas: hitodama, o fogo-fátuo que no folclore japonês é a alma de
+         um morto. Sobem devagar, desviando, e apagam antes do topo. -->
+    <span class="alma a1" aria-hidden="true"></span>
+    <span class="alma a2" aria-hidden="true"></span>
+    <span class="alma a3" aria-hidden="true"></span>
+
     <div class="deaths-head" role="group" aria-label="Deaths">
       <span class="deaths-kanji">死</span>
       <span class="deaths-count" id="deathsCount">—</span>
+      <span class="deaths-rot">deaths</span>
     </div>
 
     <div class="therm" id="therm">
@@ -1287,7 +1383,7 @@
            barra abaixo situa isso numa escala de 0 a 200 horas. -->
       <div class="tempo-meio">
         <span class="tempo-num" id="tempoNum">—</span>
-        <span class="quadro-rot" id="tempoRot">hours played</span>
+        <span class="quadro-rot" id="tempoRot">playtime</span>
       </div>
       <div class="quadro-pe">
         <div class="marcos" id="marcos"></div>
@@ -2181,13 +2277,41 @@ function renderTempo() {
   }
 
   const horas = t.horas;
-  num.textContent = horas >= 100 ? Math.round(horas) : horas.toFixed(1);
+  // O "h" vai colado no número, e não num rótulo embaixo: sem ele, "82.3"
+  // sozinho não diz se são horas, partidas ou porcentagem.
+  num.textContent = (horas >= 100 ? Math.round(horas) : horas.toFixed(1)) + "h";
   const d = degrau(horas);
   // O metal do momento entra como variáveis; o gradiente do número as usa.
+  // O NOME do metal não aparece mais: "BRONZE" embaixo de um número de horas
+  // lia como categoria de alguma coisa, e não como o que era — uma escala de
+  // material que existe só para a cor do número evoluir. A cor continua; a
+  // palavra saiu.
   quadro.style.setProperty("--m1", d[2][0]);
   quadro.style.setProperty("--m2", d[2][1]);
   quadro.style.setProperty("--m3", d[2][2]);
-  document.getElementById("tempoRot").textContent = d[1];
+  /*
+   * O hover abre o número exato — e em duas medidas, porque são duas coisas.
+   *
+   * O relógio da Steam não tem segundo: a fonte grava minutos inteiros, e
+   * escrever "00s" ali seria precisão inventada. O tempo interno do jogo vem
+   * em milissegundos da mesma struct que a contagem de mortes, e esse tem
+   * segundo de verdade — mas conta menos, porque ignora menu e carregamento.
+   * Mostrar os dois, cada um até onde ele sabe, diz mais do que um só.
+   */
+  const hm = (min) => `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m`;
+  const hms = (seg) => `${Math.floor(seg / 3600)}h `
+    + `${String(Math.floor((seg % 3600) / 60)).padStart(2, "0")}m `
+    + `${String(seg % 60).padStart(2, "0")}s`;
+
+  const linhas = [`${hm(t.minutos)} on the Steam clock, which counts menus and loading`];
+  if (typeof t.internoSegundos === "number") {
+    linhas.push(`${hms(t.internoSegundos)} of in-game time, read from the game itself`);
+    if (!temSync() || !sync.deaths || sync.deaths.aoVivo === false) {
+      linhas.push("(in-game time is the last reading; the game is not running now)");
+    }
+  }
+  linhas.push(`the number is cast in ${d[1]}, and the material changes every 25 hours`);
+  quadro.title = linhas.join("\n");
 
   // Oito blocos de 25h. O bloco onde você está fica preenchido em parte, para a
   // barra andar dentro do marco em vez de saltar só ao completá-lo.
@@ -2205,9 +2329,9 @@ function renderTempo() {
     marcos.appendChild(el);
   }
 
-  quadro.title =
-    horas.toFixed(1) + " hours — " + d[1] +
-    ". From Steam's own record, so it updates when Steam syncs, not mid-session.";
+  // O título detalhado é montado lá em cima, antes dos marcos. Havia uma
+  // segunda atribuição aqui, do texto antigo, que apagava aquele sem deixar
+  // rastro — o hover mostrava a versão velha e nada indicava por quê.
 }
 
 /* --------------------------------------------------- mortes de chefe */

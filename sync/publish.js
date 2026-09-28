@@ -64,7 +64,7 @@ function fonteLimpa(source) {
 const PODAS = {
   // A hora de cada conquista diz quando a pessoa jogou, igual ao last played.
   achievements: (a) => (a ? Object.assign({}, a, { lista: a.lista.map((x) => ({ bloco: x.bloco, stat: x.stat, nome: x.nome, descricao: x.descricao, oculta: x.oculta, conquistada: x.conquistada })) }) : a),
-  playtime: (p) => (p ? { minutos: p.minutos, horas: p.horas, fonte: p.fonte } : p),
+  playtime: (p) => (p ? { minutos: p.minutos, horas: p.horas, fonte: p.fonte, internoSegundos: p.internoSegundos } : p),
 };
 
 function sanitizar(progresso) {

@@ -489,7 +489,26 @@ function buildProgress(options) {
     essentials,
     deaths: buildDeaths(payload, config, goods, weapons, chosen.index, opts),
     // Tempo de jogo vem do Steam, não do save: ver o cabeçalho de tempo.js.
-    playtime: (() => { try { return tempo.tempoDeJogo({ save: file }); } catch (e) { return null; } })(),
+    /*
+     * Tempo de jogo, em duas medidas que não são a mesma coisa.
+     *
+     * A Steam grava tempo de relógio, e só até o minuto — não existe segundo
+     * na fonte, então a página não pode mostrar um. O tempo interno do jogo
+     * vem da mesma struct que a contagem de mortes, em milissegundos, e esse
+     * tem segundo de verdade. São números diferentes de propósito: o relógio
+     * conta menu e carregamento, o interno não.
+     */
+    playtime: (() => {
+      let t = null;
+      try { t = tempo.tempoDeJogo({ save: file }); } catch (e) { return null; }
+      if (!t) return null;
+      let interno = null;
+      try {
+        const m = deathsmem.contagem() || deathsmem.ultimaConhecida();
+        if (m && typeof m.igtHoras === 'number') interno = Math.round(m.igtHoras * 3600);
+      } catch (e) { /* jogo fechado e nada guardado ainda */ }
+      return Object.assign({}, t, { internoSegundos: interno });
+    })(),
     // Conquistas do Steam, lidas do cache local: sem chave de API, sem depender
     // de o perfil ser público.
     achievements: (() => {
