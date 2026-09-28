@@ -771,6 +771,37 @@ check('o público não recebe quando a pessoa jogou', () => {
 });
 
 /*
+ * A regra acima nomeia dois campos, e foi por isso que um terceiro passou: a
+ * leitura de mortes levava um carimbo de hora que, com o jogo fechado, era a
+ * ultima vez que ele foi visto aberto -- o last played por outro nome. A pagina
+ * nunca leu o campo; ele ia de carona.
+ *
+ * Entao aqui a regra deixa de ser por nome e passa a ser por forma: nenhuma
+ * data em lugar nenhum do arquivo publico, com uma excecao declarada para
+ * 'generatedAt', que diz quando o arquivo foi montado e nao quando se jogou (o
+ * servico monta em ciclo fixo, jogando ou nao).
+ */
+check('nenhum carimbo de hora sobra no arquivo publico', () => {
+  const HORA = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/;
+  const PERMITIDOS = new Set(['generatedAt']);
+  const limpo = publish.sanitizar(progressoLocal());
+  const achados = [];
+  (function anda(v, caminho) {
+    if (v === null || v === undefined) return;
+    if (typeof v === 'string') {
+      if (HORA.test(v) && !PERMITIDOS.has(caminho)) achados.push(caminho);
+      return;
+    }
+    if (Array.isArray(v)) { v.forEach((x, i) => anda(x, caminho + '[' + i + ']')); return; }
+    if (typeof v === 'object') {
+      for (const k of Object.keys(v)) anda(v[k], caminho ? caminho + '.' + k : k);
+    }
+  }(limpo, ''));
+  assert(achados.length === 0, 'data publicada em: ' + achados.join(', '));
+  return 'so generatedAt carrega data, e ela nao diz quando se jogou';
+});
+
+/*
  * 11. O repositório se basta.
  *
  * Antes o repositório era só a página montada, com uma cópia do fonte dentro

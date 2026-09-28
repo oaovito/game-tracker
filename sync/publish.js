@@ -81,6 +81,18 @@ const PODAS = {
       descricaoOculta: x.descricaoOculta,
     })),
   }) : a),
+  /*
+   * Das mortes sai `em`, a hora da leitura.
+   *
+   * Parece inofensivo e nao e: quando o jogo esta fechado, `aoVivo` vem falso
+   * e essa hora passa a ser exatamente a ultima vez que o jogo foi visto
+   * aberto -- o last played por outro nome, que e o que o link publico nao
+   * pode entregar. A pagina nunca leu esse campo; ele estava indo de carona.
+   */
+  deaths: (d) => (d ? {
+    known: d.known, count: d.count, confidence: d.confidence,
+    how: d.how, escopo: d.escopo, aoVivo: d.aoVivo,
+  } : d),
   playtime: (p) => (p ? { minutos: p.minutos, horas: p.horas, fonte: p.fonte, internoSegundos: p.internoSegundos } : p),
 };
 
