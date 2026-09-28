@@ -693,6 +693,32 @@ async function rodar(log) {
   log(/@keyframes subir-alma \{[\s\S]*?opacity: 0;[\s\S]*?\n  \}/.test(src),
     'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
 
+  /*
+   * A alma é o Shinobi morto, em ícone chibi — e desenho, não gradiente.
+   *
+   * As duas primeiras versões falharam por motivos diferentes e instrutivos: a
+   * de bulbo com cauda lia como espermatozoide (cabeça redonda mais rabo
+   * afilado é esse desenho em qualquer contexto), e a seguinte tinha rosto,
+   * mas rosto de ninguém. O que se testa aqui são os três sinais que fazem
+   * reconhecer o personagem, mais o sinal de que está morto.
+   */
+  const simbolo = /<symbol id="almaChibi"[\s\S]*?<\/symbol>/.exec(src);
+  const svg = simbolo ? simbolo[0] : '';
+  log(!!svg, 'a alma é um ícone desenhado, não um borrão de gradiente',
+    svg ? svg.length + ' caracteres de caminho' : 'não achei o símbolo');
+  log(/olhos em ×/.test(svg) || /M8\.2 12\.1l2\.2 2\.2/.test(svg),
+    'tem olhos em ×, que é o sinal chibi de morto', 'dois pares de traços cruzados');
+  log(/abacaxi/.test(svg), 'tem o coque espetado', 'o sinal mais rápido do personagem');
+  log(/[Mm]echas prateadas/.test(svg) && /#d9e5f1/.test(svg),
+    'e as mechas prateadas em prata cheia',
+    'no tom anterior elas sumiam dentro do cabelo escuro');
+  log(/marca de prata no rosto/.test(svg), 'e a marca de prata no rosto', 'o terceiro sinal');
+  // Um símbolo usado cinco vezes, e não cinco cópias do mesmo caminho: cinco
+  // cópias seriam cinco lugares para corrigir quando o desenho mudar.
+  const usos = (src.match(/<use href="#almaChibi"\/>/g) || []).length;
+  log(usos === almas, 'desenhado uma vez e usado por todas',
+    usos + ' usos para ' + almas + ' almas');
+
   // O tempo de jogo: "h" no número, e nenhum nome de metal na tela.
   log(/\+ "h";/.test(src), 'o número de horas traz o "h"', 'colado no número');
   log(!/getElementById\("tempoRot"\)\.textContent = d\[1\]/.test(src),

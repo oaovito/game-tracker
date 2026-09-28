@@ -142,8 +142,12 @@
   .deaths-panel {
     position: relative;
     border: 1px solid rgba(214, 210, 200, 0.16);
+    /* Sala de velório: uma luz só, vinda de cima, e o resto caindo no escuro.
+       O fundo é mais fundo que o dos outros blocos de propósito — é o que dá
+       peso sem precisar de mais desenho na borda. */
     background:
-      radial-gradient(120% 80% at 50% 0%, rgba(228, 224, 214, 0.05), rgba(10, 10, 11, 0.6) 70%),
+      radial-gradient(90% 62% at 50% 0%, rgba(236, 232, 222, 0.085), rgba(236,232,222,0) 68%),
+      radial-gradient(140% 120% at 50% 42%, rgba(10, 10, 12, 0.35), rgba(4, 4, 5, 0.86) 88%),
       var(--bg-panel);
     border-radius: 0;
     padding: 40px 22px 20px;
@@ -215,12 +219,28 @@
     54%      { transform: translateX(1.5px)  skewX(-0.35deg); }
     79%      { transform: translateX(-1px)   skewX(0.2deg); }
   }
-  /* A barra do pé é só a sombra do pano no chão: sem listra, para não repetir
-     o padrão e trazer a zebra de volta. */
+  /*
+   * A névoa do chão, no lugar de uma sombra chapada.
+   *
+   * O bloco precisava de mais peso fúnebre sem voltar à listra, e o caminho
+   * não era mais padrão — era mais ATMOSFERA. Uma bruma baixa, que se move
+   * devagar e nunca fecha a mesma forma, dá sala de velório; uma segunda
+   * fileira de listras daria faixa de pedestre de novo.
+   */
   .deaths-panel::after {
-    left: 0; right: 0; bottom: 0;
-    height: 14px;
-    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
+    left: -10%; right: -10%; bottom: 0;
+    height: 74px;
+    background:
+      radial-gradient(60% 100% at 18% 100%, rgba(150,160,150,0.09), rgba(150,160,150,0) 72%),
+      radial-gradient(50% 100% at 52% 100%, rgba(170,180,170,0.11), rgba(170,180,170,0) 70%),
+      radial-gradient(64% 100% at 84% 100%, rgba(140,152,144,0.08), rgba(140,152,144,0) 74%),
+      linear-gradient(180deg, transparent, rgba(0,0,0,0.55));
+    animation: bruma 29s ease-in-out infinite;
+  }
+  @keyframes bruma {
+    0%, 100% { transform: translateX(0);    opacity: 0.85; }
+    33%      { transform: translateX(14px); opacity: 1; }
+    66%      { transform: translateX(-11px); opacity: 0.72; }
   }
   /*
    * Hitodama (人魂): no folclore japonês, a alma de um morto vista como um
@@ -232,26 +252,52 @@
    * primos entre si de propósito: 13s, 17s e 19s nunca voltam a coincidir, e é
    * isso que impede a leitura de "três coisas piscando em fila".
    */
+  /*
+   * O rosto.
+   *
+   * A primeira versão era um bulbo com um rabo fino atrás, e não havia como
+   * não ver espermatozoide: cabeça redonda mais cauda afilada é exatamente
+   * esse desenho, em qualquer contexto. O que conserta não é diminuir o rabo —
+   * é dar cara à coisa e trocar a cauda por fumaça larga, que dissolve em vez
+   * de afilar.
+   *
+   * A cara é de desespero, que é o que um 幽霊 japonês tem: órbitas fundas e
+   * escuras, e a boca aberta num lamento — alta e estreita, não um sorriso
+   * redondo. O desespero está no contraste, então as cavidades são quase
+   * pretas contra o pálido, e não cinzas.
+   */
+  /*
+   * A alma é o desenho, e o span só carrega o movimento e o brilho.
+   *
+   * A primeira versão era um bulbo com rabo fino, e lia como espermatozoide —
+   * cabeça redonda mais cauda afilada é esse desenho, em qualquer contexto. A
+   * segunda tinha cara, mas cara genérica. Esta é o próprio Shinobi morto, e
+   * o que a faz funcionar é ser ÍCONE: traço fechado, não gradiente. Gradiente
+   * some no fundo escuro e vira borrão.
+   */
   .alma {
     position: absolute;
-    bottom: 12px;
-    width: 9px; height: 12px;
-    border-radius: 50% 50% 46% 46%;
-    background: radial-gradient(60% 55% at 50% 38%,
-      #f2fbff 0%, #bfe8ff 34%, #7fb9e8 62%, rgba(99,140,200,0) 100%);
-    filter: blur(0.4px) drop-shadow(0 0 7px rgba(170,215,255,0.75));
+    bottom: 10px;
+    width: 28px; height: 30px;
     opacity: 0;
     pointer-events: none;
+    /* O halo é do espírito, não do desenho: fica no contêiner para envolver a
+       silhueta inteira em vez de cada caminho. */
+    filter: drop-shadow(0 0 9px rgba(178, 216, 250, 0.7))
+            drop-shadow(0 0 20px rgba(120, 170, 220, 0.35));
   }
-  /* O rastro: some para cima, que é de onde a alma veio. */
+  .alma svg { width: 100%; height: 100%; display: block; }
+  /* O rastro: fumaça larga embaixo, sem contorno — contorno é o que fazia o
+     rabo parecer cauda. */
   .alma::after {
     content: "";
     position: absolute;
-    left: 50%; top: 78%;
-    width: 3px; height: 16px;
-    margin-left: -1.5px;
-    border-radius: 50% 50% 60% 60%;
-    background: linear-gradient(180deg, rgba(191,232,255,0.6), rgba(191,232,255,0));
+    left: 50%; top: 82%;
+    width: 150%; height: 130%;
+    margin-left: -75%;
+    background: radial-gradient(50% 42% at 50% 0%,
+      rgba(200, 230, 252, 0.3) 0%, rgba(170, 210, 240, 0.12) 46%, rgba(150,195,230,0) 78%);
+    filter: blur(3px);
   }
   /* Cinco almas, não três, e em períodos primos entre si: 11, 13, 17, 19 e 23
      segundos só voltam a coincidir depois de mais de 17 horas, então o bloco
@@ -1545,13 +1591,46 @@
          próprio porque os dois pseudo-elementos do painel já são a cortina. -->
     <div class="manchas" aria-hidden="true"></div>
 
-    <!-- As almas: hitodama, o fogo-fátuo que no folclore japonês é a alma de
-         um morto. Sobem devagar, desviando, e apagam antes do topo. -->
-    <span class="alma a1" aria-hidden="true"></span>
-    <span class="alma a2" aria-hidden="true"></span>
-    <span class="alma a3" aria-hidden="true"></span>
-    <span class="alma a4" aria-hidden="true"></span>
-    <span class="alma a5" aria-hidden="true"></span>
+    <!--
+      As almas que sobem são o próprio Shinobi, morto, em ícone chibi: cabeça
+      grande, traço mínimo, e os três sinais que o identificam de relance — o
+      coque espetado como ponta de abacaxi, as mechas prateadas e a marca de
+      prata no rosto. Olhos em × porque está morto; é a convenção do desenho
+      chibi e dispensa qualquer outro sinal.
+
+      Um `symbol` desenhado uma vez e usado cinco: cinco cópias do mesmo
+      caminho seriam cinco lugares para corrigir quando o desenho mudar.
+    -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+      <symbol id="almaChibi" viewBox="0 0 24 26">
+        <!-- cabeça -->
+        <path d="M3.4 12.4c0-4.9 3.6-8.3 8.6-8.3s8.6 3.4 8.6 8.3c0 5.3-3.7 8.9-8.6 8.9s-8.6-3.6-8.6-8.9z" fill="#eaf4fb"/>
+        <!-- Cabelo: massa escura que desce pelas têmporas em duas madeixas,
+             passando da altura dos olhos. Terminado numa linha reta sobre a
+             testa ele lia como touca, não como cabelo. -->
+        <path d="M3.5 12.6C3.5 7 7.2 3.7 12 3.7s8.5 3.3 8.5 8.9c-.5-1.6-1-2.8-1.6-3.6-.3 1.6-.5 2.9-.6 4-.5-1.6-.9-3-1.2-4.4-2.4 1-7 1-9.4 0-.3 1.4-.7 2.8-1.2 4.4-.1-1.1-.3-2.4-.6-4-.6.8-1.1 2-1.6 3.6z" fill="#222a36"/>
+        <!-- Coque espetado, a ponta de abacaxi: é o sinal mais rápido de
+             reconhecimento, então é o maior dos três. -->
+        <path d="M10.4 4.4 12.1-.4l1.8 4.8 2.2-2.6-.7 3.4z" fill="#222a36"/>
+        <!-- Mechas prateadas. Vão por cima do cabelo e em prata cheia: no tom
+             anterior elas sumiam dentro do escuro e não existiam. -->
+        <path d="M9.6 4.1c-.8 1.4-1.3 2.8-1.5 4.3M14.6 4c.7 1.4 1.1 2.9 1.3 4.4M12.2 1.1l.5 2.6"
+              stroke="#d9e5f1" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+        <!-- A marca de prata no rosto -->
+        <path d="M6.5 12.2c.6 1.4.7 2.8.4 4.2" stroke="#dbe6f2" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <!-- olhos em ×: está morto -->
+        <path d="M8.2 12.1l2.2 2.2M10.4 12.1l-2.2 2.2M13.8 12.1l2.2 2.2M16 12.1l-2.2 2.2" stroke="#0b131e" stroke-width="1.1" stroke-linecap="round"/>
+        <!-- boca aberta, pequena -->
+        <ellipse cx="12.1" cy="17.4" rx="1.5" ry="1.9" fill="#0b131e"/>
+      </symbol>
+    </svg>
+
+    <!-- As almas sobem devagar, desviando, e apagam antes do topo. -->
+    <span class="alma a1" aria-hidden="true"><svg viewBox="0 0 24 26"><use href="#almaChibi"/></svg></span>
+    <span class="alma a2" aria-hidden="true"><svg viewBox="0 0 24 26"><use href="#almaChibi"/></svg></span>
+    <span class="alma a3" aria-hidden="true"><svg viewBox="0 0 24 26"><use href="#almaChibi"/></svg></span>
+    <span class="alma a4" aria-hidden="true"><svg viewBox="0 0 24 26"><use href="#almaChibi"/></svg></span>
+    <span class="alma a5" aria-hidden="true"><svg viewBox="0 0 24 26"><use href="#almaChibi"/></svg></span>
 
     <div class="deaths-head" role="group" aria-label="Deaths">
       <span class="deaths-kanji">死</span>
