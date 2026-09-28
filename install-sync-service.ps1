@@ -110,5 +110,4 @@ foreach ($ip in $ips) {
 
 Write-Host ""
 Write-Host "A partir de agora sobe sozinho no login. Nao precisa abrir nada." -ForegroundColor Green
-Write-Host "QR atualizado em: $(Join-Path $PSScriptRoot 'qr-acesso.svg')" -ForegroundColor DarkGray
 Write-Host "Para remover: .\uninstall-sync-service.ps1" -ForegroundColor Yellow

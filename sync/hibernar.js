@@ -43,7 +43,6 @@ const GUARDAR = [
   ['deaths.json', 'o que a busca do contador de mortes já descobriu'],
   ['sync/offsets.json', 'os offsets e nomes verificados'],
   ['sync/.state.json', 'qual slot é o seu'],
-  ['qr-acesso.svg', 'o QR do endereço na rede local'],
 ];
 
 function copiar(de, para) {

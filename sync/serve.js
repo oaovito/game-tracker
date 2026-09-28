@@ -12,7 +12,6 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const qr = require('./qr');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -183,15 +182,7 @@ function start(options) {
 
       if (lanUrl) {
         console.log('');
-        console.log('  Aponte a câmera do celular para o QR abaixo:');
-        console.log('');
-        try {
-          console.log(qr.toAnsi(qr.encode(lanUrl, 'L')));
-        } catch (e) {
-          console.log(`  (não consegui desenhar o QR: ${e.message})`);
-        }
-        console.log('');
-        console.log(`  ${lanUrl}`);
+        console.log(`  na rede local: ${lanUrl}`);
       } else {
         console.log('');
         console.log('  Nenhum IP de rede local encontrado - só dá para abrir nesta máquina.');
@@ -206,7 +197,23 @@ function start(options) {
   });
 }
 
-module.exports = { start, listenExtra, createServer, localAddresses, isPrivate, isApipa };
+/**
+ * O endereço desta máquina na rede local, ou null enquanto não houver IP.
+ *
+ * Morava no gerador de QR, que saiu do projeto: a página é acessada pelo link
+ * público, e um QR que ninguém aponta a câmera para é 536 linhas de código
+ * para manter à toa. A função em si continua útil — o serviço avisa no log
+ * quando o IP muda — então desceu para cá, que é onde o servidor já sabe
+ * quais são os endereços.
+ */
+function lanUrl(porta, indice) {
+  const addrs = localAddresses();
+  if (!addrs.length) return null;
+  const p = porta || Number(process.env.PORT || 8777);
+  return `http://${addrs[0].address}:${p}/${indice || 'trackeroao.html'}`;
+}
+
+module.exports = { start, listenExtra, createServer, localAddresses, lanUrl, isPrivate, isApipa };
 
 // ----------------------------------------------------------------------- CLI
 if (require.main === module) {

@@ -46,17 +46,16 @@ Isso sobe duas coisas:
   enquanto o jogo está aberto é que o watcher do save existe. Com o jogo
   fechado não há handle aberto no arquivo nem leitura de 11 MB.
 - **o servidor** — escuta em `0.0.0.0:8777`, então dá para abrir do celular.
-  Ao subir ele imprime o IP da máquina na rede e desenha um QR code no
-  terminal; aponte a câmera e abre direto.
+  Ao subir ele imprime o IP da máquina na rede local.
 
 Outros comandos:
 
 ```bash
-npm run selftest    # confere QR, leitura do save e parsing nesta máquina
+npm run selftest    # confere a leitura do save e o parsing nesta máquina
 npm run sync        # lê o save uma vez e escreve progress.json
 npm run serve       # só o servidor, sem o watcher
 npm run discover    # descoberta por diff (veja abaixo)
-npm run qr          # grava qr-acesso.svg com o endereço da LAN
+
 ```
 
 Se o celular não abrir, libere a porta 8777 no Firewall do Windows para redes
@@ -70,8 +69,6 @@ funcionar. Duas saídas:
 
 - **Definitiva:** reserve o IP da máquina no roteador (DHCP reservation). Aí o
   endereço nunca muda e o link vale para sempre.
-- **Paliativa:** o serviço regrava `qr-acesso.svg` a cada boot com o endereço
-  atual, e o log sempre traz a URL nas primeiras linhas.
 
 ### Diagnóstico
 
@@ -329,7 +326,7 @@ trackeroao/
     publish.js                monta docs/ e barra o que identificaria a máquina
     serve.js                  servidor estático + IP da LAN
     mdns.js                   nome .local na rede, sem dependência
-    qr.js / qrfile.js         QR do endereço da LAN, sem dependência
+
     oculto.vbs                sobe o serviço sem janela, via wscript do Windows
 
     instalacao.js             detecta se o jogo foi desinstalado
@@ -358,5 +355,3 @@ Fora do git, porque nascem em tempo de execução e carregam dados da máquina:
   do servidor.
 - **números errados** — provavelmente é o slot. Veja qual o terminal escolheu
   e fixe com `"slot": N` no `offsets.json`.
-- **o QR não aparece direito** — o terminal precisa de cores ANSI. O endereço
-  é impresso em texto logo abaixo do QR de qualquer jeito.

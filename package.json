@@ -9,7 +9,6 @@
     "serve": "node sync/serve.js",
     "discover": "node sync/discover.js",
     "selftest": "node sync/selftest.js",
-    "qr": "node sync/qrfile.js",
     "auditoria": "node sync/auditoria.js",
     "tempo": "node sync/tempo.js",
     "icones": "node sync/icones.js",

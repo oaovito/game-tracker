@@ -14,7 +14,6 @@ const fs = require('fs');
 const path = require('path');
 
 const RAIZ_PROJETO = path.join(__dirname, '..');
-const qr = require('./qr');
 const sl2 = require('./sl2');
 const inventory = require('./inventory');
 const parse = require('./parse');
@@ -69,71 +68,6 @@ function progressoLocal() {
   return JSON.parse(fs.readFileSync(arq, 'utf8'));
 }
 
-console.log('\n  === 1. Gerador de QR ===');
-
-check('encoda uma URL de LAN', () => {
-  const m = qr.encode('http://192.168.1.10:8777/trackeroao.html', 'L');
-  assert(m.size === m.version * 4 + 17, 'tamanho não bate com a versão');
-  assert(m.grid.length === m.size, 'altura da matriz errada');
-  assert(m.grid.every((r) => r.length === m.size), 'linha com largura errada');
-  return `versão ${m.version}, ${m.size}x${m.size}, máscara ${m.mask}`;
-});
-
-check('desenha os três finder patterns', () => {
-  const m = qr.encode('teste', 'L');
-  const finderAt = (cx, cy) => {
-    // centre 3x3 dark, ring at distance 2 light, ring at distance 3 dark
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dx = -3; dx <= 3; dx++) {
-        const d = Math.max(Math.abs(dx), Math.abs(dy));
-        const want = d !== 2;
-        if (m.grid[cy + dy][cx + dx] !== want) return false;
-      }
-    }
-    return true;
-  };
-  assert(finderAt(3, 3), 'finder superior esquerdo errado');
-  assert(finderAt(m.size - 4, 3), 'finder superior direito errado');
-  assert(finderAt(3, m.size - 4), 'finder inferior esquerdo errado');
-  return 'os 3 conferem';
-});
-
-check('timing pattern alterna', () => {
-  const m = qr.encode('teste', 'L');
-  for (let i = 8; i < m.size - 8; i++) {
-    assert(m.grid[6][i] === (i % 2 === 0), `timing horizontal quebrado em ${i}`);
-    assert(m.grid[i][6] === (i % 2 === 0), `timing vertical quebrado em ${i}`);
-  }
-  return 'horizontal e vertical';
-});
-
-check('escolhe versões maiores conforme o texto cresce', () => {
-  const small = qr.encode('oi', 'L').version;
-  const big = qr.encode('x'.repeat(200), 'L').version;
-  assert(big > small, 'a versão não cresceu');
-  return `${small} -> ${big}`;
-});
-
-check('recusa texto grande demais em vez de gerar lixo', () => {
-  let threw = false;
-  try {
-    qr.encode('x'.repeat(5000), 'L');
-  } catch (e) {
-    threw = true;
-  }
-  assert(threw, 'deveria ter lançado erro');
-  return 'erro lançado como esperado';
-});
-
-check('known-answer: QR do texto "HELLO WORLD" nível M', () => {
-  // Byte-mode "HELLO WORLD" at level M is version 1. Verifying the derived
-  // capacity numbers catches a wrong ECC table, which is the one thing here
-  // that comes from a lookup rather than a formula.
-  const m = qr.encode('HELLO WORLD', 'M');
-  assert(m.version === 1, `esperava versão 1, veio ${m.version}`);
-  assert(m.size === 21, `esperava 21x21, veio ${m.size}`);
-  return 'versão 1, 21x21';
-});
 
 console.log('\n  === 2. Arquivo de save ===');
 
@@ -296,20 +230,14 @@ check('ignora endereços APIPA (169.254.x) ao escolher o IP da LAN', () => {
   return addrs.length ? addrs.map((a) => a.address).join(', ') : 'sem rede agora';
 });
 
-check('anuncia e regrava o QR quando a rede aparece depois do boot', () => {
+check('anuncia quando a rede aparece depois do boot', () => {
   // O serviço sobe segundos após o logon, antes de o Wi-Fi associar. Este é o
-  // caso que quebrou de verdade num reboot: sem IP no arranque, o QR não era
-  // gravado e o log dizia que não havia rede.
+  // caso que quebrou de verdade num reboot: sem IP no arranque, o serviço
+  // dizia que não havia rede e nunca mais reavaliava.
   const main = require('./main');
   const linhas = [];
   const original = console.log;
   console.log = (...a) => linhas.push(a.join(' '));
-
-  // vigiarRede regrava o QR de verdade; guardar e devolver, senão o teste
-  // deixa o arquivo apontando para um IP inventado.
-  const qrPath = path.join(__dirname, '..', 'qr-acesso.svg');
-  const existiaQr = fs.existsSync(qrPath);
-  const qrAntes = existiaQr ? fs.readFileSync(qrPath) : null;
 
   let url = null;
   let v;
@@ -324,15 +252,12 @@ check('anuncia e regrava o QR quando a rede aparece depois do boot', () => {
   } finally {
     console.log = original;
     if (v && v.timer) clearInterval(v.timer);
-    if (existiaQr) fs.writeFileSync(qrPath, qrAntes);
-    else if (fs.existsSync(qrPath)) fs.unlinkSync(qrPath);
   }
 
   const texto = linhas.join('\n');
   assert(/sem IP de rede local/.test(texto), 'não avisou que começou sem IP');
   assert(/disponível na rede: http:\/\/192\.168\.1\.50/.test(texto), 'não anunciou o IP quando apareceu');
   assert(/o IP mudou de 192\.168\.1\.50 para 192\.168\.1\.77/.test(texto), 'não detectou a troca de IP');
-  assert(/regravado/.test(texto), 'não regravou o QR');
   return 'sem rede -> aparece -> muda -> some';
 });
 

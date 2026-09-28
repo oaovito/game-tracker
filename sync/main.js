@@ -26,7 +26,6 @@ const mdns = require('./mdns');
 const publish = require('./publish');
 const instalacao = require('./instalacao');
 const hibernar = require('./hibernar');
-const qrfile = require('./qrfile');
 
 // --------------------------------------------------------------------- log
 // Instalado como tarefa agendada, o processo roda oculto e o stdout se perde.
@@ -63,8 +62,8 @@ function hookConsole() {
           .map((a) => (typeof a === 'string' ? a : require('util').inspect(a)))
           .join(' ');
         const limpo = bruto.replace(ANSI, '');
-        // O QR é desenhado com blocos coloridos: sem as cores sobram centenas
-        // de linhas só de espaço, que não dizem nada num arquivo de log.
+        // Linha só de espaços com muito conteúdo bruto é resto de desenho no
+        // terminal: não diz nada num arquivo de log.
         if (limpo.trim() === '' && bruto.length > 40) return;
         fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${limpo}\n`);
       } catch (e) {
@@ -465,18 +464,17 @@ function stopWatching() {
 /*
  * Como serviço, este processo sobe segundos depois do logon - antes de o Wi-Fi
  * associar. Nesse instante não existe IP de LAN, então não adianta anunciar a
- * URL nem gravar o QR uma vez só no boot. Aqui ficamos de olho: quando um
- * endereço aparece (ou muda, por DHCP), anunciamos e regravamos o QR, para que
- * o arquivo na pasta esteja sempre certo sem ninguém rodar nada.
+ * URL uma vez só no boot. Aqui ficamos de olho: quando um endereço aparece
+ * (ou muda, por DHCP), o mDNS reanuncia e o log registra.
  */
 let ultimoIp = null;
 
 /**
  * `obterUrl` existe para poder testar as transições sem depender da placa de
- * rede real; em produção é sempre qrfile.lanUrl.
+ * rede real; em produção é sempre serve.lanUrl.
  */
 function vigiarRede(obterUrl, intervalo, aoMudar) {
-  const fonte = obterUrl || qrfile.lanUrl;
+  const fonte = obterUrl || (() => serve.lanUrl(PORT));
   const avisar = (ip) => { try { if (aoMudar) aoMudar(ip); } catch (e) { /* gancho não derruba o watcher */ } };
   const checar = () => {
     let url = null;
@@ -501,13 +499,6 @@ function vigiarRede(obterUrl, intervalo, aoMudar) {
         ? `  [rede] o IP mudou de ${antes} para ${ip}`
         : `  [rede] disponível na rede: ${url}`
     );
-    try {
-      const svg = path.join(ROOT, 'qr-acesso.svg');
-      fs.writeFileSync(svg, qrfile.toSvg(require('./qr').encode(url, 'L'), url));
-      console.log(`  [qr] ${svg} regravado`);
-    } catch (e) {
-      console.log(`  [qr] não consegui regravar: ${e.message}`);
-    }
     avisar(ip);
   };
   checar();

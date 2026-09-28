@@ -14,7 +14,6 @@
 sync/.state.json
 
 # --- gerados ---
-qr-acesso.svg
 auditoria-publica.txt
 sync/trackeroao.log
 sync/trackeroao.log*
