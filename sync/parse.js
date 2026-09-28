@@ -19,6 +19,7 @@ const deathsmem = require('./deathsmem');
 const tempo = require('./tempo');
 const bosskills = require('./bosskills');
 const achievements = require('./achievements');
+const conquistas = require('./conquistas');
 const efeitos = require('./efeitos');
 const memoria = require('./memoria');
 
@@ -473,7 +474,63 @@ function buildProgress(options) {
   // contagem para saber quantas conquistas caíram nesta sessão. Ler o arquivo
   // do Steam duas vezes por ciclo seria trabalho repetido para o mesmo número.
   const conq = (() => {
-    try { return achievements.conquistas({ conta: tempo.contaDoSave(file) }); } catch (e) { return null; }
+    let c = null;
+    try { c = achievements.conquistas({ conta: tempo.contaDoSave(file) }); } catch (e) { return null; }
+    if (!c || !Array.isArray(c.lista)) return c;
+    /*
+     * Ícone e dificuldade entram por NOME, não por posição.
+     *
+     * A tabela vem da página pública de estatísticas do Steam, colhida uma vez
+     * por `npm run conquistas`. A primeira tentativa ligou os dois lados pela
+     * ordem — primeira linha da página com a primeira chave interna — e o
+     * acerto foi zero em 34: teria posto a arte de cada conquista na
+     * conquista errada, sem nada falhar.
+     */
+    let tabela = null;
+    try { tabela = conquistas.carregar(); } catch (e) { tabela = null; }
+    if (!tabela) return c;
+    const lista = c.lista.map((a) => {
+      const t = tabela[conquistas.slug(a.nome)];
+      const extra = t
+        ? { icone: t.icone, dificuldade: t.dificuldade, raridade: t.percent }
+        : {};
+      /*
+       * Toda conquista tem descrição, inclusive as 23 ocultas.
+       *
+       * O jogo esconde o texto delas até você desbloquear, e a Steam também —
+       * "hidden until unlocked" na tela não dizia nada a quem quer saber o que
+       * falta. A reserva vem da lista de troféus do PlayStation, que é o mesmo
+       * conjunto no mesmo jogo, e é copiada, não escrita por mim.
+       *
+       * `descricaoOculta` marca de onde veio, para a página poder dizer que
+       * aquilo não é o texto que o jogo mostraria.
+       */
+      if (!a.descricao) {
+        const r = conquistas.descricaoDeReserva(a.nome);
+        if (r) { extra.descricao = r; extra.descricaoOculta = true; }
+      }
+      return Object.assign({}, a, extra);
+    });
+
+    /*
+     * A mais rara de todas ganha a marca de shinobi.
+     *
+     * Calculada, e não escrita à mão: a porcentagem global muda com o tempo, e
+     * um nome fixo no código continuaria apontando para a conquista errada
+     * depois que outra a ultrapassasse. Hoje é a "Sekiro", que pede todas as
+     * outras — o que faz dela a marca certa por mérito, não por acaso.
+     *
+     * Empate não existe na prática (são porcentagens com uma casa), mas se
+     * houver, a primeira leva: duas marcas diluiriam o sentido de ter uma.
+     */
+    let maisRara = null;
+    for (const a of lista) {
+      if (typeof a.raridade !== 'number') continue;
+      if (!maisRara || a.raridade < maisRara.raridade) maisRara = a;
+    }
+    if (maisRara) maisRara.shinobi = true;
+
+    return Object.assign({}, c, { lista });
   })();
 
   let saveModified = null;

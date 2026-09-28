@@ -63,7 +63,24 @@ function fonteLimpa(source) {
  */
 const PODAS = {
   // A hora de cada conquista diz quando a pessoa jogou, igual ao last played.
-  achievements: (a) => (a ? Object.assign({}, a, { lista: a.lista.map((x) => ({ bloco: x.bloco, stat: x.stat, nome: x.nome, descricao: x.descricao, oculta: x.oculta, conquistada: x.conquistada })) }) : a),
+  /*
+   * Das conquistas sai a hora de cada desbloqueio, e só ela.
+   *
+   * A lista é por campo que ENTRA, como a de cima, e isso já cobrou o preço
+   * uma vez: ícone, dificuldade e raridade nasceram e sumiram do site sem
+   * nada falhar, porque não estavam escritos aqui. Nenhum dos três é privado
+   * — caminho de arquivo local, faixa calculada, e porcentagem que a Steam
+   * publica para todo mundo. O que não pode passar é `em`, a hora, que diz
+   * quando a pessoa estava jogando.
+   */
+  achievements: (a) => (a ? Object.assign({}, a, {
+    lista: a.lista.map((x) => ({
+      bloco: x.bloco, stat: x.stat, nome: x.nome, descricao: x.descricao,
+      oculta: x.oculta, conquistada: x.conquistada,
+      icone: x.icone, dificuldade: x.dificuldade, raridade: x.raridade, shinobi: x.shinobi,
+      descricaoOculta: x.descricaoOculta,
+    })),
+  }) : a),
   playtime: (p) => (p ? { minutos: p.minutos, horas: p.horas, fonte: p.fonte, internoSegundos: p.internoSegundos } : p),
 };
 

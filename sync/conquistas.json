@@ -1,0 +1,206 @@
+{
+ "revered-blade": {
+  "nome": "Revered Blade",
+  "percent": 94,
+  "dificuldade": "facil",
+  "icone": "icones/conquistas/revered-blade.jpg"
+ },
+ "shinobi-prosthetic": {
+  "nome": "Shinobi Prosthetic",
+  "percent": 89.6,
+  "dificuldade": "facil",
+  "icone": "icones/conquistas/shinobi-prosthetic.jpg"
+ },
+ "resurrection": {
+  "nome": "Resurrection",
+  "percent": 85.5,
+  "dificuldade": "facil",
+  "icone": "icones/conquistas/resurrection.jpg"
+ },
+ "memorial-mob": {
+  "nome": "Memorial Mob",
+  "percent": 59.2,
+  "dificuldade": "facil",
+  "icone": "icones/conquistas/memorial-mob.jpg"
+ },
+ "gyoubu-masataka-oniwa": {
+  "nome": "Gyoubu Masataka Oniwa",
+  "percent": 57.2,
+  "dificuldade": "facil",
+  "icone": "icones/conquistas/gyoubu-masataka-oniwa.jpg"
+ },
+ "the-phantom-lady-butterfly": {
+  "nome": "The Phantom Lady Butterfly",
+  "percent": 46.6,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/the-phantom-lady-butterfly.jpg"
+ },
+ "genichiro-ashina": {
+  "nome": "Genichiro Ashina",
+  "percent": 45.3,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/genichiro-ashina.jpg"
+ },
+ "folding-screen-monkeys": {
+  "nome": "Folding Screen Monkeys",
+  "percent": 41.7,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/folding-screen-monkeys.jpg"
+ },
+ "guardian-ape": {
+  "nome": "Guardian Ape",
+  "percent": 39.8,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/guardian-ape.jpg"
+ },
+ "master-of-the-arts": {
+  "nome": "Master of the Arts",
+  "percent": 38.9,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/master-of-the-arts.jpg"
+ },
+ "great-shinobi-owl": {
+  "nome": "Great Shinobi - Owl",
+  "percent": 36.5,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/great-shinobi-owl.jpg"
+ },
+ "ashina-traveler": {
+  "nome": "Ashina Traveler",
+  "percent": 35.8,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/ashina-traveler.jpg"
+ },
+ "corrupted-monk": {
+  "nome": "Corrupted Monk",
+  "percent": 35.8,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/corrupted-monk.jpg"
+ },
+ "gracious-gift-of-tears": {
+  "nome": "Gracious Gift of Tears",
+  "percent": 34.8,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/gracious-gift-of-tears.jpg"
+ },
+ "guardian-ape-immortality-severed": {
+  "nome": "Guardian Ape Immortality Severed",
+  "percent": 33.7,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/guardian-ape-immortality-severed.jpg"
+ },
+ "all-ninjutsu-techniques": {
+  "nome": "All Ninjutsu Techniques",
+  "percent": 33.5,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/all-ninjutsu-techniques.jpg"
+ },
+ "great-serpent": {
+  "nome": "Great Serpent",
+  "percent": 32.5,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/great-serpent.jpg"
+ },
+ "sword-saint-isshin-ashina": {
+  "nome": "Sword Saint, Isshin Ashina",
+  "percent": 31.5,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/sword-saint-isshin-ashina.jpg"
+ },
+ "all-prosthetic-tools": {
+  "nome": "All Prosthetic Tools",
+  "percent": 31.2,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/all-prosthetic-tools.jpg"
+ },
+ "ultimate-healing-gourd": {
+  "nome": "Ultimate Healing Gourd",
+  "percent": 27.1,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/ultimate-healing-gourd.jpg"
+ },
+ "demon-of-hatred": {
+  "nome": "Demon of Hatred",
+  "percent": 26.5,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/demon-of-hatred.jpg"
+ },
+ "immortal-severance": {
+  "nome": "Immortal Severance",
+  "percent": 24,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/immortal-severance.jpg"
+ },
+ "great-colored-carp": {
+  "nome": "Great Colored Carp",
+  "percent": 22.8,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/great-colored-carp.jpg"
+ },
+ "father-surpassed": {
+  "nome": "Father Surpassed",
+  "percent": 22.1,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/father-surpassed.jpg"
+ },
+ "peak-physical-strength": {
+  "nome": "Peak Physical Strength",
+  "percent": 21.4,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/peak-physical-strength.jpg"
+ },
+ "lazuline-upgrade": {
+  "nome": "Lazuline Upgrade",
+  "percent": 21.2,
+  "dificuldade": "media",
+  "icone": "icones/conquistas/lazuline-upgrade.jpg"
+ },
+ "shura": {
+  "nome": "Shura",
+  "percent": 19.2,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/shura.jpg"
+ },
+ "isshin-ashina": {
+  "nome": "Isshin Ashina",
+  "percent": 19.2,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/isshin-ashina.jpg"
+ },
+ "dragon-s-homecoming": {
+  "nome": "Dragon's Homecoming",
+  "percent": 19,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/dragon-s-homecoming.jpg"
+ },
+ "purification": {
+  "nome": "Purification",
+  "percent": 16.9,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/purification.jpg"
+ },
+ "man-without-equal": {
+  "nome": "Man Without Equal",
+  "percent": 14.7,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/man-without-equal.jpg"
+ },
+ "height-of-technique": {
+  "nome": "Height of Technique",
+  "percent": 13.8,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/height-of-technique.jpg"
+ },
+ "master-of-the-prosthetic": {
+  "nome": "Master of the Prosthetic",
+  "percent": 13.4,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/master-of-the-prosthetic.jpg"
+ },
+ "sekiro": {
+  "nome": "Sekiro",
+  "percent": 10,
+  "dificuldade": "dificil",
+  "icone": "icones/conquistas/sekiro.jpg"
+ }
+}

@@ -13,6 +13,7 @@
     "auditoria": "node sync/auditoria.js",
     "tempo": "node sync/tempo.js",
     "icones": "node sync/icones.js",
+    "conquistas": "node sync/conquistas.js",
     "deaths": "node sync/deathsmem.js",
     "mem": "node sync/memoria.js",
     "instalacao": "node sync/instalacao.js"

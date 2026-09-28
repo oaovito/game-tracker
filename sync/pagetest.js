@@ -854,6 +854,58 @@ async function rodar(log) {
     'menos movimento vence as animações que desliga',
     'declarado em ' + iReduz + ', depois da última animação em ' + iUltima);
 
+  // --- a lista de conquistas ---
+  const conqs = (progress.achievements && progress.achievements.lista) || [];
+  log(/\.conq-lista \{[^}]*flex-direction: column/.test(src),
+    'as conquistas ficam em lista de uma coluna, não em grade',
+    'nome e descrição têm comprimentos muito diferentes; em grade sobram buracos');
+  log(/\.quadro-anel::after \{[\s\S]*?content: "▾"/.test(src),
+    'o bloco mostra que pode ser aberto', 'a mesma seta dos blocos de chefe');
+
+  const semDesc = conqs.filter((c) => !c.descricao);
+  log(semDesc.length === 0, 'toda conquista tem descrição',
+    semDesc.length ? semDesc.length + ' sem texto: ' + semDesc.slice(0, 3).map((c) => c.nome).join(', ')
+      : conqs.length + ' de ' + conqs.length);
+  const daReserva = conqs.filter((c) => c.descricaoOculta).length;
+  log(daReserva > 0, 'e as ocultas vêm marcadas como texto de reserva',
+    daReserva + ' das ' + conqs.length + ' o jogo esconde até desbloquear');
+
+  const semIcone = conqs.filter((c) => !c.icone);
+  log(semIcone.length === 0, 'toda conquista tem ícone',
+    semIcone.length ? semIcone.length + ' sem arte' : conqs.length + ' baixados');
+  const faixas = new Set(conqs.map((c) => c.dificuldade).filter(Boolean));
+  log(faixas.size === 3, 'separadas em três faixas de dificuldade',
+    [...faixas].join(', '));
+
+  /*
+   * A dificuldade sai da raridade, e a raridade é dado da Steam — não opinião.
+   * O teste confere a consequência disso: dentro de cada faixa as
+   * porcentagens têm de ficar nos intervalos declarados, senão alguém mexeu na
+   * classificação à mão em algum lugar.
+   */
+  const dentroDaFaixa = conqs.every((c) => {
+    if (typeof c.raridade !== 'number') return true;
+    if (c.dificuldade === 'facil') return c.raridade >= 50;
+    if (c.dificuldade === 'media') return c.raridade >= 20 && c.raridade < 50;
+    return c.raridade < 20;
+  });
+  log(dentroDaFaixa, 'e a faixa concorda com a porcentagem de jogadores',
+    'fácil ≥50%, média 20–50%, difícil <20%');
+
+  // A marca de shinobi: uma só, e na mais rara de todas.
+  const comTag = conqs.filter((c) => c.shinobi);
+  const maisRara = conqs.slice().sort((a, b) => (a.raridade || 100) - (b.raridade || 100))[0];
+  log(comTag.length === 1, 'existe uma marca de shinobi, e uma só',
+    comTag.length + ' marcadas');
+  log(comTag.length === 1 && maisRara && comTag[0].nome === maisRara.nome,
+    'e ela está na conquista mais rara de todas',
+    comTag[0] ? comTag[0].nome + ' (' + comTag[0].raridade + '%)' : 'nenhuma');
+  log(/const SHINOBI_VISTO/.test(src) && /antes === "1" \|\| antes === null/.test(src),
+    'o 忍殺 só corre na transição, não a cada leitura',
+    'a página relê de 5 em 5s; sem isso o site piscaria para sempre');
+  log(/\.golpe \{[^}]*pointer-events: none/.test(src),
+    'e a cena não rouba o clique de nada', 'pointer-events: none');
+
   // O menu não pode precisar de arrasto: no celular o último item ficava
   // cortado na borda e só aparecia se você puxasse de lado.
   const menuCel = /@media \(max-width: 460px\) \{[\s\S]*?\n  \}/.exec(src);
