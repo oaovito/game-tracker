@@ -95,13 +95,32 @@
      cantoneiras. É o vocabulário de moldura do jogo — canto sempre reforçado,
      nunca arredondado — feito com a paleta que a página já tem, sem cor nova.
      Cantos retos de propósito: o raio de 3px amolecia a peça. */
+  /* --- luto ---
+   *
+   * O bloco de mortes deixou de ser uma placa dourada com sangue e passou a
+   * ser um velório. Isso separa os dois contadores: o de chefes é violência,
+   * e sangra; este é a conta de quem morreu, e guarda luto.
+   *
+   * A moldura é o 鯨幕 (kujira-maku), a cortina de listras pretas e brancas
+   * alternadas que se arma em velório japonês — chamada assim porque a baleia
+   * é preta e branca. Ela vem faixa a faixa no topo e na base, não como borda
+   * inteira, que é como a cortina se pendura de verdade.
+   *
+   * O branco não é escolha de contraste: até antes da era Shōwa o luto no
+   * Japão era branco, e o preto só entra depois, por influência ocidental. O
+   * Sekiro se passa muito antes disso, então o branco é a cor certa para o
+   * período, e o dourado sai porque ouro é celebração.
+   */
   .deaths-panel {
     position: relative;
-    border: 1px solid var(--line);
-    background: var(--bg-panel);
+    border: 1px solid rgba(214, 210, 200, 0.16);
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(228, 224, 214, 0.05), rgba(10, 10, 11, 0.6) 70%),
+      var(--bg-panel);
     border-radius: 0;
-    padding: 20px 22px 18px;
+    padding: 26px 22px 18px;
     margin-bottom: 26px;
+    overflow: hidden;
   }
   .deaths-panel::before,
   .deaths-panel::after {
@@ -109,36 +128,48 @@
     position: absolute;
     pointer-events: none;
   }
-  /* fio interno */
+  /* A cortina: listras de 26px, brancas e pretas, no alto e no pé do bloco.
+     A de baixo é mais apagada, como pano no escuro longe da vela. */
   .deaths-panel::before {
-    inset: 5px;
-    border: 1px solid var(--gold);
-    opacity: 0.3;
-  }
-  /* cantoneiras: oito faixas, duas por canto */
-  .deaths-panel::after {
-    inset: 0;
+    left: 0; right: 0; top: 0;
+    height: 10px;
+    /* Duas camadas: as listras, e por cima um escurecimento de alto a baixo
+       que faz a faixa ler como pano pendurado e não como fita chapada. */
     background:
-      linear-gradient(var(--gold), var(--gold)) 0 0 / 16px 2px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 0 0 / 2px 16px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 100% 0 / 16px 2px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 100% 0 / 2px 16px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 0 100% / 16px 2px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 0 100% / 2px 16px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 100% 100% / 16px 2px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 100% 100% / 2px 16px no-repeat;
+      linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0) 45%, rgba(0,0,0,0.45)),
+      repeating-linear-gradient(90deg, #d9d5cb 0 22px, #0b0b0c 22px 44px);
+    opacity: 0.66;
+  }
+  .deaths-panel::after {
+    left: 0; right: 0; bottom: 0;
+    height: 6px;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1)),
+      repeating-linear-gradient(90deg, #d9d5cb 0 22px, #0b0b0c 22px 44px);
+    opacity: 0.3;
   }
   .deaths-head { display: flex; align-items: baseline; gap: 12px; }
   .deaths-kanji {
     font-family: var(--font-display);
     font-size: 1.9rem;
     font-weight: 800;
-    color: var(--blood-bright);
+    /* Osso, não sangue: o 死 fica pálido, e a luz que ele recebe oscila devagar
+       como a de uma vela num velório. */
+    color: #cfcabd;
     line-height: 1;
+    text-shadow: 0 0 10px rgba(226, 222, 212, 0.35);
+    animation: vela 6.4s ease-in-out infinite;
   }
-  /* O número de mortes sangra: o vermelho escorre de cima para baixo dentro do
-     glifo, e uma gota cai da base de tempos em tempos. Duas animações
-     independentes, para não ficar um pulso só, mecânico. */
+  /*
+   * O número é lápide.
+   *
+   * O que o gradiente faz aqui é o contrário do de antes: no bloco de chefes a
+   * cor escorre de cima para baixo, como sangue descendo; aqui a claridade
+   * desce e para, como pedra que pega luz no alto e fica escura embaixo.
+   * A sombra interna inclina para o baixo-direita, que é onde a luz de uma
+   * vela posta à frente deixaria a sombra do sulco — é isso que dá a leitura
+   * de gravado em vez de impresso.
+   */
   .deaths-count {
     position: relative;
     font-family: var(--font-display);
@@ -149,45 +180,69 @@
     font-variant-numeric: tabular-nums;
     background-image: linear-gradient(
       180deg,
-      #ffd8cc 0%, #ff6a3d 18%, #d4462a 36%, #8c1a10 62%, #3d0a06 100%);
-    background-size: 100% 300%;
+      #f2efe7 0%, #cdc8bb 26%, #8e8a80 58%, #55524b 82%, #2e2c29 100%);
+    background-size: 100% 190%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     -webkit-text-fill-color: transparent;
-    animation: escorrer 2.4s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px rgba(212,70,42,0.8)) drop-shadow(0 2px 3px rgba(0,0,0,0.85));
+    /* Sem varredura de ponta a ponta: o luto não pulsa, respira. O deslocamento
+       é curto e lento de propósito. */
+    animation: luto 9.2s ease-in-out infinite;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.9))
+            drop-shadow(0 0 14px rgba(226, 222, 212, 0.22));
   }
-  @keyframes escorrer {
-    0%   { background-position: 50% 0%; }
-    45%  { background-position: 50% 100%; }
-    100% { background-position: 50% 0%; }
+  @keyframes luto {
+    0%, 100% { background-position: 50% 18%; }
+    50%      { background-position: 50% 46%; }
   }
-  /* A gota. Nasce colada na base do número e cai, sumindo no caminho. */
+  /*
+   * A fumaça do incenso, no lugar da gota de sangue.
+   *
+   * Em velório japonês se oferece incenso ao morto, e a fumaça é o que se vê
+   * subindo o tempo todo. Ela sobe da base do número, desvia de um lado para o
+   * outro e some antes de chegar ao topo — nunca completa o trajeto, que é
+   * como fumaça se comporta.
+   */
   .deaths-count::after {
     content: "";
     position: absolute;
-    left: 58%;
-    top: 92%;
-    width: 4px;
-    height: 13px;
-    border-radius: 0 0 60% 60%;
-    background: linear-gradient(180deg, #ff5b33, #8c1a10 65%, transparent);
+    left: 62%;
+    top: 4%;
+    width: 3px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(232, 229, 220, 0), rgba(232, 229, 220, 0.5));
+    filter: blur(2.5px);
     opacity: 0;
-    animation: pingar 3.1s ease-in infinite;
+    animation: incenso 7.6s ease-out infinite;
   }
-  @keyframes pingar {
-    0%, 30%  { transform: translateY(0) scaleY(0.3); opacity: 0; }
-    40%      { transform: translateY(4px) scaleY(1); opacity: 1; }
-    80%      { transform: translateY(46px) scaleY(1.8); opacity: 0.8; }
-    100%     { transform: translateY(78px) scaleY(2.4); opacity: 0; }
+  @keyframes incenso {
+    0%   { transform: translate(0, 6px) scale(0.7); opacity: 0; }
+    18%  { transform: translate(-3px, -6px) scale(1); opacity: 0.55; }
+    44%  { transform: translate(4px, -22px) scale(1.5); opacity: 0.4; }
+    72%  { transform: translate(-5px, -38px) scale(2.1); opacity: 0.18; }
+    100% { transform: translate(3px, -54px) scale(2.8); opacity: 0; }
+  }
+  /* A vela: a luz não bate igual o tempo todo, e o intervalo entre as quedas
+     não é regular — vela que oscila em compasso vira pisca-pisca. */
+  @keyframes vela {
+    0%, 100% { opacity: 1;    text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
+    12%      { opacity: 0.82; text-shadow: 0 0 5px rgba(226, 222, 212, 0.2); }
+    19%      { opacity: 1;    text-shadow: 0 0 13px rgba(226, 222, 212, 0.45); }
+    54%      { opacity: 0.88; text-shadow: 0 0 7px rgba(226, 222, 212, 0.25); }
+    61%      { opacity: 1;    text-shadow: 0 0 11px rgba(226, 222, 212, 0.4); }
+    83%      { opacity: 0.93; text-shadow: 0 0 9px rgba(226, 222, 212, 0.3); }
   }
   /* Quem pediu menos movimento no sistema recebe o número parado. */
   @media (prefers-reduced-motion: reduce) {
-    .deaths-count, .tempo-num, .boss-num, .headless-num,
+    .deaths-count, .deaths-kanji, .tempo-num, .boss-num, .headless-num,
     .boss-quadro::before, .headless-quadro::before, .headless-quadro {
       animation: none;
     }
+    /* Sem a vela oscilando, o 死 fica na luz cheia em vez de num quadro
+       qualquer do ciclo. */
+    .deaths-kanji { opacity: 1; text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
     .deaths-count { background-position: 50% 30%; }
     .tempo-num { background-position: 40% 50%; }
     .boss-num, .headless-num { background-position: 50% 30%; }
@@ -221,8 +276,12 @@
     height: 100%;
     width: 0%;
     border-radius: 99px;
-    /* Frio para quente sem sair da paleta: papel apagado, ouro, sangue. */
-    background: linear-gradient(90deg, var(--paper-dim), var(--gold) 38%, var(--blood) 72%, var(--blood-bright));
+    /* A escala não esquenta, apaga. Sai da cera clara da vela, passa pela
+       fumaça e termina na cinza: quanto mais se morreu, mais queimou. Ir para
+       o vermelho aqui era o mesmo gesto do bloco de chefes, e este bloco
+       precisa dizer outra coisa. */
+    background: linear-gradient(90deg,
+      #e8e4da, #b9b3a6 34%, #7c776d 66%, #46433e);
     transition: width 0.5s ease;
   }
   .therm-pin {
@@ -252,7 +311,8 @@
     width: 1px;
     height: 10px;
     margin-left: -0.5px;
-    background: var(--blood-bright);
+    background: #cfcabd;
+    opacity: 0.7;
   }
   .therm-scale {
     display: flex;
@@ -268,8 +328,9 @@
   .deaths-panel.unknown .deaths-kanji { color: var(--text-dim); }
   .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
   .deaths-panel.unknown .therm-pin::after { background: var(--line); }
-  /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". */
-  .deaths-panel.over .therm-scale span:last-child { color: var(--blood-bright); }
+  /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". Branco e
+     não vermelho, porque aqui o excesso é de luto, não de sangue. */
+  .deaths-panel.over .therm-scale span:last-child { color: #e8e4da; }
   /* Faixa do botão de tema: colada no topo, alinhada à direita. */
   .topbar {
     display: flex;

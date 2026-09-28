@@ -626,6 +626,46 @@ async function rodar(log) {
   log(/\.headless-num \{[^}]*#2a1550/.test(src), 'a raiz do gradiente continua roxa',
     'o número resolve na cor do bloco, então segue no tema');
 
+  // --- o bloco de mortes é um velório, não um ferimento ---
+  // Os dois contadores dizem coisas diferentes e precisam parecer diferentes:
+  // o de chefes é violência e sangra, este é luto e guarda. Sem isto os dois
+  // viram o mesmo bloco vermelho com números distintos.
+  log(/\.deaths-panel::before \{[^}]*repeating-linear-gradient/.test(src),
+    'a moldura do bloco de mortes é a cortina de velório',
+    'listras alternadas no topo e no pé');
+  const listras = /\.deaths-panel::before \{[\s\S]*?repeating-linear-gradient\(90deg, (#[0-9a-f]{6}) 0 \d+px, (#[0-9a-f]{6})/i.exec(src);
+  const listraClara = listras ? listras[1] : "";
+  const listraEscura = listras ? listras[2] : "";
+  const brilhoDe = (c) => c
+    ? (parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16)) / 3
+    : -1;
+  log(brilhoDe(listraClara) > 190 && brilhoDe(listraEscura) < 40,
+    'e as listras são de fato branca e preta',
+    listraClara + " / " + listraEscura);
+
+  // O número não pode ter gradiente de sangue: a cor tem de ser de osso.
+  const numMorte = /\.deaths-count \{[\s\S]*?background-image: linear-gradient\(\s*180deg,\s*(#[0-9a-f]{6})/i.exec(src);
+  const topoMorte = numMorte ? numMorte[1] : '';
+  const r = topoMorte ? parseInt(topoMorte.slice(1, 3), 16) : 0;
+  const b = topoMorte ? parseInt(topoMorte.slice(5, 7), 16) : 0;
+  log(topoMorte && r - b < 30, 'o número de mortes não é mais vermelho',
+    topoMorte + ' (osso: vermelho e azul quase iguais)');
+  log(!/\.deaths-count \{[^}]*animation: escorrer\b/.test(src),
+    'e não escorre como o de chefes', 'a animação de sangue saiu daqui');
+  log(/\.deaths-count \{[^}]*animation: luto/.test(src),
+    'o número respira em vez de pulsar', 'animação "luto", lenta');
+  log(/\.deaths-count::after \{[^}]*animation: incenso/.test(src),
+    'sobe fumaça de incenso no lugar da gota de sangue', 'animação "incenso"');
+  log(/\.deaths-kanji \{[^}]*animation: vela/.test(src),
+    'e a luz sobre o 死 oscila como vela', 'animação "vela"');
+  // A escala também: morrer mais apaga, não esquenta.
+  const fim = /\.therm-fill \{[\s\S]*?linear-gradient\(90deg,[^)]*?(#[0-9a-f]{6})\);/i.exec(src);
+  const fimCor = fim ? fim[1] : '';
+  const fr = fimCor ? parseInt(fimCor.slice(1, 3), 16) : 0;
+  const fb = fimCor ? parseInt(fimCor.slice(5, 7), 16) : 0;
+  log(fimCor && fr - fb < 30, 'o fim da escala é cinza, não sangue',
+    fimCor + ' no extremo de 1000');
+
   // O menu não pode precisar de arrasto: no celular o último item ficava
   // cortado na borda e só aparecia se você puxasse de lado.
   const menuCel = /@media \(max-width: 460px\) \{[\s\S]*?\n  \}/.exec(src);
