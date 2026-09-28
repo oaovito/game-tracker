@@ -29,6 +29,10 @@ function check(name, fn) {
     pass++;
     console.log(`   ok    ${name}${detail ? '  -  ' + detail : ''}`);
   } catch (err) {
+    if (err && err.pular) {
+      console.log(`   --    ${name}  -  ${err.message}`);
+      return;
+    }
     fail++;
     failures.push(name);
     console.log(`   FALHA ${name}\n            ${err.message}`);
@@ -37,6 +41,32 @@ function check(name, fn) {
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
+}
+
+/**
+ * Sai do teste sem reprovar, porque falta algo que só existe depois de rodar.
+ *
+ * Um clone recém-feito não tem `progress.json`: ele nasce da primeira leitura
+ * do save, nesta máquina. Os testes que dependem dele não têm o que verificar
+ * ali, e reprovar faria um clone saudável parecer quebrado — exatamente a
+ * dúvida que o projeto precisa não deixar no ar. Então eles se anunciam como
+ * pulados, com o motivo, em vez de falhar calados ou passar em falso.
+ */
+function pular(motivo) {
+  const e = new Error(motivo);
+  e.pular = true;
+  throw e;
+}
+
+/** A leitura local do save, ou um pulo explicando que ela ainda não existe. */
+function temProgresso() { return fs.existsSync(path.join(RAIZ_PROJETO, 'progress.json')); }
+
+function progressoLocal() {
+  const arq = path.join(RAIZ_PROJETO, 'progress.json');
+  if (!fs.existsSync(arq)) {
+    pular('sem leitura local ainda; rode `npm start` uma vez com o jogo instalado');
+  }
+  return JSON.parse(fs.readFileSync(arq, 'utf8'));
 }
 
 console.log('\n  === 1. Gerador de QR ===');
@@ -546,7 +576,8 @@ check('a cópia guarda o progresso e o save, sem apagar nada', () => {
   const guardouSave = r.manifesto.save.some((g) => g.bytes === 2048);
   assert(guardouSave, 'não guardou o save');
   assert(fs.existsSync(falso), 'APAGOU o original — hibernar só copia');
-  assert(fs.existsSync(path.join(RAIZ_PROJETO, 'progress.json')), 'mexeu no progress.json de verdade');
+  // Só faz sentido conferir que não mexeu no original se ele existe aqui.
+  if (temProgresso()) assert(fs.existsSync(path.join(RAIZ_PROJETO, 'progress.json')), 'mexeu no progress.json de verdade');
 
   const n = r.manifesto.projeto.length + r.manifesto.save.length;
   fs.rmSync(tmp, { recursive: true, force: true });
@@ -624,7 +655,7 @@ check('todo campo que a página lê chega na versão pública', () => {
 });
 
 check('o que ficou de fora ficou por um motivo escrito', () => {
-  const local = JSON.parse(fs.readFileSync(path.join(RAIZ_PROJETO, 'progress.json'), 'utf8'));
+  const local = progressoLocal();
   const limpo = publish.sanitizar(local);
   const fora = Object.keys(local).filter((k) => !(k in limpo));
   const semMotivo = fora.filter((k) => !EXCLUIDOS[k]);
@@ -633,14 +664,14 @@ check('o que ficou de fora ficou por um motivo escrito', () => {
 });
 
 check('a versão pública segue sem nada de máquina ou conta', () => {
-  const local = JSON.parse(fs.readFileSync(path.join(RAIZ_PROJETO, 'progress.json'), 'utf8'));
+  const local = progressoLocal();
   const v = publish.vazamentos(JSON.stringify(publish.sanitizar(local)));
   assert(v.length === 0, 'vazou: ' + v.join(', '));
   return 'sem caminho, Steam ID, IP ou despejo cru';
 });
 
 check('o público não recebe quando a pessoa jogou', () => {
-  const local = JSON.parse(fs.readFileSync(path.join(RAIZ_PROJETO, 'progress.json'), 'utf8'));
+  const local = progressoLocal();
   const limpo = publish.sanitizar(local);
   assert(limpo.playtime && limpo.playtime.horas > 0, 'perdeu as horas junto');
   assert(!limpo.playtime.ultimaVez, 'a data da última partida foi publicada');

@@ -79,7 +79,16 @@ async function carregar(progress, opts) {
 }
 
 async function rodar(log) {
-  const progress = JSON.parse(fs.readFileSync(path.join(RAIZ, 'progress.json'), 'utf8'));
+  // Num clone recém-feito ainda não houve leitura do save, então a versão
+  // publicada é o que existe de progresso. Ela é menor — não traz os despejos
+  // crus nem a data da última partida —, mas tem todos os campos que a página
+  // desenha, que é o que estes testes verificam. Sem esta reserva, clonar e
+  // rodar a suíte dava um erro de arquivo faltando, que parece defeito do
+  // projeto quando é só a primeira execução.
+  const cru = path.join(RAIZ, 'progress.json');
+  const publicado = path.join(RAIZ, 'docs', 'progress.json');
+  const de = fs.existsSync(cru) ? cru : publicado;
+  const progress = JSON.parse(fs.readFileSync(de, 'utf8'));
   const { nodes, ctx, trocar, original } = await carregar(progress);
   // `sync` é uma `let` de topo do script, invisível de fora do contexto; a
   // prova de que a resposta foi consumida é a página ter desenhado algo.
