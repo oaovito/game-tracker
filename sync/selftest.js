@@ -781,6 +781,152 @@ check('o público não recebe quando a pessoa jogou', () => {
  * 'generatedAt', que diz quando o arquivo foi montado e nao quando se jogou (o
  * servico monta em ciclo fixo, jogando ou nao).
  */
+/*
+ * 13. Independencia da Steam.
+ *
+ * O tracker nasceu numa maquina com Steam e por isso tratava a Steam como
+ * parte do ambiente: o apelido estava escrito no HTML, e o tempo de jogo so
+ * existia se o localconfig.vdf existisse. Instalado em outro lugar, a pagina
+ * mentia o nome e perdia as horas.
+ *
+ * O que se testa aqui e o contrario: que cada coisa que vinha da Steam tenha
+ * um caminho proprio, e que a Steam, quando existe, sirva de gabarito para
+ * esse caminho em vez de ser a unica fonte.
+ */
+check('o tempo de jogo tem fonte propria, fora da Steam', () => {
+  const sl2 = require('./sl2');
+  const tempo = require('./tempo');
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'offsets.json'), 'utf8'));
+  const caminho = sl2.findSavePath();
+  assert(caminho, 'sem save nesta maquina para conferir');
+  const bruto = fs.readFileSync(caminho);
+  const save = sl2.readSave(caminho);
+  const achados = sl2.nonEmptySlots(save)
+    .map((sl) => tempo.doSave(sl2.blockPayload(bruto, sl), cfg))
+    .filter((v) => v !== null);
+  assert(achados.length > 0, 'nenhum slot devolveu tempo interno');
+  return achados.map((v) => (v / 3600).toFixed(1) + ' h').join(', ') + ' nos slots do save';
+});
+
+check('e a Steam confere esse tempo em vez de substitui-lo', () => {
+  const p2 = progressoLocal();
+  const t = p2.playtime;
+  assert(t, 'sem tempo de jogo lido');
+  if (t.fonte !== 'steam') return 'sem Steam nesta maquina: a fonte e o proprio jogo (' + t.fonte + ')';
+  assert(t.conferencia, 'com Steam presente, a conferencia tinha de existir');
+  /*
+   * A regra e de sentido unico: relogio de parede conta menu, pausa e
+   * carregamento, entao ele e sempre MAIOR que o tempo interno. Se o interno
+   * passar o relogio, uma das duas leituras esta errada -- e provavelmente a
+   * nova, que e a que este teste existe para vigiar.
+   */
+  assert(t.conferencia.coerente,
+    'tempo interno (' + (t.conferencia.jogoSegundos / 3600).toFixed(1) + ' h) passou do relogio de parede ('
+    + (t.conferencia.relogioSegundos / 3600).toFixed(1) + ' h)');
+  return (t.conferencia.jogoSegundos / 3600).toFixed(1) + ' h internas dentro de '
+    + (t.conferencia.relogioSegundos / 3600).toFixed(1) + ' h de relogio';
+});
+
+check('o nome do cabecalho vem da maquina, nao do codigo', () => {
+  const jogador = require('./jogador');
+  const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8');
+  assert(!/oaovito game progress/.test(src), 'o nome continua escrito na pagina');
+  const r = jogador.quem({ save: require('./sl2').findSavePath() });
+  if (!r) return 'sem Steam identificada: o cabecalho fica so com o titulo, que e o previsto';
+  assert(r.nick && r.fonte === 'steam', 'apelido veio sem fonte declarada');
+  return 'apelido lido do loginusers.vdf (' + r.nick.length + ' caracteres)';
+});
+
+check('e o nome de login da conta nunca entra no processo', () => {
+  /*
+   * O loginusers.vdf tem dois nomes por conta: PersonaName, que e o apelido
+   * publico, e AccountName, que e o login. So o primeiro pode sair daqui, e
+   * a diferenca e importante o bastante para virar teste em vez de comentario.
+   */
+  const jogador = require('./jogador');
+  const inst = require('./instalacao');
+  const steam = inst.steamPath();
+  if (!steam) return 'sem Steam nesta maquina: nada a vazar';
+  let txt;
+  try { txt = fs.readFileSync(path.join(steam, 'config', 'loginusers.vdf'), 'utf8'); }
+  catch (e) { return 'loginusers.vdf ilegivel: nada a vazar'; }
+  const logins = [...txt.matchAll(/"AccountName"\s+"([^"]+)"/g)].map((m) => m[1]).filter(Boolean);
+  const r = jogador.quem({ save: require('./sl2').findSavePath() });
+  const saida = JSON.stringify(r || {});
+  const vazou = logins.filter((l) => saida.includes(l));
+  assert(vazou.length === 0, 'o nome de login saiu no objeto do jogador');
+  return logins.length + ' login(s) no arquivo, nenhum no objeto';
+});
+
+/*
+ * 14. Os dois estados do bloco de mortes.
+ *
+ * Sino e podridao nao tem campo no save: o jogo conta os dois pelo
+ * inventario. Entao o que se testa e a ponte -- que os ids do config existam,
+ * que o leitor devolva estado em vez de silencio, e que a lista de nomes
+ * esteja completa.
+ */
+check('o Sino Demoniaco vira estado, nao silencio', () => {
+  const p2 = progressoLocal();
+  const b = p2.demonBell;
+  assert(b, 'demonBell nao foi montado');
+  assert(typeof b.ativo === 'boolean', 'o estado nao e binario');
+  assert(b.id === 3730, 'id do Bell Demon mudou: era 3730');
+  return b.ativo ? 'sino tocado agora' : 'sino nao tocado (ou ja devolvido)';
+});
+
+check('a podridao sabe o nome de cada um dos afligidos', () => {
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'offsets.json'), 'utf8'));
+  const lista = cfg.rotEssence && cfg.rotEssence.list;
+  assert(lista && lista.length === 17, 'a wiki lista 17 Rot Essence; aqui tem ' + (lista ? lista.length : 0));
+  const semNome = lista.filter((r) => !r.npc || !r.item || !(r.id > 0));
+  assert(semNome.length === 0, 'entrada incompleta: ' + semNome.map((r) => r.id).join(', '));
+  const ids = new Set(lista.map((r) => r.id));
+  assert(ids.size === lista.length, 'id repetido na lista');
+  const npcs = new Set(lista.map((r) => r.npc));
+  assert(npcs.size === lista.length, 'dois itens apontando para o mesmo NPC');
+  return lista.length + ' essencias, cada uma com item e NPC proprios';
+});
+
+check('e o estado dela sai montado do parse', () => {
+  const p2 = progressoLocal();
+  const d = p2.dragonrot;
+  assert(d, 'dragonrot nao foi montado');
+  assert(typeof d.ativo === 'boolean' && d.quantos >= 0, 'estado incompleto');
+  assert(d.quantos === d.essencias.length, 'a contagem nao bate com a lista');
+  assert(d.ativo === (d.quantos > 0), 'ativo diz uma coisa e a contagem diz outra');
+  return d.quantos + ' de ' + d.total + ' com essencia no inventario';
+});
+
+check('quem clonar recebe as artes dos Headless tambem', () => {
+  const icones = require('./icones');
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'offsets.json'), 'utf8'));
+  const faltando = cfg.headless.list.filter((h) => !icones.MAPA[h.key]);
+  assert(faltando.length === 0, 'sem arte no mapa: ' + faltando.map((h) => h.key).join(', '));
+  const semArquivo = cfg.headless.list
+    .filter((h) => !fs.existsSync(path.join(icones.DESTINO, h.key + '.png')));
+  assert(semArquivo.length === 0, 'arte nao baixada: ' + semArquivo.map((h) => h.key).join(', '));
+  return cfg.headless.list.length + ' Headless com arte, no mesmo lugar das dos chefes';
+});
+
+check('nenhum modulo do sync esta quebrado', () => {
+  /*
+   * Parece obvio demais para ser teste, e nao e: o icones.js passou um tempo
+   * com uma string sem aspas, sem que nada acusasse. A suite so olhava o PNG
+   * ja baixado, e o resto do projeto nunca carrega o modulo -- entao ele
+   * podia estar sintaticamente quebrado por semanas. Um require de cada um
+   * custa milissegundos e fecha essa porta.
+   */
+  const quebrados = [];
+  for (const arq of fs.readdirSync(__dirname).filter((f) => f.endsWith('.js'))) {
+    if (arq === 'selftest.js') continue;
+    try { require(path.join(__dirname, arq)); }
+    catch (e) { quebrados.push(arq + ': ' + e.message.split('\n')[0]); }
+  }
+  assert(quebrados.length === 0, quebrados.join(' | '));
+  return 'todos os modulos carregam';
+});
+
 check('nenhum carimbo de hora sobra no arquivo publico', () => {
   const HORA = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/;
   const PERMITIDOS = new Set(['generatedAt']);

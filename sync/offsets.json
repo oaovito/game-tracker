@@ -47,6 +47,26 @@
       "offset": 213712,
       "type": "u32",
       "confidence": "likely"
+    },
+    "igtSegundos": {
+      "offset": 212864,
+      "type": "u32",
+      "confidence": "confirmed",
+      "_note": [
+        "Tempo interno de jogo, em segundos, no bloco de stats do slot -- logo",
+        "depois do NG+ (0x33F34) e do SteamID (0x33E54), que a comunidade ja tinha",
+        "mapeado. Ninguem tinha publicado este, entao ele foi achado aqui e",
+        "conferido, nao deduzido: varrendo o slot atras do valor que a leitura de",
+        "memoria (GameDataMan+0x9C) ja dava, so um offset alinhado respondeu com o",
+        "numero certo no slot certo -- 239251 s no save contra 238810 s lidos da",
+        "memoria minutos antes, diferenca do tanto que se jogou entre as duas.",
+        "O slot inativo traz outro valor (51963 s), que e o tempo daquele outro",
+        "personagem, como tem de ser.",
+        "Existe uma segunda copia em 999344; o jogo duplica a regiao. Nao se le a",
+        "copia: se as duas divergirem, quem manda e a primeira.",
+        "Para que serve: e o tempo de jogo quando nao ha Steam na maquina. O da",
+        "Steam e relogio de parede e conta menu e carregamento; este nao."
+      ]
     }
   },
   "goods": {
@@ -86,6 +106,17 @@
       "paramName": "回復ひょうたん (Healing Gourd)",
       "confidence": "high",
       "_note": "A quantidade deste item e o numero de cargas: 1 inicial + 1 por semente entregue."
+    },
+    "bellDemon": {
+      "id": 3730,
+      "label": "Bell Demon",
+      "paramName": "鬼仏の鐘 (Demon Bell)",
+      "_note": [
+        "Tocar o Sino Demoniaco poe este item no inventario e deixa la enquanto o",
+        "efeito valer; devolve-lo num Idolo tira o item. Entao possuir = afligido,",
+        "e isso e um estado binario, exatamente o que o icone precisa mostrar."
+      ],
+      "confidence": "high"
     }
   },
   "progression": {
@@ -1439,7 +1470,12 @@
           3350
         ],
         "drop": "Ako's Spiritfall",
-        "confidence": "high"
+        "confidence": "high",
+        "enquadre": {
+          "size": "165%",
+          "pos": "52% 20%"
+        },
+        "enquadrePorque": "captura de galeria, nao retrato: aproxima no torso e sobe, senao o corte quadrado perde os ombros"
       },
       {
         "key": "headlessCastle",
@@ -1450,7 +1486,12 @@
           3370
         ],
         "drop": "Ungo's Spiritfall",
-        "confidence": "high"
+        "confidence": "high",
+        "enquadre": {
+          "size": "150%",
+          "pos": "50% 14%"
+        },
+        "enquadrePorque": "captura de galeria, nao retrato: aproxima no torso e sobe, senao o corte quadrado perde os ombros"
       },
       {
         "key": "headlessDepths",
@@ -1461,7 +1502,12 @@
           3390
         ],
         "drop": "Gachiin's Spiritfall",
-        "confidence": "high"
+        "confidence": "high",
+        "enquadre": {
+          "size": "165%",
+          "pos": "52% 20%"
+        },
+        "enquadrePorque": "captura de galeria, nao retrato: aproxima no torso e sobe, senao o corte quadrado perde os ombros"
       },
       {
         "key": "headlessValley",
@@ -1472,7 +1518,12 @@
           3380
         ],
         "drop": "Gokan's Spiritfall",
-        "confidence": "high"
+        "confidence": "high",
+        "enquadre": {
+          "size": "165%",
+          "pos": "52% 20%"
+        },
+        "enquadrePorque": "captura de galeria, nao retrato: aproxima no torso e sobe, senao o corte quadrado perde os ombros"
       },
       {
         "key": "headlessPalace",
@@ -1483,7 +1534,12 @@
           3360
         ],
         "drop": "Yashariku's Spiritfall",
-        "confidence": "high"
+        "confidence": "high",
+        "enquadre": {
+          "size": "150%",
+          "pos": "50% 14%"
+        },
+        "enquadrePorque": "captura de galeria, nao retrato: aproxima no torso e sobe, senao o corte quadrado perde os ombros"
       }
     ]
   },
@@ -1905,5 +1961,106 @@
     "senOffset": 214224,
     "sanityMax": 100000,
     "_senNote": "Offset do Sen, confirmado neste save (1398). Serve de sinal de morte certa: Sen caiu e nada entrou no inventario."
+  },
+  "rotEssence": {
+    "_note": [
+      "Dragonrot nao aparece como numero em lugar nenhum do save que se conheca.",
+      "O que aparece e consequencia: cada NPC adoecido larga uma Rot Essence, um",
+      "item permanente e exclusivo daquele NPC. Possuir qualquer uma prova que a",
+      "podridao se espalhou, e a lista de quais diz exatamente quem adoeceu.",
+      "E o mesmo raciocinio que prova Headless pelo Spiritfall: o jogo nao expoe",
+      "o estado, expoe o rastro.",
+      "IDs do EquipParamGoods; os nomes de NPC vem da wiki. A mesma tabela de IDs",
+      "confere com os Spiritfall e com Prayer Bead/Gourd Seed que ja estavam aqui",
+      "e ja foram verificados neste save, o que da confianca nas linhas novas."
+    ],
+    "confidence": "high",
+    "list": [
+      {
+        "id": 9500,
+        "item": "Rot Essence: Sculptor",
+        "npc": "Sculptor"
+      },
+      {
+        "id": 9501,
+        "item": "Rot Essence: Newcomer",
+        "npc": "Anayama the Peddler"
+      },
+      {
+        "id": 9502,
+        "item": "Rot Essence: Black Hat",
+        "npc": "Blackhat Badger"
+      },
+      {
+        "id": 9503,
+        "item": "Rot Essence: Lost Child",
+        "npc": "Kotaro"
+      },
+      {
+        "id": 9504,
+        "item": "Rot Essence: Charmed One",
+        "npc": "Jinzaemon Kumano"
+      },
+      {
+        "id": 9505,
+        "item": "Rot Essence: Surgeons",
+        "npc": "Doujun"
+      },
+      {
+        "id": 9510,
+        "item": "Rot Essence: Fine Son",
+        "npc": "Inosuke Nogami"
+      },
+      {
+        "id": 9511,
+        "item": "Rot Essence: Thirsty One",
+        "npc": "Basket Weaver Shosuke"
+      },
+      {
+        "id": 9515,
+        "item": "Rot Essence: Timid Maid",
+        "npc": "Inosuke Nogami's Mother"
+      },
+      {
+        "id": 9516,
+        "item": "Rot Essence: Faithful One",
+        "npc": "Old Hag"
+      },
+      {
+        "id": 9520,
+        "item": "Rot Essence: Crow Mob",
+        "npc": "Crow's Bed Memorial Mob"
+      },
+      {
+        "id": 9521,
+        "item": "Rot Essence: Wartorn Mob",
+        "npc": "Battlefield Memorial Mob"
+      },
+      {
+        "id": 9522,
+        "item": "Rot Essence: Jail Mob",
+        "npc": "Dungeon Memorial Mob"
+      },
+      {
+        "id": 9523,
+        "item": "Rot Essence: Toxic Mob",
+        "npc": "Toxic Memorial Mob"
+      },
+      {
+        "id": 9524,
+        "item": "Rot Essence: Pious Mob",
+        "npc": "Exiled Memorial Mob"
+      },
+      {
+        "id": 9525,
+        "item": "Rot Essence: Drunk Mob",
+        "npc": "Shugendo Memorial Mob"
+      },
+      {
+        "id": 9526,
+        "item": "Rot Essence: Info Broker",
+        "npc": "Fujioka the Info Broker"
+      }
+    ]
   }
 }

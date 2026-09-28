@@ -367,7 +367,20 @@ async function rodar(log) {
     'nenhuma regra de CSS segue o tema do sistema',
     'o escuro vale mesmo se o script não rodar');
 
-  log(/oaovito game progress/.test(fonte), 'assinatura no cabeçalho', 'presente');
+  /*
+   * A assinatura não está mais escrita no HTML.
+   *
+   * Ela era a palavra "oaovito", e o teste cobrava essa palavra. Os dois
+   * estavam errados pelo mesmo motivo: numa máquina que não a de quem
+   * escreveu a página, o nome era mentira. Agora sai do apelido do Steam, e
+   * o que se cobra é o contrário — que o nome de ninguém esteja fixo aqui.
+   */
+  log(!/oaovito game progress/.test(fonte), 'nenhum nome de pessoa escrito no cabeçalho',
+    'a assinatura vem do apelido do Steam da máquina');
+  log(/id="assinatura"[^>]*hidden/.test(fonte), 'e ela nasce escondida',
+    'sem Steam identificado a linha some e o cabeçalho fecha');
+  log(/game progress"/.test(fonte) || /\+ " game progress"/.test(fonte),
+    'o sufixo continua sendo "game progress"', 'só o nome é que varia');
   // A janela cresceu porque o ponto de sync passou a ficar entre os dois.
   log(/class="topbar"[\s\S]{0,600}themeToggle/.test(fonte),
     'o botão de tema fica na faixa do topo', 'fora do cabeçalho, à direita');
@@ -743,30 +756,92 @@ async function rodar(log) {
     'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
 
   /*
-   * A alma é o Shinobi morto, em ícone chibi — e desenho, não gradiente.
+   * A alma é o 鬼仏, o Ídolo do Escultor — e desenho, não gradiente.
    *
-   * As duas primeiras versões falharam por motivos diferentes e instrutivos: a
-   * de bulbo com cauda lia como espermatozoide (cabeça redonda mais rabo
-   * afilado é esse desenho em qualquer contexto), e a seguinte tinha rosto,
-   * mas rosto de ninguém. O que se testa aqui são os três sinais que fazem
-   * reconhecer o personagem, mais o sinal de que está morto.
+   * Três versões falharam antes, por motivos diferentes e instrutivos. A de
+   * bulbo com cauda lia como espermatozoide (cabeça redonda mais rabo afilado
+   * é esse desenho em qualquer contexto). A seguinte tinha rosto, mas rosto de
+   * ninguém. A terceira era um chibi de Shinobi morto: legível, e genérico —
+   * chibi com olho em × é vocabulário de qualquer jogo, não deste.
+   *
+   * O Ídolo é deste. É a estátua que se toca para ressuscitar, o objeto da
+   * morte no Sekiro, e o nome dela é 鬼仏, "Buda demoníaco". O que se testa
+   * aqui são os sinais que a tornam reconhecível: os seis braços (que fazem
+   * dela um Shura e não um Buda), o 人魂 azul ardendo em cima, e as mãos em
+   * prece. Sem os braços, volta a ser figura ajoelhada qualquer.
    */
   const simbolo = /<symbol id="almaChibi"[\s\S]*?<\/symbol>/.exec(src);
   const svg = simbolo ? simbolo[0] : '';
   log(!!svg, 'a alma é um ícone desenhado, não um borrão de gradiente',
     svg ? svg.length + ' caracteres de caminho' : 'não achei o símbolo');
-  log(/olhos em ×/.test(svg) || /M8\.2 12\.1l2\.2 2\.2/.test(svg),
-    'tem olhos em ×, que é o sinal chibi de morto', 'dois pares de traços cruzados');
-  log(/abacaxi/.test(svg), 'tem o coque espetado', 'o sinal mais rápido do personagem');
-  log(/[Mm]echas prateadas/.test(svg) && /#d9e5f1/.test(svg),
-    'e as mechas prateadas em prata cheia',
-    'no tom anterior elas sumiam dentro do cabelo escuro');
-  log(/marca de prata no rosto/.test(svg), 'e a marca de prata no rosto', 'o terceiro sinal');
+  const bracos = (svg.match(/<path d="M(9|14)[.\d]* 1[46]/g) || []).length;
+  log(/seis braços/.test(svg) && bracos >= 4,
+    'tem os braços do Shura, que é o que faz dela um Ídolo',
+    bracos + ' traços de braço — sem eles é figura ajoelhada qualquer');
+  log(/人魂/.test(svg) && /fogoIdolo/.test(svg),
+    'e o 人魂 azul ardendo em cima', 'o fogo que arde no topo de todo Ídolo');
+  log(/em prece/.test(svg), 'e as mãos unidas em prece', 'o gesto que lê como luto');
+  log(!/abacaxi/.test(svg) && !/olhos em ×/.test(svg),
+    'e nada sobrou do chibi anterior', 'nem coque, nem olho cruzado');
   // Um símbolo usado cinco vezes, e não cinco cópias do mesmo caminho: cinco
   // cópias seriam cinco lugares para corrigir quando o desenho mudar.
   const usos = (src.match(/<use href="#almaChibi"\/>/g) || []).length;
   log(usos === almas, 'desenhado uma vez e usado por todas',
     usos + ' usos para ' + almas + ' almas');
+
+  /*
+   * Os dois estados do bloco de mortes: sino e podridão.
+   *
+   * O pedido pede tamanhos diferentes e razões diferentes: o sino é pequeno e
+   * só confirma; a podridão é maior, tem nome dentro e é a única que abre. O
+   * que se testa é essa hierarquia, porque ela é o conteúdo da decisão — dois
+   * ícones do mesmo tamanho diriam que as duas coisas pesam igual.
+   */
+  const cssSino = cssDe('.estado-sino svg');
+  const cssRotK = cssDe('.estado-rot-bt .rot-kanji');
+  const tamSino = parseFloat((/font-size|width:\s*([\d.]+)rem/.exec(cssSino) || [])[1] || 0);
+  const tamRot = parseFloat((/font-size:\s*([\d.]+)rem/.exec(cssRotK) || [])[1] || 0);
+  log(tamSino > 0 && tamRot > tamSino, 'a podridão é maior que o sino',
+    'sino ' + tamSino + 'rem contra ' + tamRot + 'rem — não pesam igual, e não devem');
+  log(/id="estadoRot"[^>]*type="button"/.test(src) && /aria-haspopup="dialog"/.test(src),
+    'e é ela que abre, não o sino', 'o sino é liga-desliga: não há o que abrir nele');
+  log(/\.estado-sino\.on/.test(src) && /\.estado-sino\.off/.test(src),
+    'o sino diz os dois estados no mesmo desenho',
+    'aceso e batendo, ou apagado e pontilhado — não são duas figuras diferentes');
+  log(/Rot Essence/.test(src) || /rot-item/.test(src),
+    'a janela da podridão traz "Rot Essence: <NPC>"', 'item em cima, nome de quem embaixo');
+  // Poluir aqui seria escrever a contagem, a lista e a ressalva no próprio
+  // ícone. O desenho leva mancha e kanji; o resto vive na janela e no hover.
+  const marcaRot = /<button class="estado estado-rot-bt"[\s\S]*?<\/button>/.exec(src);
+  const textoDoIcone = stripTags(marcaRot ? marcaRot[0] : '').replace(/\s+/g, ' ').trim();
+  log(textoDoIcone.length <= 14, 'o ícone da podridão não vira parágrafo',
+    '"' + textoDoIcone + '"');
+
+  /*
+   * 皆伝: o estado de 100% nas conquistas.
+   *
+   * O selo não pode empurrar nada. É o ponto mais fácil de errar: qualquer
+   * elemento novo no fluxo do quadrado reorganizaria a fileira inteira no dia
+   * em que a última conquista cair, e a página mudaria de forma justamente na
+   * hora em que a pessoa está olhando para ela.
+   */
+  const cssSelo = cssDe('.selo');
+  log(/position: absolute/.test(cssSelo),
+    'o selo não ocupa lugar no fluxo', 'aos 100% ele aparece sem mover nada na página');
+  log(/皆伝/.test(src), 'o selo é 皆伝, a licença de transmissão completa',
+    'nas escolas japonesas é a mais alta que existe: o mestre ensinou tudo que sabia');
+  const cssKaiden = cssDe('.quadro-anel.kaiden');
+  log(/box-shadow/.test(cssKaiden) && /translateY/.test(cssKaiden),
+    'e o bloco vira o destaque da página a partir dali',
+    'sobe e ganha halo — as duas por fora do fluxo, então nada se reorganiza');
+  log(/renderKaiden\(ok && todas > 0 && feitas >= todas\)/.test(src),
+    'o selo exige contagem real antes de carimbar',
+    'sem o "todas > 0", zero de zero seria 100% e a página se parabenizaria sozinha');
+  log(/id="kaidenCena"/.test(src) && /pointer-events: none/.test(cssDe('.kaiden-cena')),
+    'a cena do selo é a página inteira, e não engole o clique',
+    'o pedido é contemplar; uma cena que trava a página vira espera');
+  log(/selo\.addEventListener\("click", tocarKaiden\)/.test(src),
+    'e ela responde à interação com o selo', 'clicar recomeça a cena');
 
   // O tempo de jogo: "h" no número, e nenhum nome de metal na tela.
   log(/\+ "h";/.test(src), 'o número de horas traz o "h"', 'colado no número');

@@ -573,6 +573,125 @@
   }
   /* Sem offset calibrado o número é desconhecido, não zero: o rosto sai de cena
      e o tubo fica vazio, em vez de fingir uma leitura em 0. */
+  /*
+   * Os dois estados do bloco de mortes: sino e podridão.
+   *
+   * Ficam numa fileira própria embaixo do termômetro, alinhados à direita,
+   * porque a esquerda já é do número e a linha do meio é do termômetro. Como
+   * são estado e não contagem, entram com pouco peso: traço, sem preenchimento
+   * e sem moldura, na mesma língua do menu.
+   */
+  .estados {
+    position: relative; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    gap: 1.15rem;
+    margin-top: 0.9rem;
+  }
+  .estado {
+    display: flex; flex-direction: column; align-items: center; gap: 0.28rem;
+    background: none; border: 0; padding: 0;
+    color: var(--text-dim);
+    transition: color 0.25s ease, opacity 0.25s ease;
+  }
+  .estado-rot {
+    font-family: var(--font-display);
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* --- o sino: pequeno, dois estados no mesmo desenho --- */
+  .estado-sino svg { width: 1.45rem; height: 1.45rem; display: block; }
+  .estado-sino .sino-corpo {
+    fill: none; stroke: currentColor; stroke-width: 1.3;
+    stroke-linejoin: round;
+    transform-origin: 12px 2.2px;
+  }
+  .estado-sino .sino-frisos { stroke-width: 0.85; opacity: 0.6; }
+  .estado-sino .sino-tronco {
+    fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round;
+    opacity: 0.35;
+  }
+  /* As ondas só existem quando o sino está tocando; sem efeito elas somem em
+     vez de ficarem pálidas, senão o desenho parado já parece meio aceso. */
+  .estado-sino .sino-ondas {
+    fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round;
+    opacity: 0;
+  }
+  /* Desligado: apagado e quieto. É o estado normal, então não chama. */
+  .estado-sino.off { opacity: 0.32; }
+  .estado-sino.off .sino-corpo { stroke-dasharray: 2.5 2; }
+  /* Ligado: vermelhão de selo, ondas visíveis e o sino batendo. O balanço sai
+     do topo, onde ele estaria pendurado. */
+  .estado-sino.on { color: #d6402a; opacity: 1; }
+  .estado-sino.on .sino-ondas { opacity: 0.85; animation: sino-onda 1.9s ease-in-out infinite; }
+  .estado-sino.on .sino-corpo { animation: sino-bate 1.9s ease-in-out infinite; }
+  .estado-sino.on .estado-rot { color: #d6402a; }
+  @keyframes sino-bate {
+    0%, 100% { transform: rotate(-7deg); }
+    50%      { transform: rotate(7deg); }
+  }
+  @keyframes sino-onda {
+    0%, 100% { opacity: 0.25; transform: scale(0.94); }
+    50%      { opacity: 0.9;  transform: scale(1.06); }
+  }
+
+  /* --- a podridão: maior, e a única que abre --- */
+  .estado-rot-bt { cursor: pointer; position: relative; }
+  .estado-rot-bt .rot-kanji {
+    position: relative; z-index: 1;
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    line-height: 1;
+  }
+  /*
+   * A mancha.
+   *
+   * O estado se lê por ela e não por cor de texto: uma auréola irregular que
+   * cresce com o número de essências, via --rot (0 a 1). Zero essências, zero
+   * mancha — e aí o kanji sozinho já diz que o assunto existe sem afirmar que
+   * está acontecendo.
+   */
+  .estado-rot-bt .rot-mancha {
+    position: absolute;
+    left: 50%; top: 0.9rem;
+    width: 2.9rem; height: 2.9rem;
+    transform: translate(-50%, -50%) scale(calc(0.55 + 0.45 * var(--rot, 0)));
+    border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%;
+    background: radial-gradient(circle at 42% 38%,
+      rgba(150, 168, 96, calc(0.5 * var(--rot, 0))) 0%,
+      rgba(110, 132, 66, calc(0.28 * var(--rot, 0))) 48%,
+      rgba(90, 110, 54, 0) 72%);
+    filter: blur(2.5px);
+    pointer-events: none;
+    transition: transform 0.4s ease;
+  }
+  .estado-rot-bt.on { color: #b6bf94; }
+  .estado-rot-bt.on .rot-mancha { animation: rot-pulsa 6.5s ease-in-out infinite; }
+  .estado-rot-bt.off { opacity: 0.4; }
+  .estado-rot-bt:hover, .estado-rot-bt:focus-visible { color: var(--paper); outline: 0; }
+  @keyframes rot-pulsa {
+    0%, 100% { border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%; }
+    50%      { border-radius: 54% 46% 44% 56% / 46% 56% 44% 54%; }
+  }
+
+  /* A lista dentro da janela: item em cima, nome de quem embaixo. */
+  .rot-lista { display: flex; flex-direction: column; gap: 0.7rem; }
+  .rot-linha {
+    display: flex; flex-direction: column; gap: 0.12rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .rot-linha:last-child { border-bottom: 0; padding-bottom: 0; }
+  .rot-item {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: #b6bf94;
+  }
+  .rot-npc { font-size: 0.78rem; color: var(--text-dim); }
+  .rot-vazio { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+
   .deaths-panel.unknown .deaths-count,
   .deaths-panel.unknown .deaths-kanji { color: var(--text-dim); }
   .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
@@ -1189,6 +1308,204 @@
     stroke-dashoffset: 263.89;
     transition: stroke-dashoffset 0.6s ease;
   }
+  /*
+   * ===== 皆伝: o estado de 100% nas conquistas =====
+   *
+   * Duas coisas mudam, e a segunda é a que importa: o bloco ganha detalhe, e
+   * ganha hierarquia. Até os 100% ele é um medidor entre iguais; a partir
+   * dali é o assunto da página, e a página tem de dizer isso sem reorganizar
+   * nada — quem já conhece o layout não pode se perder nele.
+   *
+   * Como se resolve isso sem mexer no fluxo: o quadrado sobe um pouco
+   * (translate, que não ocupa espaço), ganha halo por fora (box-shadow, que
+   * também não), e o selo mora absoluto sobre o topo dele. Nenhuma das três
+   * empurra vizinho nenhum.
+   */
+  .quadro-anel.kaiden {
+    transform: translateY(-0.35rem);
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.8s ease;
+    box-shadow:
+      0 0 0 1px rgba(168, 133, 61, 0.55),
+      0 0 26px rgba(168, 133, 61, 0.22),
+      0 0 70px rgba(214, 64, 42, 0.14);
+    overflow: visible;
+  }
+  /* A moldura de luz: um arco dourado dando a volta na borda do quadrado,
+     devagar. É o detalhe que o pedido chama de "muito detalhada" sem virar
+     enfeite — ele descreve a peça em vez de cobri-la. */
+  .quadro-anel.kaiden::before {
+    content: "";
+    position: absolute; inset: -1px;
+    border-radius: inherit;
+    background: conic-gradient(from 0deg,
+      rgba(168,133,61,0) 0deg, rgba(168,133,61,0) 62deg,
+      rgba(255, 226, 150, 0.85) 90deg,
+      rgba(168,133,61,0) 118deg, rgba(168,133,61,0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    padding: 1px;
+    pointer-events: none;
+    animation: kaiden-fio 7s linear infinite;
+    animation-play-state: var(--anim, running);
+  }
+  @keyframes kaiden-fio { to { transform: rotate(360deg); } }
+
+  /* O anel fechado é ouro, não sangue: sangue é a medida em curso, ouro é o
+     que acabou. E a ponta do traço vira redonda — o corte reto aparecia como
+     emenda no topo, que num círculo completo é defeito. */
+  .quadro-anel.kaiden .anel-fio {
+    stroke: #e8c877;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 7px rgba(255, 200, 90, 0.6));
+  }
+  .quadro-anel.kaiden .anel-trilho { stroke: rgba(168, 133, 61, 0.18); }
+  .quadro-anel.kaiden .anel-pct {
+    color: transparent;
+    background-image: linear-gradient(100deg,
+      #8a6a22 0%, #a8853d 12%, #e8c877 26%, #fff6da 42%, #e8c877 58%, #a8853d 100%);
+    -webkit-background-clip: text; background-clip: text;
+    background-size: 220% 100%;
+    animation: kaiden-brilho 5.5s linear infinite;
+    animation-play-state: var(--anim, running);
+    text-shadow: 0 0 20px rgba(255, 210, 120, 0.35);
+  }
+  @keyframes kaiden-brilho {
+    0%   { background-position: 220% 0; }
+    100% { background-position: -20% 0; }
+  }
+  .quadro-anel.kaiden .anel-num,
+  .quadro-anel.kaiden .quadro-rot { color: var(--gold); letter-spacing: 0.22em; }
+
+  /*
+   * O selo 落款.
+   *
+   * Absoluto sobre o topo do quadrado e centrado: não ocupa lugar no fluxo,
+   * então aparecer aos 100% não move nada na página. Os cantos têm raios
+   * desiguais, que é o que dá a irregularidade de carimbo — quadrado perfeito
+   * lê como adesivo.
+   */
+  .selo {
+    position: absolute;
+    top: -1.05rem; left: 50%;
+    transform: translateX(-50%) rotate(-4deg);
+    z-index: 4;
+    width: 2.7rem; height: 2.7rem;
+    display: grid; place-items: center;
+    background: none; border: 0; padding: 0;
+    cursor: pointer;
+    animation: selo-nasce 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  /* Entra como carimbo batido: desce de cima, esmaga, e assenta. */
+  @keyframes selo-nasce {
+    0%   { opacity: 0; transform: translateX(-50%) rotate(-14deg) scale(2.2); filter: blur(6px); }
+    45%  { opacity: 1; transform: translateX(-50%) rotate(-2deg)  scale(0.9); filter: blur(0); }
+    70%  { transform: translateX(-50%) rotate(-5deg) scale(1.07); }
+    100% { transform: translateX(-50%) rotate(-4deg) scale(1); }
+  }
+  .selo-tinta {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 24% 20%, rgba(255,120,100,0.35) 0%, rgba(255,120,100,0) 42%),
+      #c62f1e;
+    border-radius: 24% 17% 26% 19% / 18% 26% 17% 25%;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 180, 160, 0.25),
+      inset 0 -3px 7px rgba(120, 18, 10, 0.4),
+      0 0 16px rgba(198, 47, 30, 0.55);
+  }
+  .selo-kanji {
+    position: relative; z-index: 1;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: 0;
+    color: #fff3ec;
+    writing-mode: vertical-rl;
+    text-shadow: 0 1px 2px rgba(120, 20, 10, 0.6);
+  }
+  .selo:hover, .selo:focus-visible {
+    outline: 0;
+    transform: translateX(-50%) rotate(-1deg) scale(1.08);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .selo:hover .selo-tinta { box-shadow: inset 0 0 0 1px rgba(255,200,180,0.4), 0 0 26px rgba(214, 64, 42, 0.85); }
+
+  /*
+   * ===== a cena do selo, na página inteira =====
+   *
+   * As outras cenas são golpes: entram, batem e somem em três segundos. Esta
+   * não — o pedido é contemplar. Então ela é lenta, translúcida e não tapa a
+   * página: quem quiser continuar lendo por baixo, lê.
+   *
+   * `pointer-events: none` é o que garante isso. Uma cena que engole o clique
+   * transformaria "contemplar" em "esperar".
+   */
+  .kaiden-cena {
+    position: fixed; inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  /* A lavagem de tinta sobe do pé da tela, como papel absorvendo. */
+  .kaiden-lavagem {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(120% 70% at 50% 108%, rgba(198, 47, 30, 0.34) 0%, rgba(198, 47, 30, 0) 62%),
+      radial-gradient(90% 60% at 50% -8%, rgba(168, 133, 61, 0.26) 0%, rgba(168, 133, 61, 0) 58%);
+    animation: kaiden-lava 5.2s ease-out forwards;
+  }
+  @keyframes kaiden-lava {
+    0%   { opacity: 0; transform: translateY(14%) scale(1.15); }
+    18%  { opacity: 1; transform: translateY(0) scale(1); }
+    72%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.06); }
+  }
+  /* O carimbo grande, no meio: mesma leitura do selinho, em tamanho de tela. */
+  .kaiden-selo {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 26vw, 15rem);
+    font-weight: 700;
+    line-height: 0.9;
+    writing-mode: vertical-rl;
+    color: rgba(230, 62, 40, 0.92);
+    text-shadow: 0 0 60px rgba(214, 64, 42, 0.55), 0 6px 26px rgba(0,0,0,0.75);
+    animation: kaiden-bate 5.2s cubic-bezier(0.14, 0.9, 0.2, 1) forwards;
+  }
+  @keyframes kaiden-bate {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(2.6) rotate(-10deg); filter: blur(14px); }
+    12%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-3deg);    filter: blur(0); }
+    18%  { transform: translate(-50%, -50%) scale(1.04) rotate(-4deg); }
+    26%  { transform: translate(-50%, -50%) scale(1) rotate(-4deg); }
+    76%  { opacity: 0.92; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.14) rotate(-4deg); }
+  }
+  /* A poeira dourada: faíscas subindo devagar, como cinza de incenso. São
+     pontos num gradiente repetido, não elementos — cem nós para um efeito de
+     fundo seria caro e não se veria diferença. */
+  .kaiden-poeira {
+    position: absolute; inset: -20% 0 0 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 82%, rgba(255,226,150,0.9), transparent),
+      radial-gradient(1.2px 1.2px at 28% 64%, rgba(255,210,120,0.7), transparent),
+      radial-gradient(1.8px 1.8px at 44% 91%, rgba(255,240,190,0.85), transparent),
+      radial-gradient(1.1px 1.1px at 61% 72%, rgba(255,205,110,0.65), transparent),
+      radial-gradient(1.6px 1.6px at 77% 86%, rgba(255,232,165,0.8), transparent),
+      radial-gradient(1.3px 1.3px at 89% 68%, rgba(255,215,130,0.7), transparent),
+      radial-gradient(1.4px 1.4px at 35% 40%, rgba(255,226,150,0.6), transparent),
+      radial-gradient(1.2px 1.2px at 68% 33%, rgba(255,240,190,0.55), transparent);
+    animation: kaiden-sobe 5.2s linear forwards;
+  }
+  @keyframes kaiden-sobe {
+    0%   { opacity: 0; transform: translateY(12%); }
+    20%  { opacity: 1; }
+    80%  { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-34%); }
+  }
+
   .anel-meio {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2082,7 +2399,19 @@
   <header class="top">
     <div class="top-centro">
       <h1>Sekiro<span> 進捗</span></h1>
-      <div class="assinatura">oaovito game progress</div>
+      <!--
+        A assinatura sai do apelido do Steam, não do HTML.
+
+        Escrita à mão aqui, ela mentia em qualquer máquina que não a de quem
+        escreveu a página: instalado no PC de outra pessoa, o tracker
+        anunciava o progresso dela com nome alheio.
+
+        Sem Steam na máquina não há apelido, e aí a linha some inteira em vez
+        de virar um "player" genérico — o cabeçalho fecha e fica só o título.
+        Por isso ela nasce escondida: o estado honesto é não ter nome, e quem
+        preenche é a leitura.
+      -->
+      <div class="assinatura" id="assinatura" hidden></div>
     </div>
   </header>
 
@@ -2189,27 +2518,45 @@
     <div class="manchas" aria-hidden="true"></div>
 
     <!--
-      As almas que sobem são o próprio Shinobi, morto, em ícone chibi: cabeça
-      grande, traço mínimo, e os três sinais que o identificam de relance — o
-      coque espetado como ponta de abacaxi, as mechas prateadas e a marca de
-      prata no rosto. Olhos em × porque está morto; é a convenção do desenho
-      chibi e dispensa qualquer outro sinal.
+      As almas que sobem são 鬼仏 — o Ídolo do Escultor.
+
+      O desenho anterior era um chibi de Shinobi morto: legível, mas genérico.
+      Chibi com olho em × é vocabulário de qualquer jogo; não dizia Sekiro.
+
+      O Ídolo diz. É a estátua que se toca para ressuscitar, então é literalmente
+      o objeto da morte neste jogo — e o nome dele em japonês é 鬼仏, "Buda
+      demoníaco". Os dois wikis registram o detalhe que fecha a escolha: **seis
+      braços**, o que faz dele não um Buda e sim um Shura (阿修羅), a divindade
+      da ira — o mesmo Shura do final do jogo. Uma terceira fonte diz quatro
+      braços; ficamos com as duas que concordam e explicam o porquê.
+
+      Então cada alma é: a figura ajoelhada de seis braços, as mãos da frente
+      unidas em prece, e o 人魂 azul flutuando acima — o fogo que arde no topo
+      de todo Ídolo. A base se desfaz no rastro em vez de terminar em pedra:
+      aqui ela sobe, não fica.
 
       Um `symbol` desenhado uma vez e usado cinco: cinco cópias do mesmo
       caminho seriam cinco lugares para corrigir quando o desenho mudar.
     -->
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <defs>
-        <!-- O manto some para baixo: o espírito se desfaz, não termina. -->
+        <!-- A pedra some para baixo: o espírito se desfaz, não termina. -->
         <linearGradient id="mantoAlma" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stop-color="#dff0fb" stop-opacity="0.95"/>
           <stop offset="55%"  stop-color="#b6d9f0" stop-opacity="0.5"/>
           <stop offset="100%" stop-color="#8fbcdd" stop-opacity="0.05"/>
         </linearGradient>
+        <!-- O fogo do Ídolo é azul-turquesa, não laranja: é a cor com que ele
+             arde no jogo, e é o que separa este fogo do fogo do anel. -->
+        <linearGradient id="fogoIdolo" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%"   stop-color="#2f7fae" stop-opacity="0.15"/>
+          <stop offset="45%"  stop-color="#5ec8f0" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#eaffff" stop-opacity="1"/>
+        </linearGradient>
       </defs>
       <symbol id="almaChibi" viewBox="0 0 24 34">
         <!--
-          A cauda, embaixo de tudo para a cabeça cair por cima dela.
+          A base, embaixo de tudo, para a figura cair por cima dela.
 
           A animação é SMIL e não CSS porque `use` clona o conteúdo numa árvore
           sombra, e seletor do documento não alcança lá dentro. SMIL viaja
@@ -2221,32 +2568,58 @@
           descer inteira.
         -->
         <path fill="url(#mantoAlma)" opacity="0.55"
-              d="M6.2 16c-1.3 3.4-2 6.7-2 10.2l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10.2z">
+              d="M6.2 20c-1.3 3.2-2 6.5-2 10l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10z">
           <animate attributeName="d" dur="3.7s" repeatCount="indefinite"
-            values="M6.2 16c-1.3 3.4-2 6.7-2 10.2l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10.2z;
-                    M6.2 16c-1.3 3.4-2.2 6.9-1.7 10.6l2-2.4 1.8 2.3 2-2.3 1.9 2.4 1.9-2.4 2 2.3 1.8-2.3 2 2.4c.5-3.7-.4-7.2-1.7-10.6z;
-                    M6.2 16c-1.3 3.4-1.8 6.5-2.3 10.1l2.2-1.5 1.8 1.7 2-1.8 1.9 1.9 1.9-1.9 2 1.8 1.8-1.7 2.2 1.5c-.5-3.6-1-6.7-2.3-10.1z;
-                    M6.2 16c-1.3 3.4-2 6.7-2 10.2l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10.2z"/>
+            values="M6.2 20c-1.3 3.2-2 6.5-2 10l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10z;
+                    M6.2 20c-1.3 3.2-2.2 6.7-1.7 10.4l2-2.4 1.8 2.3 2-2.3 1.9 2.4 1.9-2.4 2 2.3 1.8-2.3 2 2.4c.5-3.7-.4-7.2-1.7-10.4z;
+                    M6.2 20c-1.3 3.2-1.8 6.3-2.3 9.9l2.2-1.5 1.8 1.7 2-1.8 1.9 1.9 1.9-1.9 2 1.8 1.8-1.7 2.2 1.5c-.5-3.6-1-6.7-2.3-9.9z;
+                    M6.2 20c-1.3 3.2-2 6.5-2 10l1.9-1.8 1.9 2 1.9-2 2 2 2-2 1.9 2 1.9-2 1.9 1.8c0-3.5-.7-6.8-2-10z"/>
         </path>
-        <!-- cabeça -->
-        <path d="M3.4 12.4c0-4.9 3.6-8.3 8.6-8.3s8.6 3.4 8.6 8.3c0 5.3-3.7 8.9-8.6 8.9s-8.6-3.6-8.6-8.9z" fill="#eaf4fb"/>
-        <!-- Cabelo: massa escura que desce pelas têmporas em duas madeixas,
-             passando da altura dos olhos. Terminado numa linha reta sobre a
-             testa ele lia como touca, não como cabelo. -->
-        <path d="M3.5 12.6C3.5 7 7.2 3.7 12 3.7s8.5 3.3 8.5 8.9c-.5-1.6-1-2.8-1.6-3.6-.3 1.6-.5 2.9-.6 4-.5-1.6-.9-3-1.2-4.4-2.4 1-7 1-9.4 0-.3 1.4-.7 2.8-1.2 4.4-.1-1.1-.3-2.4-.6-4-.6.8-1.1 2-1.6 3.6z" fill="#222a36"/>
-        <!-- Coque espetado, a ponta de abacaxi: é o sinal mais rápido de
-             reconhecimento, então é o maior dos três. -->
-        <path d="M10.4 4.4 12.1-.4l1.8 4.8 2.2-2.6-.7 3.4z" fill="#222a36"/>
-        <!-- Mechas prateadas. Vão por cima do cabelo e em prata cheia: no tom
-             anterior elas sumiam dentro do escuro e não existiam. -->
-        <path d="M9.6 4.1c-.8 1.4-1.3 2.8-1.5 4.3M14.6 4c.7 1.4 1.1 2.9 1.3 4.4M12.2 1.1l.5 2.6"
-              stroke="#d9e5f1" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-        <!-- A marca de prata no rosto -->
-        <path d="M6.5 12.2c.6 1.4.7 2.8.4 4.2" stroke="#dbe6f2" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-        <!-- olhos em ×: está morto -->
-        <path d="M8.2 12.1l2.2 2.2M10.4 12.1l-2.2 2.2M13.8 12.1l2.2 2.2M16 12.1l-2.2 2.2" stroke="#0b131e" stroke-width="1.1" stroke-linecap="round"/>
-        <!-- boca aberta, pequena -->
-        <ellipse cx="12.1" cy="17.4" rx="1.5" ry="1.9" fill="#0b131e"/>
+
+        <!--
+          人魂: o fogo azul que arde no alto do Ídolo. Vai primeiro no código
+          mas é a peça de cima no desenho, e é ele que dá o brilho que faz a
+          alma se destacar do fundo escuro.
+        -->
+        <path fill="url(#fogoIdolo)"
+              d="M12 .6c1.9 1.7 2.9 3.3 2.9 4.9 0 1.7-1.3 2.9-2.9 2.9S9.1 7.2 9.1 5.5C9.1 3.9 10.1 2.3 12 .6z">
+          <animate attributeName="d" dur="2.6s" repeatCount="indefinite"
+            values="M12 .6c1.9 1.7 2.9 3.3 2.9 4.9 0 1.7-1.3 2.9-2.9 2.9S9.1 7.2 9.1 5.5C9.1 3.9 10.1 2.3 12 .6z;
+                    M12 1c2.3 1.4 3.2 3.1 3.2 4.7 0 1.7-1.4 2.9-3.2 2.9S8.8 7.4 8.8 5.7C8.8 4.1 9.7 2.4 12 1z;
+                    M12 .3c1.6 2 2.7 3.5 2.7 5.1 0 1.7-1.2 2.9-2.7 2.9S9.3 7.1 9.3 5.4C9.3 3.8 10.4 2.3 12 .3z;
+                    M12 .6c1.9 1.7 2.9 3.3 2.9 4.9 0 1.7-1.3 2.9-2.9 2.9S9.1 7.2 9.1 5.5C9.1 3.9 10.1 2.3 12 .6z"/>
+        </path>
+
+        <!--
+          Os seis braços, em três pares que se abrem para fora e para cima.
+
+          São o sinal de reconhecimento do Ídolo, então vêm antes do tronco e
+          em traço cheio: escondidos atrás do corpo, o desenho voltaria a ser
+          uma figura ajoelhada qualquer.
+        -->
+        <g stroke="#cfe6f6" stroke-width="1.15" stroke-linecap="round" fill="none" opacity="0.92">
+          <path d="M9.6 14.4C7.6 13.3 6.2 11.6 5.4 9.4"/>
+          <path d="M14.4 14.4c2-1.1 3.4-2.8 4.2-5"/>
+          <path d="M9.4 16.2c-2.1.3-3.9 1-5.4 2.2"/>
+          <path d="M14.6 16.2c2.1.3 3.9 1 5.4 2.2"/>
+        </g>
+
+        <!-- A cabeça: pequena em relação ao corpo, como na estátua — não é
+             chibi, é escultura. -->
+        <circle cx="12" cy="11.1" r="2.9" fill="#eaf4fb"/>
+        <!-- Olhos fechados, dois traços: o Ídolo está em meditação, não morto.
+             É a diferença entre lamentar e ser cadáver. -->
+        <path d="M10.8 11.1h.9M12.3 11.1h.9" stroke="#0b131e" stroke-width="0.85" stroke-linecap="round"/>
+
+        <!-- O tronco ajoelhado, ombros retos e base larga: silhueta de pedra
+             entalhada, não de corpo. -->
+        <path d="M12 13.6c-3.1 0-5 1.9-5.4 5.2-.3 2.2-.4 3.8-.4 4.7h11.6c0-.9-.1-2.5-.4-4.7-.4-3.3-2.3-5.2-5.4-5.2z"
+              fill="#dcecf8" opacity="0.88"/>
+        <!-- As duas mãos da frente unidas em prece, no peito: o gesto que
+             fecha a leitura de luto. -->
+        <path d="M12 15.4c-.9.6-1.4 1.5-1.4 2.6 0 .9.5 1.5 1.4 1.5s1.4-.6 1.4-1.5c0-1.1-.5-2-1.4-2.6z"
+              fill="#f2fbff"/>
+        <path d="M12 15.6v3.6" stroke="#8fb6d2" stroke-width="0.6" stroke-linecap="round"/>
       </symbol>
     </svg>
 
@@ -2276,15 +2649,122 @@
      </div>
     </div>
 
+    <!--
+      Os dois estados que andam junto com morrer, em ícone e não em texto.
+
+      Os dois vêm do inventário, que é como o jogo conta estas duas coisas: o
+      sino põe o "Bell Demon" na bolsa enquanto o efeito vale, e cada NPC
+      adoecido larga uma Rot Essence com o nome dele. Nenhum dos dois tem
+      campo próprio no save.
+
+      Tamanhos diferentes de propósito. O sino é um liga-desliga e cabe em
+      pouco: quem toca sabe que tocou, o ícone só confirma. A podridão tem
+      nome, conta e gente dentro, então é a peça maior e a única que abre.
+    -->
+    <div class="estados" id="estados" hidden>
+      <!--
+        O sino, pequeno. Dois estados no mesmo desenho, sem trocar de figura:
+        parado e apagado quando não há efeito; aceso, inclinado e com as ondas
+        batendo quando há. Trocar o desenho faria a pessoa ter de aprender dois
+        símbolos para uma informação só.
+      -->
+      <div class="estado estado-sino" id="estadoSino" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <g class="sino-ondas">
+            <path d="M4.6 9.4C4.9 7.2 5.9 5.4 7.4 4.1"/>
+            <path d="M19.4 9.4C19.1 7.2 18.1 5.4 16.6 4.1"/>
+          </g>
+          <g class="sino-corpo">
+            <!-- 梵鐘: o sino de templo japonês é um cilindro de ombro reto e
+                 boca larga, não a campânula ocidental de alça. -->
+            <path d="M12 3.1c-3.5 0-5.6 2.4-5.6 6v5.6h-1v2.1h13.2v-2.1h-1V9.1c0-3.6-2.1-6-5.6-6z"/>
+            <path d="M9.1 7.6h5.8M9.1 10.6h5.8" class="sino-frisos"/>
+            <circle cx="12" cy="2.2" r="1.1"/>
+          </g>
+          <path class="sino-tronco" d="M20.6 16.1h2.6"/>
+        </svg>
+        <span class="estado-rot" id="sinoRot">bell</span>
+      </div>
+
+      <!--
+        A podridão, maior e clicável.
+
+        Não é um ícone cheio: é o 竜 (dragão) em traço, com a mancha atrás
+        crescendo conforme o número de essências. Assim o estado se lê de
+        longe pela mancha e o detalhe fica na janela, em vez de tentar caber
+        tudo no desenho — que é como ele ficaria poluído.
+      -->
+      <button class="estado estado-rot-bt" id="estadoRot" type="button" aria-haspopup="dialog" aria-expanded="false" hidden>
+        <span class="rot-mancha" aria-hidden="true"></span>
+        <span class="rot-kanji" aria-hidden="true">竜</span>
+        <span class="estado-rot" id="rotRot">dragonrot</span>
+      </button>
+    </div>
+
     <div class="deaths-note" id="deathsNote"></div>
   </section>
+
+  <!-- A lista de quem está com a podridão. Janela, e não bloco empurrando a
+       página: é detalhe sob demanda, do mesmo jeito que as outras listas. -->
+  <!--
+    A cena do selo: a página inteira responde ao toque nele.
+
+    O pedido é contemplar, então ela não é um golpe como as outras cenas — é
+    lenta. Uma lavagem de tinta sobe do pé da tela, o carimbo se imprime no
+    meio, e as partículas douradas atravessam o quadro. Fica fora do fluxo e
+    não trava nada: quem quiser rolar a página durante, rola.
+  -->
+  <div class="kaiden-cena" id="kaidenCena" hidden aria-hidden="true">
+    <div class="kaiden-lavagem"></div>
+    <div class="kaiden-selo">皆伝</div>
+    <div class="kaiden-poeira"></div>
+  </div>
+
+  <dialog class="janela" id="rotJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo">Dragonrot</span>
+      <button class="janela-fecha" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="janela-corpo">
+      <div class="rot-lista" id="rotLista"></div>
+    </div>
+  </dialog>
 
   <!-- Bloco 3: progresso e tempo de jogo, lado a lado, quadrados. -->
   <div class="dois-quadrados">
     <!-- Anel em vez de barra: num quadrado 1:1 a barra fina deixava a maior
          parte do espaço vazio, e o anel ocupa o quadrado inteiro dizendo a
          mesma coisa. O número vive no meio dele. -->
+    <!--
+      O bloco das conquistas, que muda de natureza aos 100%.
+
+      Até lá ele é um medidor: anel, número, e pronto. Aos 100% deixa de medir
+      (não há mais o que medir) e passa a comemorar — vira a peça mais alta da
+      página, com o selo em cima e o anel em ouro.
+    -->
     <section class="quadro quadro-anel" id="anelPanel">
+      <!--
+        皆伝 (kaiden), "transmissão completa": nas escolas de artes marciais
+        japonesas é a licença mais alta que existe, a que diz que o mestre já
+        ensinou tudo que sabe. É o que 100% significa aqui, e é mais preciso
+        que 全 ou 完 — aqueles diriam "tudo" ou "fim"; este diz que não sobrou
+        técnica nenhuma por aprender, que é a frase certa para um jogo sobre um
+        shinobi de uma escola.
+
+        O desenho é um 落款, o carimbo vermelhão de tinta: quadrado de cantos
+        arredondados, borda grossa, kanji vazado. A borda é irregular de
+        propósito — carimbo de tinta não sai perfeito, e o que sai perfeito lê
+        como adesivo.
+
+        Fica absoluto sobre o topo do quadrado: aos 100% ele aparece sem
+        empurrar nada, porque não ocupa lugar no fluxo. O layout da página é o
+        mesmo antes e depois.
+      -->
+      <button class="selo" id="selo" type="button" hidden
+              aria-label="All achievements complete">
+        <span class="selo-tinta" aria-hidden="true"></span>
+        <span class="selo-kanji" aria-hidden="true">皆伝</span>
+      </button>
       <button class="anel-abre" id="anelHead" type="button" aria-expanded="false" aria-controls="conqLista" title="Open the full list of achievements, by difficulty">
         <div class="anel">
           <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -3449,6 +3929,118 @@ function renderContador(cfg) {
   document.getElementById(cfg.botao).title = cfg.resumo(dados);
 }
 
+/**
+ * Os dois estados do bloco de mortes.
+ *
+ * Nenhum dos dois inventa um valor quando a leitura não veio: o elemento
+ * some. Um sino desenhado como "desligado" sem save lido afirmaria uma coisa
+ * que não se sabe, e este é o tipo de erro que a página não pode cometer —
+ * ela é lida como informação de referência.
+ */
+function renderEstados() {
+  const caixa = document.getElementById("estados");
+  const sino = document.getElementById("estadoSino");
+  const rot = document.getElementById("estadoRot");
+  if (!caixa || !sino || !rot) return;
+
+  const b = temSync() ? sync.demonBell : null;
+  const d = temSync() ? sync.dragonrot : null;
+
+  sino.hidden = !b;
+  if (b) {
+    sino.classList.toggle("on", !!b.ativo);
+    sino.classList.toggle("off", !b.ativo);
+    // A ressalva vai para o hover, não para a página: o bloco é contador.
+    sino.title = b.ativo
+      ? "Bell Demon carried: harder enemies, better drops. Return it at an idol to remove."
+      : "Demon Bell not rung, or the Bell Demon has been returned.";
+    const rotulo = document.getElementById("sinoRot");
+    if (rotulo) rotulo.textContent = b.ativo ? "bell rung" : "bell";
+  }
+
+  rot.hidden = !d;
+  if (d) {
+    rot.classList.toggle("on", !!d.ativo);
+    rot.classList.toggle("off", !d.ativo);
+    // A mancha cresce com o número, mas satura: a partir de um terço dos NPCs
+    // a diferença entre seis e sete doentes não é o que a pessoa lê no ícone,
+    // e deixar crescer até o fim viraria borrão.
+    const fracao = d.total ? Math.min(1, d.quantos / (d.total / 3)) : 0;
+    rot.style.setProperty("--rot", d.ativo ? Math.max(0.35, fracao).toFixed(2) : "0");
+    const rotulo = document.getElementById("rotRot");
+    if (rotulo) rotulo.textContent = d.ativo ? d.quantos + " afflicted" : "dragonrot";
+    rot.title = d.ativo
+      ? "Rot Essence held for " + d.quantos + " of " + d.total + " characters. Open for the names."
+      : "No Rot Essence in the inventory.";
+  }
+
+  caixa.hidden = !b && !d;
+  renderRotLista(d);
+}
+
+/**
+ * A lista de quem está com a podridão.
+ *
+ * O texto diz "held", e não "sick": o que se verificou é o que está no
+ * inventário. Se a essência some ao curar a pessoa, as duas frases seriam a
+ * mesma; como isso não está confirmado em fonte nenhuma, a página fica com a
+ * que é verdade dos dois jeitos.
+ */
+function renderRotLista(d) {
+  const lista = document.getElementById("rotLista");
+  const janela = document.getElementById("rotJanela");
+  const bt = document.getElementById("estadoRot");
+  if (!lista || !janela || !bt) return;
+
+  lista.innerHTML = "";
+  const itens = d && Array.isArray(d.essencias) ? d.essencias : [];
+  if (!itens.length) {
+    const vazio = document.createElement("p");
+    vazio.className = "rot-vazio";
+    vazio.textContent = d
+      ? "No Rot Essence in the inventory. Each character who catches Dragonrot leaves one, named after them."
+      : "Waiting for the save.";
+    lista.appendChild(vazio);
+  }
+  for (const e of itens) {
+    const linha = document.createElement("div");
+    linha.className = "rot-linha";
+    const item = document.createElement("div");
+    item.className = "rot-item";
+    item.textContent = e.item;
+    const npc = document.createElement("div");
+    npc.className = "rot-npc";
+    npc.textContent = e.npc;
+    linha.appendChild(item); linha.appendChild(npc);
+    lista.appendChild(linha);
+  }
+
+  ligarJanela(janela, bt);
+  if (!bt.dataset.ligado) {
+    bt.dataset.ligado = "1";
+    bt.addEventListener("click", () => abrirJanela(janela, bt));
+  }
+}
+
+/**
+ * A assinatura do cabeçalho: "<apelido> game progress".
+ *
+ * Sem apelido não há linha. Não é o mesmo que uma linha vazia: `hidden` tira
+ * o elemento do fluxo, então o `gap` da coluna do cabeçalho também some e a
+ * borda de baixo sobe para junto do título, em vez de deixar uma faixa de ar
+ * do tamanho de um texto que não existe.
+ *
+ * Enquanto a leitura não chegou, a linha também fica fora — piscar "oaovito"
+ * e trocar por outro nome meio segundo depois seria pior que não mostrar.
+ */
+function renderAssinatura() {
+  const el = document.getElementById("assinatura");
+  if (!el) return;
+  const nick = temSync() && sync.jogador && sync.jogador.nick ? sync.jogador.nick : null;
+  el.hidden = !nick;
+  el.textContent = nick ? nick + " game progress" : "";
+}
+
 function renderBossKills() {
   renderContador({
     painel: "bossPanel", num: "bossNum", lista: "bossLista", botao: "bossHead",
@@ -3471,7 +4063,7 @@ function renderBossKills() {
 function renderHeadlessConta() {
   renderContador({
     painel: "headlessPanel", num: "headlessNum", lista: "headlessLista", botao: "headlessHead",
-    campo: "headless", arte: false, emblema: "首",
+    campo: "headless", arte: true, emblema: "首",
     total: (d) => d.filter((h) => h.defeated).length,
     feito: (h) => h.defeated,
     marca: (h) => (h.defeated ? "✓" : "—"),
@@ -3648,6 +4240,8 @@ function renderEssentials() {
 
 function render() {
   renderSyncLine();
+  renderAssinatura();
+  renderEstados();
   renderDeaths();
   renderTempo();
   renderBossKills();
@@ -3744,9 +4338,59 @@ function render() {
   const VOLTA = 263.89;
   document.getElementById("anelFio").style.strokeDashoffset = VOLTA - (VOLTA * pct / 100);
 
+  renderKaiden(ok && todas > 0 && feitas >= todas);
   renderConquistas(conq);
   renderEfeitos();
   renderMarcos();
+}
+
+/**
+ * 皆伝: o estado de 100% nas conquistas.
+ *
+ * Só entra quando a contagem é real. `feitas >= todas` com `todas` valendo
+ * zero seria verdade por vacuidade, e a página carimbaria "completou tudo"
+ * antes de ler save nenhum — o mesmo erro que as cenas de chefe já tiveram
+ * com `every` de lista vazia.
+ *
+ * A classe some quando a condição deixa de valer. Isso importa mais do que
+ * parece: em NG+ o placar da Steam não zera, mas um save novo lido num outro
+ * computador pode chegar com menos, e um selo que nunca sai passaria a
+ * mentir.
+ */
+function renderKaiden(completo) {
+  const painel = document.getElementById("anelPanel");
+  const selo = document.getElementById("selo");
+  if (!painel || !selo) return;
+
+  painel.classList.toggle("kaiden", !!completo);
+  selo.hidden = !completo;
+  if (!completo) return;
+
+  selo.title = "皆伝 — every achievement unlocked.";
+  if (selo.dataset.ligado) return;
+  selo.dataset.ligado = "1";
+  selo.addEventListener("click", tocarKaiden);
+}
+
+/**
+ * A cena do selo, na página inteira.
+ *
+ * Reinicia se já estiver rodando: clicar de novo tem de responder de novo,
+ * senão o segundo clique parece que não funcionou. Tirar o nó do documento e
+ * repor é o jeito de reiniciar animação de CSS — reatribuir a classe sozinho
+ * não relança, porque o navegador não vê mudança.
+ */
+function tocarKaiden() {
+  const cena = document.getElementById("kaidenCena");
+  if (!cena) return;
+  const pai = cena.parentNode;
+  const novo = cena.cloneNode(true);
+  pai.replaceChild(novo, cena);
+  novo.hidden = false;
+  // 5,2 s é a duração declarada no CSS das três camadas. Guardar o número em
+  // dois lugares é o tipo de coisa que desanda; aqui ele existe uma vez no
+  // CSS e o JS só espera um pouco mais que isso para esconder.
+  setTimeout(() => { novo.hidden = true; }, 5400);
 }
 
 /**

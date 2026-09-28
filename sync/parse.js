@@ -19,6 +19,7 @@ const deathsmem = require('./deathsmem');
 const tempo = require('./tempo');
 const bosskills = require('./bosskills');
 const achievements = require('./achievements');
+const jogador = require('./jogador');
 const conquistas = require('./conquistas');
 const efeitos = require('./efeitos');
 const memoria = require('./memoria');
@@ -169,7 +170,58 @@ function buildHeadless(config, goods) {
     detected: true,
     defeated: h.goodsAnyOf.some((id) => goods.has(id)),
     confidence: h.confidence,
+    enquadre: h.enquadre || null,
   }));
+}
+
+/**
+ * O Sino Demoníaco: afligido ou não.
+ *
+ * Tocar o sino põe o item "Bell Demon" no inventário e o deixa lá enquanto o
+ * efeito durar; devolvê-lo num Ídolo tira o item. Então possuir é o estado, e
+ * o estado é binário — que é exatamente o que um ícone pequeno consegue dizer
+ * sem ficar poluído.
+ *
+ * É o mesmo raciocínio dos Headless e das Rot Essence: o jogo não expõe o
+ * estado num campo, expõe o rastro no inventário.
+ */
+function buildDemonBell(config, goods) {
+  const cfg = config.goods && config.goods.bellDemon;
+  if (!cfg) return null;
+  return {
+    ativo: goods.has(cfg.id),
+    id: cfg.id,
+    label: cfg.label,
+    confidence: cfg.confidence || 'unknown',
+  };
+}
+
+/**
+ * Dragonrot: quem adoeceu.
+ *
+ * Não há contador de podridão legível no save. O que há é consequência: cada
+ * NPC adoecido larga uma Rot Essence exclusiva e permanente. Possuir qualquer
+ * uma prova que a podridão se espalhou, e o conjunto diz exatamente quem.
+ *
+ * O que NÃO se sabe, e por isso não se afirma: se a Rot Essence some do
+ * inventário quando a pessoa é curada. Nenhuma das fontes consultadas diz, e
+ * as duas leituras mudam o sentido do número — "quem está doente agora" e
+ * "quem já adoeceu algum dia" não são a mesma coisa. Então a página fala só o
+ * que é verificável: quantas Rot Essence estão no inventário neste momento, e
+ * de quem são. Se um dia a podridão aparecer neste save, a resposta cai
+ * sozinha na observação e o texto pode ficar mais específico.
+ */
+function buildDragonrot(config, goods) {
+  const cfg = config.rotEssence;
+  if (!cfg || !cfg.list) return null;
+  const tocados = cfg.list.filter((r) => goods.has(r.id));
+  return {
+    ativo: tocados.length > 0,
+    quantos: tocados.length,
+    total: cfg.list.length,
+    essencias: tocados.map((r) => ({ item: r.item, npc: r.npc })),
+    confidence: cfg.confidence || 'unknown',
+  };
 }
 
 /**
@@ -565,15 +617,37 @@ function buildProgress(options) {
      * conta menu e carregamento, o interno não.
      */
     playtime: (() => {
-      let t = null;
-      try { t = tempo.tempoDeJogo({ save: file }); } catch (e) { return null; }
-      if (!t) return null;
+      /*
+       * O tempo interno tem duas fontes, e a ordem entre elas importa.
+       *
+       * A memória é a mais fresca — vale o segundo em que se leu. Mas ela só
+       * existe com o jogo aberto, e o que fica guardado envelhece. O save é
+       * gravado a cada Ídolo, então atrasa um pouco, mas nunca fica parado
+       * enquanto a pessoa joga. Fica com o maior dos dois: tempo de jogo só
+       * anda para a frente, então o maior é o mais recente por definição.
+       */
       let interno = null;
       try {
         const m = deathsmem.contagem() || deathsmem.ultimaConhecida();
         if (m && typeof m.igtHoras === 'number') interno = Math.round(m.igtHoras * 3600);
       } catch (e) { /* jogo fechado e nada guardado ainda */ }
-      return Object.assign({}, t, { internoSegundos: interno });
+      try {
+        const doSave = tempo.doSave(payload, config);
+        if (doSave && (interno === null || doSave > interno)) interno = doSave;
+      } catch (e) { /* sem offset no config, fica só o da memória */ }
+
+      let t = null;
+      try { t = tempo.tempoDeJogo({ save: file, internoSegundos: interno }); } catch (e) { return null; }
+      return t;
+    })(),
+    /*
+     * De quem é este progresso.
+     *
+     * Sem Steam na máquina isto é null, e o cabeçalho perde a linha inteira em
+     * vez de mostrar um nome genérico — ver o comentário em jogador.js.
+     */
+    jogador: (() => {
+      try { return jogador.quem({ save: file }); } catch (e) { return null; }
     })(),
     // Conquistas do Steam, lidas do cache local: sem chave de API, sem depender
     // de o perfil ser público.
@@ -616,6 +690,8 @@ function buildProgress(options) {
     arts: buildUnlocks(config.combatArts.list, weapons),
     miniBosses: mini.list,
     headless: buildHeadless(config, goods),
+    demonBell: buildDemonBell(config, goods),
+    dragonrot: buildDragonrot(config, goods),
     idols: idols.list,
     idolCalibration: { blocos: idols.blocosCalibrados, total: idols.blocosTotal },
     goodsUnlocks: buildGoodsUnlocks(config, goods),

@@ -46,7 +46,26 @@ const MAPA = {
   // A arte dela não está na página de chefes: é a de personagem, retrato de
   // corpo inteiro. Por isso ela tem `enquadre` no config — sem aproximar, o
   // recorte quadrado pegaria o tronco em vez do rosto.
-  emma: 2/2b/Emma-min.png,
+  emma: '2/2b/Emma-min.png',
+
+  /*
+   * Headless.
+   *
+   * O wiki não tem página por Headless: eles são um inimigo só, com duas
+   * formas — o de terra e o de água. Então a arte se repete de propósito,
+   * como já acontece com o Genichiro, e o que muda é a forma certa para cada
+   * lugar: os dois que se enfrentam submerso levam a foto submersa.
+   *
+   * São capturas da galeria e não retrato de página, porque retrato de página
+   * não existe para eles. O enquadramento sobe no JSON, senão o corte
+   * quadrado pega a barriga e deixa a cabeça (que é o traço do bicho: não ter
+   * uma) fora do quadro.
+   */
+  headlessOutskirts: 'c/cd/Headless-gallery-1-sekiro-wiki-guide-300px.png',
+  headlessDepths: 'c/cd/Headless-gallery-1-sekiro-wiki-guide-300px.png',
+  headlessValley: 'c/cd/Headless-gallery-1-sekiro-wiki-guide-300px.png',
+  headlessCastle: '0/09/Headless-gallery-5-wiki-guide-300px.png',
+  headlessPalace: '0/09/Headless-gallery-5-wiki-guide-300px.png',
 };
 
 function baixar(url, alvo) {

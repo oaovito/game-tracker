@@ -39,6 +39,7 @@ const CAMPOS_PUBLICOS = [
   'prayerBeadList', 'gourdSeedList',
   'bosses', 'miniBosses', 'headless', 'idols', 'idolCalibration',
   'tools', 'arts', 'goodsUnlocks', 'history', 'notes', 'efeitos',
+  'jogador', 'demonBell', 'dragonrot',
 ];
 
 /** O que sobra de `source` depois de tirar o que identifica a máquina. */
@@ -93,6 +94,27 @@ const PODAS = {
     known: d.known, count: d.count, confidence: d.confidence,
     how: d.how, escopo: d.escopo, aoVivo: d.aoVivo,
   } : d),
+  /*
+   * Do jogador sai só o apelido.
+   *
+   * O objeto do módulo já nasce sem o nome de login da conta, mas a poda é
+   * declarada aqui do mesmo jeito: a regra deste arquivo é que campo novo não
+   * vaza por esquecimento, e para isso ela precisa valer para todo objeto que
+   * tem mais de um campo. Apelido do Steam é público por natureza — é o nome
+   * que aparece na lista de amigos de quem quer que seja.
+   */
+  jogador: (j) => (j ? { nick: j.nick, fonte: j.fonte } : j),
+  /*
+   * Da podridão saem os nomes, não os números de item.
+   *
+   * O id do EquipParamGoods não diz nada a quem lê a página e é detalhe de
+   * como o save foi lido. O que interessa é de quem é cada essência.
+   */
+  dragonrot: (d) => (d ? {
+    ativo: d.ativo, quantos: d.quantos, total: d.total,
+    essencias: (d.essencias || []).map((e) => ({ item: e.item, npc: e.npc })),
+  } : d),
+  demonBell: (b) => (b ? { ativo: b.ativo, label: b.label } : b),
   playtime: (p) => (p ? { minutos: p.minutos, horas: p.horas, fonte: p.fonte, internoSegundos: p.internoSegundos } : p),
 };
 
