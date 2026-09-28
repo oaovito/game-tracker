@@ -11,7 +11,7 @@ const vm = require('vm');
 const { install, stripTags } = require('./domshim.js');
 
 const RAIZ = path.join(__dirname, '..');
-const PAGINA = path.join(RAIZ, 'sekiro-progresso.html');
+const PAGINA = path.join(RAIZ, 'trackeroao.html');
 
 const IDS = ['categories', 'topics', 'essentials', 'beads', 'seeds', 'bosses', 'minibosses', 'headless',
   'deaths', 'deathsCount', 'deathsNote', 'syncDot', 'syncText', 'anelFio', 'overallPct', 'overallCount', 'tempoNum', 'skillEmote', 'marcos', 'bossPanel', 'bossHead', 'bossNum', 'bossLista', 'bossNota', 'quadroTempo', 'tempoRot', 'therm', 'thermFill', 'thermPin',
@@ -52,7 +52,7 @@ async function carregar(progress, opts) {
     clearInterval: global.clearInterval,
     clearTimeout: global.clearTimeout,
   });
-  new vm.Script(blocos[0][1], { filename: 'sekiro-progresso.html' }).runInContext(ctx);
+  new vm.Script(blocos[0][1], { filename: 'trackeroao.html' }).runInContext(ctx);
   await ctx.pollProgress();
 
   /**

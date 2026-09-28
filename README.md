@@ -1,7 +1,7 @@
 # Sekiro — tracker de progresso com sync do save
 
 Lê o save do Sekiro (`S0000.sl2`), extrai o que dá para extrair com confiança e
-alimenta o `sekiro-progresso.html`. A página é **somente leitura**: tudo que
+alimenta o `trackeroao.html`. A página é **somente leitura**: tudo que
 ela mostra vem do save, não existe marcação manual.
 
 **O save nunca é escrito.** Todo o código abre o arquivo somente para leitura.
@@ -66,7 +66,7 @@ funcionar. Duas saídas:
 
 ### Diagnóstico
 
-Rodando oculto, a saída vai para `sync/sekiro-sync.log` (rotaciona em 512 KB).
+Rodando oculto, a saída vai para `sync/trackeroao.log` (rotaciona em 512 KB).
 Um boot saudável tem ~20 linhas e termina com o estado do jogo:
 
 ```
@@ -244,7 +244,7 @@ e diz no terminal que foi chute. Para fixar, ponha `"slot": 1` no
 
 ```
 tools/completionist/
-  sekiro-progresso.html   a página (abra pelo servidor, não por file://)
+  trackeroao.html   a página (abra pelo servidor, não por file://)
   progress.json           gerado pelo sync; a página lê daqui
   run.bat                 execução manual
   install-sync-service.ps1    registra a tarefa agendada
@@ -262,7 +262,7 @@ tools/completionist/
     selftest.js           testes contra o save real
     flags.js              event flags (mini-chefes)
     offsets.json          toda a configuração e os IDs
-    sekiro-sync.log       saída do serviço quando roda oculto (gerado)
+    trackeroao.log       saída do serviço quando roda oculto (gerado)
     .state.json           slot aprendido (gerado)
     snapshots/            snapshots do discover (gerado)
 ```
@@ -273,7 +273,7 @@ tools/completionist/
   nesta máquina, a pasta não existe.
 - **a página diz "sem sincronização"** — ela não está falando com o serviço.
   Causas, da mais comum para a menos: o PC está desligado ou dormindo; o
-  serviço caiu (veja `sync/sekiro-sync.log` e
+  serviço caiu (veja `sync/trackeroao.log` e
   `Get-ScheduledTask TrackeroaoSync`); ou você abriu o arquivo HTML direto
   por `file://`, e aí o `fetch('progress.json')` não funciona — use o endereço
   do servidor.

@@ -145,7 +145,7 @@ async function montar() {
   for (const m of html.matchAll(/(?:href|src)="(https?:\/\/[^"]+)"/g)) add('    ' + m[1]);
   add();
   add('  Chaves gravadas no navegador de quem abre (localStorage):');
-  for (const m of new Set([...html.matchAll(/"(sekiro-progresso-[a-z]+)"/g)].map((m) => m[1]))) add('    ' + m);
+  for (const m of new Set([...html.matchAll(/"(trackeroao-[a-z]+)"/g)].map((m) => m[1]))) add('    ' + m);
   add();
   add('  --- HTML completo abaixo ---');
   add(html);

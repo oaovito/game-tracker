@@ -95,7 +95,7 @@ foreach ($tentativa in 1..5) {
 
 if (-not $ok) {
     Write-Host "O servidor nao respondeu em localhost:$porta." -ForegroundColor Red
-    Write-Host "Veja o log: $(Join-Path $PSScriptRoot 'sync\sekiro-sync.log')" -ForegroundColor Yellow
+    Write-Host "Veja o log: $(Join-Path $PSScriptRoot 'sync\trackeroao.log')" -ForegroundColor Yellow
     exit 1
 }
 
@@ -105,7 +105,7 @@ $ips = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
     Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
     Select-Object -ExpandProperty IPAddress
 foreach ($ip in $ips) {
-    Write-Host "  celular: http://${ip}:$porta/sekiro-progresso.html" -ForegroundColor Cyan
+    Write-Host "  celular: http://${ip}:$porta/trackeroao.html" -ForegroundColor Cyan
 }
 
 Write-Host ""

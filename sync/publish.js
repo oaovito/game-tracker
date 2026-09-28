@@ -87,7 +87,7 @@ function montar(destino) {
   const dir = destino || path.join(RAIZ, 'docs');
   fs.mkdirSync(dir, { recursive: true });
 
-  const pagina = fs.readFileSync(path.join(RAIZ, 'sekiro-progresso.html'), 'utf8');
+  const pagina = fs.readFileSync(path.join(RAIZ, 'trackeroao.html'), 'utf8');
   fs.writeFileSync(path.join(dir, 'index.html'), pagina);
 
   let progresso = null;

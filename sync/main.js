@@ -31,7 +31,7 @@ const qrfile = require('./qrfile');
 // --------------------------------------------------------------------- log
 // Instalado como tarefa agendada, o processo roda oculto e o stdout se perde.
 // Espelhar tudo num arquivo é a única forma de diagnosticar depois.
-const LOG_FILE = path.join(__dirname, 'sekiro-sync.log');
+const LOG_FILE = path.join(__dirname, 'trackeroao.log');
 const LOG_MAX = 512 * 1024;
 
 function rotateLog() {
@@ -567,7 +567,7 @@ async function run() {
   syncNow('leitura inicial');
 
   try {
-    await serve.start({ root: ROOT, port: PORT, indexFile: 'sekiro-progresso.html', quiet: true });
+    await serve.start({ root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true });
   } catch (err) {
     if (err && err.code === 'EADDRINUSE') {
       console.error(`\n  A porta ${PORT} já está ocupada.`);
@@ -583,7 +583,7 @@ async function run() {
   // Porta 80 além da principal: com ela o endereço perde o ":8777", que é a
   // diferença entre um link que dá para ditar e um que não dá. Se não der,
   // seguimos com a porta principal - não é motivo para nada parar.
-  const extra = await serve.listenExtra({ root: ROOT, port: 80, indexFile: 'sekiro-progresso.html' });
+  const extra = await serve.listenExtra({ root: ROOT, port: 80, indexFile: 'trackeroao.html' });
   if (extra.ok) console.log('  [http] também na porta 80');
   else console.log(`  [http] porta 80 indisponível (${extra.error}); o endereço sai com :${PORT}`);
 

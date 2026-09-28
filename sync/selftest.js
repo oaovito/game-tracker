@@ -72,7 +72,7 @@ function progressoLocal() {
 console.log('\n  === 1. Gerador de QR ===');
 
 check('encoda uma URL de LAN', () => {
-  const m = qr.encode('http://192.168.1.10:8777/sekiro-progresso.html', 'L');
+  const m = qr.encode('http://192.168.1.10:8777/trackeroao.html', 'L');
   assert(m.size === m.version * 4 + 17, 'tamanho não bate com a versão');
   assert(m.grid.length === m.size, 'altura da matriz errada');
   assert(m.grid.every((r) => r.length === m.size), 'linha com largura errada');
@@ -315,9 +315,9 @@ check('anuncia e regrava o QR quando a rede aparece depois do boot', () => {
   let v;
   try {
     v = main.vigiarRede(() => url, 3600000); // intervalo longo: chamamos à mão
-    url = 'http://192.168.1.50:8777/sekiro-progresso.html';
+    url = 'http://192.168.1.50:8777/trackeroao.html';
     v.checar();
-    url = 'http://192.168.1.77:8777/sekiro-progresso.html';
+    url = 'http://192.168.1.77:8777/trackeroao.html';
     v.checar();
     url = null;
     v.checar();
@@ -650,7 +650,7 @@ const EXCLUIDOS = {
 };
 
 check('todo campo que a página lê chega na versão pública', () => {
-  const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'sekiro-progresso.html'), 'utf8');
+  const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8');
   const usados = [...new Set([...src.matchAll(/sync\.([a-zA-Z]+)/g)].map((m) => m[1]))];
   const publicos = new Set(publish.CAMPOS_PUBLICOS.concat(['source']));
   const faltando = usados.filter((u) => !publicos.has(u) && !EXCLUIDOS[u]);
@@ -714,7 +714,7 @@ check('o projeto inteiro está versionado, não só a página', () => {
   for (const e of ['.js', '.ps1', '.html']) assert(porExt[e] > 0, 'nenhum ' + e + ' versionado');
   assert(rastreados.includes('package.json'), 'sem package.json');
   assert(rastreados.includes('sync/main.js'), 'sem o serviço');
-  assert(rastreados.includes('sekiro-progresso.html'), 'sem a página');
+  assert(rastreados.includes('trackeroao.html'), 'sem a página');
   return rastreados.length + ' arquivos: ' + Object.entries(porExt)
     .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([e, n]) => n + e).join(', ');
 });
@@ -770,6 +770,52 @@ check('nada do que está versionado identifica esta máquina', () => {
   }
   assert(sujos.length === 0, sujos.join(' | '));
   return rastreados.length + ' arquivos, nenhum com pasta pessoal, Steam ID ou IP';
+});
+
+check('nada no projeto carrega o nome antigo', () => {
+  // O projeto se chama trackeroao. "Progress — Sekiro" era o título da aba, e
+  // "sekiro-progresso" era o nome do arquivo da página, do log e das chaves de
+  // armazenamento. O nome do jogo continua valendo onde é o jogo que está
+  // sendo descrito — nas listas, nos textos —, mas não como nome do projeto.
+  // Os termos vão montados em pedaços: escritos por extenso, este arquivo se
+  // acusaria na primeira execução, como já houve com o Steam ID de exemplo.
+  const NOME_ANTIGO = 'sekiro' + '-progresso';
+  const LOG_ANTIGO = 'sekiro' + '-sync';
+  const TITULO_ANTIGO = 'Progress ' + '— Sekiro';
+  const antigos = new RegExp(NOME_ANTIGO + '|' + LOG_ANTIGO, 'gi');
+  // A página tem direito a três: a ponte de compatibilidade das chaves lê a
+  // antiga, apaga a antiga, e explica por quê.
+  const COTA = { 'trackeroao.html': 3 };
+
+  const sujos = [];
+  for (const a of rastreados) {
+    if (/\.(png|svg|bin|sl2|zip|exe|ico)$/i.test(a)) continue;
+    if (/^docs\//.test(a)) continue;   // saída publicada, conferida à parte
+    if (a === 'sync/selftest.js') continue;   // é este arquivo, que fala deles
+    if (antigos.test(a)) { sujos.push(a + ' (no nome do arquivo)'); continue; }
+    let t = '';
+    try { t = fs.readFileSync(path.join(RAIZ_PROJETO, a), 'utf8'); } catch (e) { continue; }
+    if (t.includes(TITULO_ANTIGO)) sujos.push(a + ': título antigo');
+    const citacoes = (t.match(antigos) || []).length;
+    if (citacoes > (COTA[a] || 0)) sujos.push(a + ': ' + citacoes + ' citações do nome antigo');
+  }
+  assert(sujos.length === 0, sujos.join(' | '));
+  const titulo = /<title>([^<]*)<\/title>/.exec(
+    fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8'));
+  assert(titulo && titulo[1].trim() === 'trackeroao', 'o título da aba é "' + (titulo && titulo[1]) + '"');
+  return 'título "trackeroao", arquivo trackeroao.html, chaves trackeroao-*';
+});
+
+check('quem já usava a página não perde as preferências', () => {
+  // Renomear chave de localStorage apaga em silêncio o tema e os alfinetes de
+  // quem já estava usando. A leitura cai na chave antiga quando a nova não
+  // existe, e é isso que faz o renome passar despercebido em vez de doer.
+  const t = fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8');
+  assert(/function guardado\(chave\)/.test(t), 'não há função de leitura');
+  assert(/getItem\("trackeroao-" \+ chave\)/.test(t), 'não lê a chave nova');
+  assert(/getItem\("sekiro-progresso-" \+ chave\)/.test(t), 'não tem a reserva da chave antiga');
+  assert(/setItem\("trackeroao-" \+ chave/.test(t), 'não grava na chave nova');
+  return 'lê a nova, cai na antiga, grava sempre na nova';
 });
 
 check('o estado de execução ficou fora do git', () => {

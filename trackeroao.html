@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Progress — Sekiro</title>
+<title>trackeroao</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -1375,10 +1375,35 @@ const ESSENTIALS = [
   { key: "lapisLazuli", label: "Lapis Lazuli", hint: "endgame material", auto: "mat:lapisLazuli" },
 ];
 
-const THEME_KEY = "sekiro-progresso-theme";
+/**
+ * As chaves de armazenamento levam o nome do projeto.
+ *
+ * `guardado` lê a chave nova e, não achando nada, tenta a antiga — o nome do
+ * projeto mudou e quem já usava a página tem preferências gravadas sob
+ * "sekiro-progresso-*". Sem essa ponte, renomear a chave apagaria em silêncio
+ * o tema escolhido e as abas alfinetadas de quem já estava usando.
+ */
+function guardado(chave) {
+  try {
+    const novo = localStorage.getItem("trackeroao-" + chave);
+    if (novo !== null) return novo;
+    return localStorage.getItem("sekiro-progresso-" + chave);
+  } catch (e) { return null; }
+}
+function guardar(chave, valor) {
+  try { localStorage.setItem("trackeroao-" + chave, valor); } catch (e) { /* aba anônima */ }
+}
+function esquecer(chave) {
+  try {
+    localStorage.removeItem("trackeroao-" + chave);
+    localStorage.removeItem("sekiro-progresso-" + chave);
+  } catch (e) { /* aba anônima */ }
+}
+
+const THEME_KEY = "theme";
 // Quando este aparelho viu as novidades pela última vez. É estado de leitura,
 // por aparelho — não é progresso, que continua vindo só do save.
-const VISTO_KEY = "sekiro-progresso-visto";
+const VISTO_KEY = "visto";
 
 // Último progress.json lido. null = o servidor ainda não respondeu.
 // A página inteira é um reflexo disto: não existe estado marcado à mão.
@@ -1386,7 +1411,7 @@ let sync = null;
 const temSync = () => !!(sync && sync.ok);
 
 let visto = null;
-try { visto = localStorage.getItem(VISTO_KEY); } catch (e) { visto = null; }
+visto = guardado(VISTO_KEY);
 
 // Prefixo que liga uma mudança do histórico à chave usada nas linhas do DATA.
 const PREFIXO = {
@@ -1432,7 +1457,7 @@ function marcarVisto() {
   const lista = novidades();
   const maisNovo = lista.length ? lista[lista.length - 1].at : new Date().toISOString();
   visto = maisNovo;
-  try { localStorage.setItem(VISTO_KEY, visto); } catch (e) {}
+  guardar(VISTO_KEY, visto);
   render();
 }
 
@@ -1475,8 +1500,8 @@ function setOpen(section, idx) {
  */
 // Sem "All": o menu passou a ser três tópicos e uma gaveta, e uma aba que
 // mostra tudo de uma vez desfaz o propósito de ter separado.
-const ABA_CHAVE = "sekiro-progresso-aba";
-const FIX_CHAVE = "sekiro-progresso-fixadas";
+const ABA_CHAVE = "aba";
+const FIX_CHAVE = "fixadas";
 // Ordem de quem vem primeiro no menu. O resto entra depois, na ordem da página.
 // Um tópico do menu pode reunir várias seções. "Items" é isso: junta tudo que
 // é item numa aba só, com contas, sementes e materiais no topo — que é a ordem
@@ -1493,17 +1518,17 @@ const ORDEM_MENU = ["Bosses", "Mini-bosses", "Items"];
 let topicos = [];
 let abaAtual = null;
 let gavetaAberta = false;
-try { abaAtual = localStorage.getItem(ABA_CHAVE); } catch (e) { abaAtual = null; }
+abaAtual = guardado(ABA_CHAVE);
 
 /** Quais seções aparecem no menu. Começa nas três e muda pelo alfinete. */
 let fixadas = new Set(ORDEM_MENU);
 try {
-  const salvo = JSON.parse(localStorage.getItem(FIX_CHAVE));
+  const salvo = JSON.parse(guardado(FIX_CHAVE));
   if (Array.isArray(salvo)) fixadas = new Set(salvo);
 } catch (e) { /* nada salvo, ou storage bloqueado */ }
 
 function gravarFixadas() {
-  try { localStorage.setItem(FIX_CHAVE, JSON.stringify([...fixadas])); } catch (e) { /* aba anônima */ }
+  guardar(FIX_CHAVE, JSON.stringify([...fixadas]));
 }
 
 function alternarPin(nome) {
@@ -1511,7 +1536,7 @@ function alternarPin(nome) {
     fixadas.delete(nome);
     // A seção aberta acabou de sair do menu. Deixá-la aberta sem botão que a
     // feche seria um beco sem saída, então volta ao estado limpo.
-    if (abaAtual === nome) { abaAtual = null; try { localStorage.removeItem(ABA_CHAVE); } catch (e) {} }
+    if (abaAtual === nome) { abaAtual = null; esquecer(ABA_CHAVE); }
   } else {
     fixadas.add(nome);
   }
@@ -1564,8 +1589,8 @@ function selecionarAba(chave) {
   try {
     // Gravar o nulo daria a string "null" na próxima visita, que não casa com
     // tópico nenhum — funcionaria por acidente. Apagar é o que diz a verdade.
-    if (chave === null) localStorage.removeItem(ABA_CHAVE);
-    else localStorage.setItem(ABA_CHAVE, chave);
+    if (chave === null) esquecer(ABA_CHAVE);
+    else guardar(ABA_CHAVE, chave);
   } catch (e) { /* aba anônima */ }
   renderTopicos();
 }
@@ -2555,13 +2580,13 @@ function applyTheme(t) {
   botao.setAttribute("aria-label", botao.title);
 }
 let savedTheme = null;
-try { savedTheme = localStorage.getItem(THEME_KEY); } catch (e) {}
+savedTheme = guardado(THEME_KEY);
 applyTheme(savedTheme);
 ligarPontoDeSync();
 ligarQuadrosAbrem();
 document.getElementById("themeToggle").addEventListener("click", () => {
   const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
-  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  guardar(THEME_KEY, next);
   applyTheme(next);
 });
 

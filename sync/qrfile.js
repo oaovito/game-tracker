@@ -13,7 +13,7 @@ const qr = require('./qr');
 const serve = require('./serve');
 
 const PORT = Number(process.env.PORT || 8777);
-const INDEX = 'sekiro-progresso.html';
+const INDEX = 'trackeroao.html';
 
 function lanUrl() {
   const addrs = serve.localAddresses();

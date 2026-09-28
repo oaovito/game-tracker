@@ -15,8 +15,8 @@ sync/.state.json
 # --- gerados ---
 qr-acesso.svg
 auditoria-publica.txt
-sync/sekiro-sync.log
-sync/sekiro-sync.log*
+sync/trackeroao.log
+sync/trackeroao.log*
 # Despejos de memória do jogo para achar o offset das mortes: dezenas de MB.
 sync/snapshots/
 # Cópias da hibernação: contêm o save, com Steam ID. Nunca vão para o git.

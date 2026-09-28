@@ -74,7 +74,7 @@ function safeJoin(root, urlPath) {
 
 function createServer(options) {
   const root = options.root;
-  const indexFile = options.indexFile || 'sekiro-progresso.html';
+  const indexFile = options.indexFile || 'trackeroao.html';
 
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
@@ -149,7 +149,7 @@ function listenExtra(options) {
 function start(options) {
   const root = options.root;
   const port = options.port || 8777;
-  const indexFile = options.indexFile || 'sekiro-progresso.html';
+  const indexFile = options.indexFile || 'trackeroao.html';
   const server = createServer({ root, indexFile });
 
   // Rodando como serviço, o processo sobe antes do Wi-Fi associar: não existe
