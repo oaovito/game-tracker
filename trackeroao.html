@@ -39,7 +39,23 @@
     --text-dim: #4a3f2d;
     --line: rgba(32,26,18,0.14);
   }
-  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  /*
+   * A página acompanha a escala do monitor.
+   *
+   * Tudo aqui é medido em rem, então mexer no corpo da raiz redimensiona o
+   * conjunto inteiro de uma vez — título, números, espaçamento, quadrados —
+   * mantendo as proporções. Redimensionar peça por peça daria uma página
+   * desmontada em telas grandes: número gigante ao lado de rótulo miúdo.
+   *
+   * A reta vai de 16px em 1280 de largura até 22px em 2560, e trava nas duas
+   * pontas. Abaixo de 1280 nada muda: celular e notebook continuam exatamente
+   * como estavam, e o ganho é só para quem tem monitor sobrando.
+   */
+  html {
+    font-size: clamp(16px, 0.469vw + 10px, 22px);
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+    height: 100%;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -56,7 +72,9 @@
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
+  /* Em rem, não em px: assim a largura do corpo cresce junto com a escala da
+     raiz em vez de virar uma coluna estreita no meio de um monitor grande. */
+  .wrap { max-width: 45rem; margin: 0 auto; padding: 1.75rem 1.25rem 5rem; }
 
   /* O cabeçalho encolheu sem o título encolher: o que saiu foi espaço — a
      folga interna, a margem abaixo e o vão entre título e assinatura. São
@@ -655,9 +673,9 @@
        auto-fit conta as colunas pelo máximo, e no celular dava uma coluna só —
        os quadrados deixavam de ficar lado a lado. Com 1fr ele conta pelo
        mínimo e continuam sendo dois por linha em qualquer largura. */
-    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-    max-width: 652px;
-    margin: 0 auto 20px;
+    grid-template-columns: repeat(auto-fit, minmax(9.25rem, 1fr));
+    max-width: 40.75rem;
+    margin: 0 auto 1.25rem;
     gap: 12px;
   }
   /* Sem moldura e sem fundo: estes dois não são placas como os de mortes e
@@ -841,7 +859,7 @@
 
   /* --- a janela --- */
   .janela {
-    width: min(680px, calc(100vw - 32px));
+    width: min(42.5rem, calc(100vw - 2rem));
     max-height: 86vh;
     padding: 0;
     border: 1px solid var(--line);
@@ -1497,7 +1515,7 @@
      Nada de medir altura nem animar no script. */
   .boss-lista {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
     gap: 10px;
     margin: -6px 0 22px;
   }
@@ -1564,36 +1582,96 @@
     gap: 8px;
     margin-bottom: 26px;
   }
+  /*
+   * O menu, na estética do jogo.
+   *
+   * A versão anterior era caixa: fundo, borda de 1px, cantos, sombra. Isso é
+   * linguagem de formulário, e o Sekiro não tem nada disso — a interface dele
+   * é tinta sobre papel, traço fino, sem moldura. Uma fileira de retângulos no
+   * topo brigava com a página inteira, que é escura e sóbria.
+   *
+   * Agora são palavras. O que marca é o traço embaixo: pincelada que afina nas
+   * pontas em vez de linha reta, porque linha reta de espessura constante é
+   * régua, não pincel. No escolhido ela é vermelhão de selo — a cor do carimbo
+   * hanko, que é como o jogo marca o que vale.
+   */
   .topic {
     appearance: none;
-    background: var(--bg-panel);
-    border: 1px solid var(--line);
-    border-radius: 2px;
+    position: relative;
+    background: none;
+    border: 0;
+    border-radius: 0;
     color: var(--text-dim);
-    font-family: var(--font-body);
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    padding: 10px 13px;
+    padding: 0.5rem 0.2rem 0.62rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition: color 0.2s ease, letter-spacing 0.2s ease;
   }
-  .topic:hover { color: var(--text); border-color: var(--gold); }
-  /* O escolhido é peça cheia, não sublinhado: de relance se vê onde se está. */
-  .topic.on {
+  /*
+   * A pincelada.
+   *
+   * Três paradas de opacidade desiguais e uma altura de 2px que o `scaleY`
+   * estica: isso dá a barriga no meio e a ponta seca nas extremidades, que é o
+   * que diferencia pincel de régua. Ela nasce recolhida no centro.
+   */
+  .topic::after {
+    content: "";
+    position: absolute;
+    left: 50%; right: 50%; bottom: 0.18rem;
+    height: 2px;
+    background: linear-gradient(90deg,
+      rgba(214, 210, 200, 0) 0%,
+      rgba(214, 210, 200, 0.75) 22%,
+      rgba(214, 210, 200, 0.95) 52%,
+      rgba(214, 210, 200, 0.55) 78%,
+      rgba(214, 210, 200, 0) 100%);
+    border-radius: 2px;
+    transform: scaleY(0.55);
+    transition: left 0.26s cubic-bezier(0.2, 0.8, 0.3, 1),
+                right 0.26s cubic-bezier(0.2, 0.8, 0.3, 1),
+                transform 0.26s ease, background 0.2s ease;
+  }
+  .topic:hover {
     color: var(--paper);
-    background: var(--blood);
-    border-color: var(--blood-bright);
+    letter-spacing: 0.22em;
   }
+  .topic:hover::after { left: 0; right: 0; }
+  .topic:focus-visible { outline: 0; color: var(--paper); }
+  .topic:focus-visible::after { left: 0; right: 0; }
+
+  /* O escolhido: vermelhão de selo, traço cheio e um ponto acima — o mesmo
+     gesto de marcar no papel. */
+  .topic.on { color: var(--paper); }
+  .topic.on::after {
+    left: 0; right: 0;
+    transform: scaleY(1.1);
+    background: linear-gradient(90deg,
+      rgba(200, 40, 24, 0) 0%,
+      rgba(214, 60, 36, 0.9) 18%,
+      #d6402a 50%,
+      rgba(214, 60, 36, 0.75) 82%,
+      rgba(200, 40, 24, 0) 100%);
+    box-shadow: 0 0 10px rgba(214, 64, 42, 0.45);
+  }
+
+  /* A contagem: miúda, alta e apagada, como anotação ao lado da palavra. */
   .topic-n {
-    margin-left: 8px;
-    font-size: 0.66rem;
-    letter-spacing: 0;
+    margin-left: 0.5rem;
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
     color: var(--text-dim);
+    opacity: 0.65;
     font-variant-numeric: tabular-nums;
+    vertical-align: super;
   }
-  .topic.on .topic-n { color: var(--paper); opacity: 0.75; }
+  .topic:hover .topic-n { opacity: 0.95; color: var(--gold); }
+  .topic.on .topic-n { color: var(--paper); opacity: 0.7; }
 
   /* A gaveta: três risquinhos, e o que não tem vaga fixa no menu mora dentro. */
   .gaveta { position: relative; }

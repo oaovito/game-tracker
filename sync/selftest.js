@@ -838,12 +838,24 @@ check('nada é resolvido para fora da pasta clonada', () => {
     // que escondia a janela, morando numa pasta irmã que não vinha no clone.
     if (/Split-Path \$PSScriptRoot -Parent/.test(t)) foraDaPasta.push(a + ': sobe acima da raiz');
     if (/\.\.[\\/]\.\.[\\/]/.test(t)) foraDaPasta.push(a + ': caminho para fora da raiz');
-    // Um .exe de terceiro chamado por caminho é o caso que se quer impedir.
-    // O `(?![A-Za-z])` no fim existe porque sem ele todo `/regex/.exec(...)`
-    // do projeto casava com ".exe" e o teste acusava meia dúzia de arquivos
-    // que não chamam executável nenhum.
-    if (/[\\/][A-Za-z0-9_-]+\.exe(?![A-Za-z])/.test(t) && !/System32/i.test(t)) {
-      foraDaPasta.push(a + ': chama um executável por caminho');
+    /*
+     * Um .exe de terceiro chamado por caminho é o caso que se quer impedir:
+     * era por aí que entrava o utilitário que escondia a janela, morando numa
+     * pasta irmã que não vinha no clone. O que NÃO é problema é chamar o que a
+     * própria máquina fornece — o Node (que o instalador obtém via winget), o
+     * compilador do .NET Framework e os utilitários do Windows. Esses existem
+     * em qualquer máquina de destino, então não quebram o "clonar e funcionar".
+     *
+     * O `(?![A-Za-z])` no fim existe porque sem ele todo `/regex/.exec(...)`
+     * do projeto casava com ".exe" e o teste acusava meia dúzia de arquivos
+     * que não chamam executável nenhum.
+     */
+    const DA_MAQUINA = /^(node|csc|wscript|cscript|powershell|winget|explorer|schtasks|taskkill)$/i;
+    const CAMINHO_EXE = /[\\/]([A-Za-z0-9_-]+)\.exe(?![A-Za-z])/g;
+    for (const m of t.matchAll(CAMINHO_EXE)) {
+      if (DA_MAQUINA.test(m[1])) continue;
+      if (/System32/i.test(t)) continue;
+      foraDaPasta.push(a + ": chama " + m[1] + ".exe por caminho");
     }
   }
   assert(foraDaPasta.length === 0, foraDaPasta.join(' | '));

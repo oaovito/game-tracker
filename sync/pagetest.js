@@ -561,13 +561,34 @@ async function rodar(log) {
   log(/h1 span \{[^}]*font-family: var\(--font-display\)/.test(src),
     "e o 進捗 continua na Mincho", "caixa alta e entreletra não valem para ele");
 
-  // Menu: sem régua embaixo, e cada tópico com contorno próprio.
-  log(!/.topics {[^}]*border-bottom/.test(src), "o menu perdeu a linha embaixo",
+  // Menu: sem régua embaixo, e o traço no lugar da caixa.
+  const cssDe = (sel) => {
+    const alvo = src.indexOf(String.fromCharCode(10) + "  " + sel + " {");
+    if (alvo < 0) return "";
+    return src.slice(alvo, src.indexOf("}", alvo) + 1);
+  };
+  log(!/border-bottom/.test(cssDe(".topics")), "o menu perdeu a linha embaixo",
     "o espaçamento faz o trabalho dela");
-  log(/.topic {[^}]*border: 1px solid/.test(src), "cada tópico é um botão com contorno",
-    "não é mais texto solto");
-  log(/\.topic\.on \{[^}]*background: var\(--blood\)/.test(src), "o tópico ativo é peça cheia",
-    "de relance se vê onde se está");
+  /*
+   * O menu é tinta, não caixa.
+   *
+   * Os testes antigos cobravam borda de 1px e fundo cheio no ativo — a
+   * estética de formulário que o pedido chamou de grosseira, e com razão: o
+   * Sekiro não tem moldura em lugar nenhum, a interface dele é traço sobre
+   * papel. Cobrar o contrário é o que impede a caixa de voltar.
+   */
+  const cssTopic = cssDe(".topic");
+  log(/border: 0/.test(cssTopic) && /background: none/.test(cssTopic),
+    "o tópico não tem caixa: nem borda, nem fundo",
+    "a interface do jogo é traço sobre papel");
+  // A pincelada: paradas de opacidade desiguais é o que separa pincel de régua.
+  const paradas = cssDe(".topic::after");
+  const stops = (paradas.match(/rgba\(214, 210, 200,/g) || []).length;
+  log(stops >= 4, "o traço afina nas pontas, como pincelada",
+    stops + " paradas de opacidade — linha de espessura constante é régua");
+  log(/#d6402a/.test(cssDe(".topic.on::after")),
+    "e o escolhido é marcado em vermelhão de selo",
+    "a cor do carimbo, que é como o jogo marca o que vale");
 
   // O nome manda no bloco do chefe.
   log(/\.boss-card-nome \{[^}]*font-family: var\(--font-display\)/.test(src),
