@@ -6,7 +6,7 @@
 <title>trackeroao</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #16130f;
@@ -66,16 +66,44 @@
   /* Tudo do cabeçalho numa coluna centrada: o título manda, e o que vem
      depois é subordinado a ele em vez de disputar a linha. */
   .top-centro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  /*
+   * O título, na tipografia do logo do jogo.
+   *
+   * O logo do Sekiro é feito sobre a Athelas — serifada de transição, com
+   * serifas em cunha e estrutura clássica. Athelas é comercial (vem no macOS,
+   * licenciada da TypeTogether), então não dá para servir num site. A Libre
+   * Baskerville é a substituta livre apontada para ela, e a escolha não é
+   * aproximação cega: a Athelas nasceu inspirada na impressão fina de livros
+   * britânicos, que é a tradição de onde a Baskerville vem. Mesma família de
+   * intenção, mesma cor de página.
+   *
+   * O resto é o arranjo do logo, que é metade do reconhecimento: caixa alta e
+   * entreletra larga. Sem isso, a mesma fonte em caixa mista leria como um
+   * livro, não como o jogo.
+   *
+   * O 進捗 fica de fora: a Baskerville não tem kanji, e esticar o espaçamento
+   * de um par de ideogramas os quebraria. Ele continua na Mincho.
+   */
   h1 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 3.1rem;
-    letter-spacing: 0.04em;
+    font-family: "Libre Baskerville", var(--font-display);
+    font-weight: 700;
+    font-size: 2.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    /* A entreletra larga põe espaço depois da última letra também, e isso
+       desloca o conjunto para a esquerda do centro. */
+    text-indent: 0.15em;
     margin: 0;
-    line-height: 1.05;
+    line-height: 1.12;
     text-align: center;
   }
-  h1 span { color: var(--blood-bright); }
+  h1 span {
+    color: var(--blood-bright);
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
 
   /* Discreto mas legível: o mesmo tom apagado das outras notas, com um fio
      acima para separar. Não usa opacidade baixa, que some no tema claro. */
@@ -175,6 +203,17 @@
       linear-gradient(180deg, #000 0 55%, rgba(0,0,0,0.3) 85%, transparent);
     mask-composite: intersect;
     -webkit-mask-composite: source-in;
+    /* Pano parado é desenho de pano. A oscilação é mínima — dois pixels e meio
+       grau — mas é ela que faz a faixa ter peso: o olho lê tecido pendurado
+       respondendo a uma corrente de ar, não uma listra impressa na borda. */
+    transform-origin: 50% 0;
+    animation: balancar 11s ease-in-out infinite;
+  }
+  @keyframes balancar {
+    0%, 100% { transform: translateX(0)      skewX(0deg); }
+    28%      { transform: translateX(-2.5px) skewX(0.5deg); }
+    54%      { transform: translateX(1.5px)  skewX(-0.35deg); }
+    79%      { transform: translateX(-1px)   skewX(0.2deg); }
   }
   /* A barra do pé é só a sombra do pano no chão: sem listra, para não repetir
      o padrão e trazer a zebra de volta. */
@@ -214,16 +253,30 @@
     border-radius: 50% 50% 60% 60%;
     background: linear-gradient(180deg, rgba(191,232,255,0.6), rgba(191,232,255,0));
   }
-  .alma.a1 { left: 14%; animation: subir-alma 13s ease-in-out infinite; }
-  .alma.a2 { left: 47%; animation: subir-alma 17s ease-in-out 5s infinite; transform: scale(0.8); }
-  .alma.a3 { left: 79%; animation: subir-alma 19s ease-in-out 9s infinite; transform: scale(1.15); }
+  /* Cinco almas, não três, e em períodos primos entre si: 11, 13, 17, 19 e 23
+     segundos só voltam a coincidir depois de mais de 17 horas, então o bloco
+     nunca repete a mesma cena. Com três havia intervalos longos de nada
+     acontecendo; com cinco há sempre uma no ar. */
+  .alma.a1 { left: 11%; animation: subir-alma 11s ease-in-out infinite; }
+  .alma.a2 { left: 31%; animation: subir-alma 17s ease-in-out 3s infinite; }
+  .alma.a3 { left: 52%; animation: subir-alma 13s ease-in-out 7s infinite; }
+  .alma.a4 { left: 73%; animation: subir-alma 23s ease-in-out 5s infinite; }
+  .alma.a5 { left: 89%; animation: subir-alma 19s ease-in-out 11s infinite; }
+  /* Tamanhos diferentes viram profundidade: a menor lê como mais longe. */
+  .alma.a2 { --corpo: 0.72; }
+  .alma.a4 { --corpo: 1.25; }
+  .alma.a5 { --corpo: 0.86; }
+  /* O percurso ficou mais alto e o desvio mais largo — antes elas mal saíam
+     do lugar antes de apagar. E o brilho agora pulsa no meio da subida, como
+     chama que respira. */
   @keyframes subir-alma {
-    0%   { transform: translate(0, 0) scale(0.7);        opacity: 0; }
-    12%  { transform: translate(6px, -14px) scale(1);     opacity: 0.85; }
-    34%  { transform: translate(-8px, -34px) scale(1.04); opacity: 0.7; }
-    58%  { transform: translate(7px, -56px) scale(1);     opacity: 0.5; }
-    80%  { transform: translate(-5px, -74px) scale(0.92); opacity: 0.22; }
-    100% { transform: translate(2px, -92px) scale(0.8);   opacity: 0; }
+    0%   { transform: translate(0, 4px)      scale(calc(var(--corpo, 1) * 0.55)); opacity: 0; }
+    10%  { transform: translate(9px, -16px)  scale(calc(var(--corpo, 1) * 1.05)); opacity: 0.95; }
+    26%  { transform: translate(-13px, -42px) scale(calc(var(--corpo, 1) * 0.92)); opacity: 0.72; }
+    44%  { transform: translate(11px, -70px) scale(calc(var(--corpo, 1) * 1.12)); opacity: 0.9; }
+    62%  { transform: translate(-9px, -96px) scale(calc(var(--corpo, 1) * 0.95)); opacity: 0.55; }
+    80%  { transform: translate(7px, -120px) scale(calc(var(--corpo, 1) * 0.82)); opacity: 0.28; }
+    100% { transform: translate(-3px, -146px) scale(calc(var(--corpo, 1) * 0.6));  opacity: 0; }
   }
   /* Com o ponteiro em cima elas ganham corpo, sem acelerar: luto não corre. */
   .deaths-panel:hover .alma, .deaths-panel.animando .alma { filter: blur(0.3px) drop-shadow(0 0 12px rgba(190,230,255,0.95)); }
@@ -281,9 +334,25 @@
     filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.9))
             drop-shadow(0 0 14px rgba(226, 222, 212, 0.22));
   }
+  /* A luz sobre a lápide agora percorre o glifo inteiro em vez de tremer
+     dentro de uma faixa de 28%. Continua lento — luto respira, não pulsa —,
+     mas o percurso é largo o bastante para se ver a pedra pegando e perdendo
+     luz, que era a ideia desde o começo. */
+  /*
+   * A luz percorre o glifo inteiro, em vez de tremer dentro de uma faixa de
+   * 28%. Continua lento — luto respira, não pulsa —, mas o percurso é largo o
+   * bastante para se ver a pedra pegando e perdendo luz.
+   *
+   * Só `background-position` aqui, de propósito. A tentação era somar um
+   * `filter: brightness()` para engrossar o efeito, mas `filter` na animação
+   * vence a declaração da regra, e levaria junto as duas sombras que dão o
+   * relevo de gravado — e o tom esverdeado da podridão, que é aplicado pelo
+   * mesmo caminho. Uma propriedade só, e nenhuma delas se atropela.
+   */
   @keyframes luto {
-    0%, 100% { background-position: 50% 18%; }
-    50%      { background-position: 50% 46%; }
+    0%, 100% { background-position: 50% 2%; }
+    34%      { background-position: 50% 54%; }
+    67%      { background-position: 50% 92%; }
   }
   /*
    * A fumaça do incenso, no lugar da gota de sangue.
@@ -306,22 +375,34 @@
     opacity: 0;
     animation: incenso 7.6s ease-out infinite;
   }
+  /* A fumaça sobe mais alto e abre mais: antes ela morria a 54px com opacidade
+     de 0.55 no pico, o que num bloco desta altura era quase nada. */
   @keyframes incenso {
-    0%   { transform: translate(0, 6px) scale(0.7); opacity: 0; }
-    18%  { transform: translate(-3px, -6px) scale(1); opacity: 0.55; }
-    44%  { transform: translate(4px, -22px) scale(1.5); opacity: 0.4; }
-    72%  { transform: translate(-5px, -38px) scale(2.1); opacity: 0.18; }
-    100% { transform: translate(3px, -54px) scale(2.8); opacity: 0; }
+    0%   { transform: translate(0, 8px)     scale(0.6); opacity: 0; }
+    14%  { transform: translate(-4px, -10px) scale(1);   opacity: 0.8; }
+    38%  { transform: translate(6px, -34px)  scale(1.7); opacity: 0.6; }
+    64%  { transform: translate(-8px, -60px) scale(2.5); opacity: 0.34; }
+    85%  { transform: translate(6px, -84px)  scale(3.2); opacity: 0.14; }
+    100% { transform: translate(-2px, -102px) scale(3.8); opacity: 0; }
   }
   /* A vela: a luz não bate igual o tempo todo, e o intervalo entre as quedas
      não é regular — vela que oscila em compasso vira pisca-pisca. */
+  /* A vela ficou de verdade. Antes a queda mais funda era de 18% de opacidade
+     e o halo mal mudava — parado ao lado de um número imóvel, ninguém veria.
+     Agora ela chega a quase apagar, e o brilho vai de 3px a 26px: é a
+     diferença entre "tem uma animação ali" e "tem uma chama ali". */
   @keyframes vela {
-    0%, 100% { opacity: 1;    text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
-    12%      { opacity: 0.82; text-shadow: 0 0 5px rgba(226, 222, 212, 0.2); }
-    19%      { opacity: 1;    text-shadow: 0 0 13px rgba(226, 222, 212, 0.45); }
-    54%      { opacity: 0.88; text-shadow: 0 0 7px rgba(226, 222, 212, 0.25); }
-    61%      { opacity: 1;    text-shadow: 0 0 11px rgba(226, 222, 212, 0.4); }
-    83%      { opacity: 0.93; text-shadow: 0 0 9px rgba(226, 222, 212, 0.3); }
+    0%, 100% { opacity: 1;    text-shadow: 0 0 14px rgba(232, 228, 216, 0.55); }
+    7%       { opacity: 0.55; text-shadow: 0 0 4px  rgba(232, 228, 216, 0.15); }
+    11%      { opacity: 1;    text-shadow: 0 0 26px rgba(255, 246, 220, 0.8); }
+    16%      { opacity: 0.72; text-shadow: 0 0 6px  rgba(232, 228, 216, 0.2); }
+    22%      { opacity: 0.98; text-shadow: 0 0 18px rgba(255, 246, 220, 0.65); }
+    48%      { opacity: 0.62; text-shadow: 0 0 5px  rgba(232, 228, 216, 0.18); }
+    53%      { opacity: 1;    text-shadow: 0 0 24px rgba(255, 246, 220, 0.75); }
+    59%      { opacity: 0.8;  text-shadow: 0 0 9px  rgba(232, 228, 216, 0.28); }
+    77%      { opacity: 0.5;  text-shadow: 0 0 3px  rgba(232, 228, 216, 0.12); }
+    82%      { opacity: 1;    text-shadow: 0 0 22px rgba(255, 246, 220, 0.7); }
+    91%      { opacity: 0.86; text-shadow: 0 0 11px rgba(232, 228, 216, 0.34); }
   }
   .deaths-note {
     font-size: 0.72rem;
@@ -518,7 +599,136 @@
   .quadro-pe { width: 100%; }
 
   /* Anel de progresso: enche o quadrado, que era o problema da barra. */
-  .quadro-anel { align-items: center; justify-content: center; gap: 8px; }
+  .quadro-anel { align-items: center; justify-content: center; gap: 8px; padding: 0; }
+  /* O quadrado inteiro é o botão, como nos blocos de chefe: alvo grande, e
+     nada de alvo dentro de alvo. */
+  .anel-abre {
+    width: 100%; height: 100%;
+    appearance: none; background: none; border: 0; padding: 4px 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; cursor: pointer; font-family: var(--font-body); min-height: 0;
+  }
+
+  /*
+   * A coroa de fogo do anel.
+   *
+   * Só acende quando a sessão rendeu duas ou mais conquistas, e apaga sozinha
+   * seis horas depois. É um segundo traço por cima do primeiro, na mesma
+   * geometria: assim ele segue exatamente o progresso, em vez de ser um enfeite
+   * solto girando em volta.
+   *
+   * O tracejado curto e o deslocamento correndo é o que dá a leitura de chama
+   * lambendo o aro — uma borda contínua pulsando leria como brilho, não fogo.
+   */
+  .anel-fogo {
+    fill: none;
+    stroke: url(#chama);
+    stroke-width: 9;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+    stroke-dasharray: 3 7;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .anel-pegando .anel-fogo {
+    opacity: 1;
+    animation: lamber 1.1s linear infinite, bruxulear 2.3s ease-in-out infinite;
+    filter: drop-shadow(0 0 5px rgba(255,150,40,0.9)) drop-shadow(0 0 14px rgba(255,90,20,0.6));
+  }
+  @keyframes lamber { to { stroke-dashoffset: -100; } }
+  @keyframes bruxulear {
+    0%, 100% { stroke-width: 8;  opacity: 0.85; }
+    40%      { stroke-width: 11; opacity: 1; }
+    70%      { stroke-width: 9;  opacity: 0.92; }
+  }
+  /* Com fogo aceso o número no meio também esquenta, senão o efeito fica só
+     na borda e parece decalque. */
+  .anel-pegando .anel-pct { color: #ffd9a8; text-shadow: 0 0 14px rgba(255,140,40,0.7); }
+
+  /*
+   * 竜咳 — a podridão do dragão.
+   *
+   * No jogo, morrer demais adoece os NPCs: eles começam a tossir sangue e o
+   * mundo fica mais pobre. Aqui ela toma o bloco de mortes por seis horas
+   * depois de cinco mortes numa sessão, e o desenho segue essa descrição —
+   * manchas escuras que crescem devagar a partir das bordas, e um verde
+   * doentio por cima do luto. Não é sangue vivo, que é do bloco de chefes;
+   * é sangue velho em pano.
+   */
+  .deaths-panel.apodrecendo {
+    box-shadow: inset 0 0 40px rgba(60, 74, 38, 0.45);
+  }
+  .deaths-panel.apodrecendo .manchas {
+    content: "";
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 46% at 8% 88%,  rgba(74, 26, 18, 0.55), rgba(74,26,18,0) 70%),
+      radial-gradient(30% 40% at 92% 14%, rgba(58, 22, 16, 0.5),  rgba(58,22,16,0) 72%),
+      radial-gradient(46% 36% at 72% 96%, rgba(52, 62, 30, 0.42), rgba(52,62,30,0) 70%),
+      radial-gradient(26% 34% at 30% 4%,  rgba(46, 56, 28, 0.38), rgba(46,56,28,0) 74%);
+    animation: alastrar 17s ease-in-out infinite;
+    mix-blend-mode: multiply;
+  }
+  /* Cresce e recua, sem nunca voltar ao mesmo ponto: doença não pulsa em
+     compasso. As quatro manchas usam a mesma animação porque são um fundo só,
+     e o deslocamento de fundo é o que as faz respirar fora de sincronia. */
+  @keyframes alastrar {
+    0%, 100% { background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; opacity: 0.75; }
+    35%      { background-size: 128% 124%, 112% 130%, 118% 108%, 136% 120%; opacity: 1; }
+    68%      { background-size: 112% 136%, 130% 110%, 104% 128%, 116% 132%; opacity: 0.88; }
+  }
+  /* O número adoece junto: o osso ganha um tom esverdeado de coisa parada. */
+  .deaths-panel.apodrecendo .deaths-count {
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,0.9))
+            drop-shadow(0 0 16px rgba(120, 140, 70, 0.5))
+            sepia(0.35) hue-rotate(28deg) saturate(1.25);
+  }
+  .deaths-panel.apodrecendo .deaths-kanji { color: #b6bf94; }
+  /* As almas também: alma de quem morreu de podridão não sobe branca. */
+  .deaths-panel.apodrecendo .alma {
+    background: radial-gradient(60% 55% at 50% 38%,
+      #eef6dd 0%, #c3d79a 34%, #8ba25e 62%, rgba(110,130,70,0) 100%);
+    filter: blur(0.4px) drop-shadow(0 0 7px rgba(170, 200, 110, 0.7));
+  }
+
+  /* --- a lista de conquistas --- */
+  .conq-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+    gap: 8px;
+    margin: -6px 0 22px;
+  }
+  .conq-lista[hidden] { display: none; }
+  .conq {
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    padding: 10px 12px;
+    min-width: 0;
+  }
+  /* A que falta fica esmaecida, e não ausente: a lista é o mapa inteiro. */
+  .conq.presa { opacity: 0.34; }
+  .conq-marca {
+    font-family: var(--font-display);
+    font-size: 1rem; line-height: 1.2;
+    color: var(--gold);
+    flex: 0 0 auto;
+  }
+  .conq.presa .conq-marca { color: var(--text-dim); }
+  .conq-texto { min-width: 0; }
+  .conq-nome {
+    font-family: var(--font-display);
+    font-size: 0.9rem; line-height: 1.25; color: var(--text);
+  }
+  .conq-desc {
+    font-size: 0.72rem; line-height: 1.4; color: var(--text-dim); margin-top: 2px;
+  }
+  /* Conquista oculta que ainda não caiu não tem descrição para mostrar; o
+     jogo esconde de propósito, e inventar texto seria pior que o traço. */
+  .conq-desc.segredo { font-style: italic; }
   /* O anel dimensiona pela ALTURA disponível, e não pela largura: assim ele
      nunca empurra o quadrado para fora do 1:1. */
   /* `align-self: center` e `width: auto` são o que faz o anel derivar a
@@ -1331,11 +1541,17 @@
 
   <!-- Bloco 2: mortes. -->
   <section class="deaths-panel" id="deaths" hidden>
+    <!-- As manchas da podridão. Vazio e invisível fora do efeito; um elemento
+         próprio porque os dois pseudo-elementos do painel já são a cortina. -->
+    <div class="manchas" aria-hidden="true"></div>
+
     <!-- As almas: hitodama, o fogo-fátuo que no folclore japonês é a alma de
          um morto. Sobem devagar, desviando, e apagam antes do topo. -->
     <span class="alma a1" aria-hidden="true"></span>
     <span class="alma a2" aria-hidden="true"></span>
     <span class="alma a3" aria-hidden="true"></span>
+    <span class="alma a4" aria-hidden="true"></span>
+    <span class="alma a5" aria-hidden="true"></span>
 
     <div class="deaths-head" role="group" aria-label="Deaths">
       <span class="deaths-kanji">死</span>
@@ -1364,18 +1580,31 @@
     <!-- Anel em vez de barra: num quadrado 1:1 a barra fina deixava a maior
          parte do espaço vazio, e o anel ocupa o quadrado inteiro dizendo a
          mesma coisa. O número vive no meio dele. -->
-    <section class="quadro quadro-anel">
-      <div class="anel">
-        <svg viewBox="0 0 100 100" aria-hidden="true">
-          <circle class="anel-trilho" cx="50" cy="50" r="42"/>
-          <circle class="anel-fio" id="anelFio" cx="50" cy="50" r="42"/>
-        </svg>
-        <div class="anel-meio">
-          <span class="anel-pct" id="overallPct">—</span>
-          <span class="anel-num" id="overallCount">—</span>
+    <section class="quadro quadro-anel" id="anelPanel">
+      <button class="anel-abre" id="anelHead" type="button" aria-expanded="false" aria-controls="conqLista">
+        <div class="anel">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <linearGradient id="chama" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%"   stop-color="#8c1a10"/>
+                <stop offset="45%"  stop-color="#ff6a1e"/>
+                <stop offset="78%"  stop-color="#ffc24a"/>
+                <stop offset="100%" stop-color="#fff2c2"/>
+              </linearGradient>
+            </defs>
+            <circle class="anel-trilho" cx="50" cy="50" r="42"/>
+            <circle class="anel-fio" id="anelFio" cx="50" cy="50" r="42"/>
+            <!-- A coroa de fogo: só aparece quando a sessão rendeu duas ou
+                 mais conquistas, e some sozinha seis horas depois. -->
+            <circle class="anel-fogo" id="anelFogo" cx="50" cy="50" r="42"/>
+          </svg>
+          <div class="anel-meio">
+            <span class="anel-pct" id="overallPct">—</span>
+            <span class="anel-num" id="overallCount">—</span>
+          </div>
         </div>
-      </div>
-      <span class="quadro-rot quadro-rot-centro" id="overallLabel">complete</span>
+        <span class="quadro-rot quadro-rot-centro" id="overallLabel">complete</span>
+      </button>
     </section>
 
     <section class="quadro" id="quadroTempo">
@@ -1391,6 +1620,10 @@
       </div>
     </section>
   </div>
+
+  <!-- Fora da grade, logo depois dela: aberta, empurra o resto para baixo pelo
+       fluxo normal do documento, como as listas de chefe e de Headless. -->
+  <div class="conq-lista" id="conqLista" hidden></div>
 
 
   <div id="novidades"></div>
@@ -2679,6 +2912,106 @@ function render() {
   // sobra é o que falta. Sem save lido, fica vazio em vez de fechado em zero.
   const VOLTA = 263.89;
   document.getElementById("anelFio").style.strokeDashoffset = VOLTA - (VOLTA * pct / 100);
+
+  renderConquistas(conq);
+  renderEfeitos();
+}
+
+/**
+ * A lista de conquistas, aberta pelo anel.
+ *
+ * As que faltam aparecem esmaecidas, e não ausentes: a lista é o mapa
+ * inteiro, e só some do mapa o que o jogo não deixa ver — a descrição de uma
+ * conquista oculta ainda não obtida, que fica como traço em vez de texto
+ * inventado.
+ */
+function renderConquistas(conq) {
+  const painel = document.getElementById("anelPanel");
+  const lista = document.getElementById("conqLista");
+  const botao = document.getElementById("anelHead");
+  if (!painel || !lista) return;
+
+  const itens = conq && Array.isArray(conq.lista) ? conq.lista : null;
+  if (!itens || !itens.length) {
+    lista.hidden = true;
+    botao.setAttribute("aria-expanded", "false");
+    painel.classList.remove("aberto");
+    return;
+  }
+
+  lista.innerHTML = "";
+  // As obtidas primeiro: a lista é para olhar o que se tem, e o que falta vem
+  // depois, esmaecido, como horizonte.
+  const ordenadas = itens.slice().sort((a, b) => Number(b.conquistada) - Number(a.conquistada));
+  for (const c of ordenadas) {
+    const el = document.createElement("div");
+    el.className = "conq" + (c.conquistada ? "" : " presa");
+
+    const marca = document.createElement("span");
+    marca.className = "conq-marca";
+    marca.textContent = c.conquistada ? "✦" : "·";
+
+    const texto = document.createElement("div");
+    texto.className = "conq-texto";
+    const nome = document.createElement("div");
+    nome.className = "conq-nome";
+    nome.textContent = c.nome || c.chave;
+    texto.appendChild(nome);
+
+    const escondida = c.oculta && !c.conquistada;
+    const desc = document.createElement("div");
+    desc.className = "conq-desc" + (escondida ? " segredo" : "");
+    desc.textContent = escondida ? "hidden until unlocked" : (c.descricao || "");
+    if (desc.textContent) texto.appendChild(desc);
+
+    el.appendChild(marca);
+    el.appendChild(texto);
+    lista.appendChild(el);
+  }
+
+  // O estado aberto/fechado é do nó, e sobrevive ao redesenho.
+  const aberto = painel.classList.contains("aberto");
+  lista.hidden = !aberto;
+  botao.setAttribute("aria-expanded", aberto ? "true" : "false");
+
+  if (!botao.dataset.ligado) {
+    botao.dataset.ligado = "1";
+    botao.addEventListener("click", () => {
+      const vai = !painel.classList.contains("aberto");
+      painel.classList.toggle("aberto", vai);
+      lista.hidden = !vai;
+      botao.setAttribute("aria-expanded", vai ? "true" : "false");
+    });
+  }
+}
+
+/**
+ * Os efeitos temporários: fogo no anel, podridão nas mortes.
+ *
+ * O serviço manda quantos segundos faltam, e não a hora em que começou — hora
+ * diria quando se jogou. A página só liga e desliga a classe; quem conta é o
+ * relógio do serviço, que a página consulta a cada leitura.
+ */
+function renderEfeitos() {
+  const ef = (temSync() && sync.efeitos) || {};
+  const anel = document.getElementById("anelPanel");
+  const mortes = document.getElementById("deaths");
+
+  const horas = (s) => (s / 3600).toFixed(1);
+  if (anel) {
+    const pegando = ef.fogo > 0;
+    anel.classList.toggle("anel-pegando", pegando);
+    if (pegando) anel.title = `On fire: two or more achievements fell this session. `
+      + `${horas(ef.fogo)} h left.`;
+    else anel.removeAttribute("title");
+  }
+  if (mortes) {
+    const podre = ef.podridao > 0;
+    mortes.classList.toggle("apodrecendo", podre);
+    if (podre) mortes.title = `Dragonrot: five or more deaths this session. `
+      + `${horas(ef.podridao)} h left.`;
+    else mortes.removeAttribute("title");
+  }
 }
 
 const origRender = render;

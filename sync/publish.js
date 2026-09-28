@@ -38,7 +38,7 @@ const CAMPOS_PUBLICOS = [
   'essentials', 'deaths', 'playtime', 'bossKills', 'achievements',
   'prayerBeadList', 'gourdSeedList',
   'bosses', 'miniBosses', 'headless', 'idols', 'idolCalibration',
-  'tools', 'arts', 'goodsUnlocks', 'history', 'notes',
+  'tools', 'arts', 'goodsUnlocks', 'history', 'notes', 'efeitos',
 ];
 
 /** O que sobra de `source` depois de tirar o que identifica a máquina. */

@@ -525,8 +525,28 @@ async function rodar(log) {
   // Cabeçalho: título centralizado e maior que antes.
   log(/.top-centro {[^}]*align-items: center/.test(src), "o cabeçalho é uma coluna centrada",
     "título, sync e assinatura empilhados");
+  // O corpo caiu de 3.1rem para 2.7rem quando o título passou a ser caixa alta
+  // com entreletra larga: a mesma medida em versal ocupa muito mais linha, e
+  // 3.1 quebrava em duas no celular. O que o teste quer garantir é presença, e
+  // presença aqui é a largura que o título ocupa, não o corpo da fonte.
   const tam = /h1 \{[^}]*font-size: ([\d.]+)rem/.exec(src);
-  log(tam && Number(tam[1]) >= 3, "o título cresceu", tam ? tam[1] + "rem" : "não achei");
+  const entre = /h1 \{[^}]*letter-spacing: ([\d.]+)em/.exec(src);
+  log(tam && Number(tam[1]) >= 2.5, "o título tem porte de cabeçalho",
+    tam ? tam[1] + "rem" : "não achei");
+
+  // A tipografia do logo do jogo: o logo do Sekiro é feito sobre a Athelas,
+  // que é comercial; a Libre Baskerville é a substituta livre dela, e vem da
+  // mesma tradição de impressão de livro. Caixa alta e entreletra larga são o
+  // arranjo do logo, e metade do reconhecimento.
+  log(/h1 \{[^}]*font-family: "Libre Baskerville"/.test(src),
+    "o título usa a serifada do logo do jogo", "Libre Baskerville");
+  log(/h1 \{[^}]*text-transform: uppercase/.test(src) && entre && Number(entre[1]) >= 0.1,
+    "em caixa alta e com entreletra larga, como o logo",
+    entre ? "letter-spacing " + entre[1] + "em" : "sem entreletra");
+  // O kanji não pode ir junto: a Baskerville não tem ideograma, e esticar o
+  // espaçamento de dois deles quebraria o par.
+  log(/h1 span \{[^}]*font-family: var\(--font-display\)/.test(src),
+    "e o 進捗 continua na Mincho", "caixa alta e entreletra não valem para ele");
 
   // Menu: sem régua embaixo, e cada tópico com contorno próprio.
   log(!/.topics {[^}]*border-bottom/.test(src), "o menu perdeu a linha embaixo",
@@ -655,11 +675,21 @@ async function rodar(log) {
     'a barra do pé não repete o padrão', 'só sombra, sem listra');
 
   // As almas: três, com tempos que não coincidem.
-  const almas = (src.match(/\.alma\.a\d \{/g) || []).length;
-  log(almas === 3, 'há três almas subindo', almas + ' declaradas');
+  // Conta os elementos na marcação, não as regras de CSS: uma alma pode ter
+  // mais de uma regra (tamanho, posição), e contar regras dava 8 para 5 almas.
+  const almas = (src.match(/<span class="alma a\d"/g) || []).length;
+  log(almas >= 4, 'há almas bastantes para o bloco nunca ficar vazio',
+    almas + ' subindo');
   const tempos = [...src.matchAll(/\.alma\.a\d \{[^}]*animation: subir-alma (\d+)s/g)].map((m) => Number(m[1]));
-  const coincidem = tempos.length === 3 && new Set(tempos).size === 3;
-  log(coincidem, 'e com durações diferentes entre si', tempos.join('s, ') + 's');
+  log(tempos.length === almas && new Set(tempos).size === almas,
+    'cada uma com a sua duração', tempos.join('s, ') + 's');
+  // O que importa não é serem diferentes, é não voltarem a coincidir: com
+  // períodos primos entre si, o ciclo completo do conjunto é o produto deles.
+  const mdc = (a, b) => (b ? mdc(b, a % b) : a);
+  const primosEntreSi = tempos.every((a, i) => tempos.every((b, j) => i === j || mdc(a, b) === 1));
+  const cicloDasAlmas = tempos.reduce((a, b) => a * b, 1);
+  log(primosEntreSi, 'e em períodos que não voltam a coincidir',
+    'o conjunto só se repete a cada ' + (cicloDasAlmas / 3600).toFixed(1) + ' h');
   log(/@keyframes subir-alma \{[\s\S]*?opacity: 0;[\s\S]*?\n  \}/.test(src),
     'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
 

@@ -483,6 +483,77 @@ check('a contagem é da jornada inteira, não da sessão', () => {
   return `${j.mortes} mortes na jornada`;
 });
 
+/*
+ * Os efeitos de sessão, contra um relógio controlado.
+ *
+ * Testar isto esperando acontecer levaria seis horas e dependeria de morrer no
+ * jogo. `atualizar` recebe o instante como argumento justamente para que o
+ * teste possa viajar no tempo — e é a única razão de esse argumento existir.
+ */
+check('os efeitos acendem no limiar e vencem em seis horas', () => {
+  const efeitos = require('./efeitos');
+  const guardado = fs.existsSync(efeitos.ESTADO) ? fs.readFileSync(efeitos.ESTADO) : null;
+  try {
+    fs.rmSync(efeitos.ESTADO, { force: true });
+    const H = 3600000;
+    let t = Date.parse('2026-01-01T00:00:00Z');
+    const passo = (o, dt) => efeitos.atualizar(o, (t += (dt || 0)));
+
+    let r = passo({ pid: 1, mortesNaSessao: 0, conquistas: 19 });
+    assert(!r.podridao && !r.fogo, 'acendeu sem gatilho nenhum');
+
+    r = passo({ pid: 1, mortesNaSessao: 4, conquistas: 19 }, 60000);
+    assert(!r.podridao, 'podridão acendeu com 4 mortes, e o limiar é 5');
+
+    r = passo({ pid: 1, mortesNaSessao: 5, conquistas: 19 }, 60000);
+    assert(r.podridao > 0, 'não acendeu com 5 mortes na sessão');
+    assert(Math.abs(r.podridao - 6 * 3600) < 5, 'não durou seis horas: ' + r.podridao + 's');
+
+    r = passo({ pid: 1, mortesNaSessao: 5, conquistas: 20 }, 60000);
+    assert(!r.fogo, 'fogo acendeu com uma conquista só, e o limiar é 2');
+
+    r = passo({ pid: 1, mortesNaSessao: 5, conquistas: 21 }, 60000);
+    assert(r.fogo > 0, 'não acendeu com duas conquistas na sessão');
+
+    // Fechar o jogo não apaga o que já acendeu: o pedido é "por seis horas
+    // depois", e depois inclui o jogo fechado.
+    r = passo({ pid: null }, H);
+    assert(r.podridao > 0 && r.fogo > 0, 'fechar o jogo apagou os efeitos');
+    r = passo({ pid: null }, 5 * H);
+    assert(!r.podridao && !r.fogo, 'ainda aceso depois de seis horas');
+
+    // Sessão nova não reacende pelo acumulado: 21 conquistas continuam 21.
+    r = passo({ pid: 2, mortesNaSessao: 0, conquistas: 21 }, 60000);
+    assert(!r.fogo, 'sessão nova acendeu o fogo pelo total, não pelo ganho');
+    return 'limiar 5/2, duração 6 h, sobrevive ao jogo fechar, não reacende sozinho';
+  } finally {
+    fs.rmSync(efeitos.ESTADO, { force: true });
+    if (guardado) fs.writeFileSync(efeitos.ESTADO, guardado);
+  }
+});
+
+check('o que é publicado é o tempo que falta, não a hora de início', () => {
+  // Hora de início diria quando a pessoa estava jogando, que é exatamente o
+  // que o site público não mostra. Segundos restantes dizem só que está aceso.
+  const efeitos = require('./efeitos');
+  const guardado = fs.existsSync(efeitos.ESTADO) ? fs.readFileSync(efeitos.ESTADO) : null;
+  try {
+    fs.rmSync(efeitos.ESTADO, { force: true });
+    const t = Date.parse('2026-01-01T00:00:00Z');
+    efeitos.atualizar({ pid: 1, mortesNaSessao: 0, conquistas: 19 }, t);
+    const r = efeitos.atualizar({ pid: 1, mortesNaSessao: 5, conquistas: 19 }, t + 1000);
+    for (const v of Object.values(r)) {
+      assert(typeof v === 'number', 'efeito publicado como ' + typeof v + ', não número');
+    }
+    const texto = JSON.stringify(require('./publish').sanitizar({ efeitos: r }));
+    assert(!/\d{4}-\d{2}-\d{2}T/.test(texto), 'saiu um carimbo de data no que vai para o ar');
+    return 'só segundos restantes: ' + JSON.stringify(r);
+  } finally {
+    fs.rmSync(efeitos.ESTADO, { force: true });
+    if (guardado) fs.writeFileSync(efeitos.ESTADO, guardado);
+  }
+});
+
 check('fechar o jogo não derruba a contagem', () => {
   // É o estado em que o link público passa a maior parte do tempo, e era onde
   // estava errado: sem a última leitura guardada, a página caía para a

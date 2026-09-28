@@ -19,6 +19,8 @@ const deathsmem = require('./deathsmem');
 const tempo = require('./tempo');
 const bosskills = require('./bosskills');
 const achievements = require('./achievements');
+const efeitos = require('./efeitos');
+const memoria = require('./memoria');
 
 const CONFIG_PATH = path.join(__dirname, 'offsets.json');
 const STATE_PATH = path.join(__dirname, '.state.json');
@@ -467,6 +469,13 @@ function buildProgress(options) {
   // As sementes entregues à Emma não estão mais na bolsa; as flags sabem.
   if (seedList) essentials.gourdSeeds.collected = seedList.filter((s) => s.collected).length;
 
+  // Calculado aqui, e não lá embaixo no objeto, porque os efeitos precisam da
+  // contagem para saber quantas conquistas caíram nesta sessão. Ler o arquivo
+  // do Steam duas vezes por ciclo seria trabalho repetido para o mesmo número.
+  const conq = (() => {
+    try { return achievements.conquistas({ conta: tempo.contaDoSave(file) }); } catch (e) { return null; }
+  })();
+
   let saveModified = null;
   try {
     saveModified = fs.statSync(file).mtime.toISOString();
@@ -511,10 +520,29 @@ function buildProgress(options) {
     })(),
     // Conquistas do Steam, lidas do cache local: sem chave de API, sem depender
     // de o perfil ser público.
-    achievements: (() => {
+    achievements: conq,
+    /*
+     * Efeitos temporários, acionados pelo que aconteceu na sessão.
+     *
+     * Sessão é o intervalo entre abrir e fechar o jogo, e a identidade vem do
+     * pid — ele muda a cada abertura, e não depende de gravar marco de tempo
+     * nenhum. Só o processo residente aciona: uma execução avulsa veria a
+     * mesma contagem de novo e acenderia um efeito que já tinha vencido.
+     *
+     * O que sai daqui é o tempo QUE FALTA, nunca a hora em que começou —
+     * hora diria quando a pessoa jogou, que é o que o site não mostra.
+     */
+    efeitos: (() => {
       try {
-        return achievements.conquistas({ conta: tempo.contaDoSave(file) });
-      } catch (e) { return null; }
+        if (!(opts && opts.observe === true)) return efeitos.ativos();
+        const c = memoria.conectar();
+        const s = (() => { try { return deathsmem.daSessao(); } catch (e) { return null; } })();
+        return efeitos.atualizar({
+          pid: c.ok ? c.pid : null,
+          mortesNaSessao: s ? s.mortes : null,
+          conquistas: conq ? conq.desbloqueadas : null,
+        });
+      } catch (e) { return {}; }
     })(),
     bossKills: (() => {
       try {
