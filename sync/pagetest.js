@@ -666,6 +666,51 @@ async function rodar(log) {
   log(fimCor && fr - fb < 30, 'o fim da escala é cinza, não sangue',
     fimCor + ' no extremo de 1000');
 
+  // --- a moldura reage, o conteúdo não espera ---
+  // A divisão é a regra toda: o que é do bloco (moldura, tremor, gotas) fica
+  // parado até alguém olhar; o que é informação (número, kanji) anima sempre,
+  // senão seria preciso passar o mouse para ler o que está escrito.
+  const temGatilho = (re) => re.test(src);
+  log(/\.boss-quadro, \.headless-quadro \{ --anim: paused; \}/.test(src),
+    'os dois blocos nascem com a moldura parada', '--anim: paused');
+  log(/\.boss-quadro:hover, \.boss-quadro\.animando/.test(src) &&
+      /\.headless-quadro:hover, \.headless-quadro\.animando \{ --anim: running; \}/.test(src),
+    'e ligam no hover ou por toque', ':hover para mouse, .animando para celular');
+
+  const gatilhada = (nome) => {
+    // Dentro da MESMA regra, e não numa janela de tantos caracteres: o atalho
+    // `animation` zera os longhands dele, então um play-state posto em outra
+    // regra acima não valeria — e uma janela larga o bastante para alcançar a
+    // regra seguinte daria positivo para a animação errada.
+    const i = src.indexOf('animation: ' + nome);
+    if (i < 0) return null;
+    const fim = src.indexOf('}', i);
+    return /animation-play-state: var\(--anim/.test(src.slice(i, fim));
+  };
+  for (const doBloco of ['sangue-borda', 'medo-borda', 'tremor', 'gotejar']) {
+    const g = gatilhada(doBloco);
+    log(g === true, 'a animação "' + doBloco + '" é do bloco e espera o gatilho',
+      g === null ? 'não achei a animação' : 'play-state ligado a --anim');
+  }
+  for (const doConteudo of ['vela', 'luto', 'incenso', 'polir', 'escorrer-forte']) {
+    const g = gatilhada(doConteudo);
+    log(g === false, 'a animação "' + doConteudo + '" é conteúdo e corre sempre',
+      g === null ? 'não achei a animação' : 'sem gatilho, como deve ser');
+  }
+  log(/const BLOCOS_ANIMADOS = "\.boss-quadro, \.headless-quadro"/.test(src),
+    'o toque alcança os mesmos dois blocos', 'e nenhum outro');
+
+  // O bloco de menos movimento precisa vir depois das animações que desliga:
+  // com a mesma especificidade, quem vem antes perde. Declarado lá em cima,
+  // ele parava o número mas deixava a borda sangrando e o Headless tremendo.
+  const iReduz = src.indexOf('@media (prefers-reduced-motion: reduce)');
+  const iUltima = Math.max(
+    src.indexOf('animation: tremor'), src.indexOf('animation: medo-borda'),
+    src.indexOf('animation: sangue-borda'), src.indexOf('animation: gotejar'));
+  log(iReduz > iUltima && iReduz > 0,
+    'menos movimento vence as animações que desliga',
+    'declarado em ' + iReduz + ', depois da última animação em ' + iUltima);
+
   // O menu não pode precisar de arrasto: no celular o último item ficava
   // cortado na borda e só aparecia se você puxasse de lado.
   const menuCel = /@media \(max-width: 460px\) \{[\s\S]*?\n  \}/.exec(src);

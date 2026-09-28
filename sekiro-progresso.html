@@ -234,21 +234,6 @@
     61%      { opacity: 1;    text-shadow: 0 0 11px rgba(226, 222, 212, 0.4); }
     83%      { opacity: 0.93; text-shadow: 0 0 9px rgba(226, 222, 212, 0.3); }
   }
-  /* Quem pediu menos movimento no sistema recebe o número parado. */
-  @media (prefers-reduced-motion: reduce) {
-    .deaths-count, .deaths-kanji, .tempo-num, .boss-num, .headless-num,
-    .boss-quadro::before, .headless-quadro::before, .headless-quadro {
-      animation: none;
-    }
-    /* Sem a vela oscilando, o 死 fica na luz cheia em vez de num quadro
-       qualquer do ciclo. */
-    .deaths-kanji { opacity: 1; text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
-    .deaths-count { background-position: 50% 30%; }
-    .tempo-num { background-position: 40% 50%; }
-    .boss-num, .headless-num { background-position: 50% 30%; }
-    .boss-quadro::before, .headless-quadro::before { opacity: 0.85; }
-    .deaths-count::after, .pingo { display: none; }
-  }
   .deaths-note {
     font-size: 0.72rem;
     color: var(--text-dim);
@@ -556,6 +541,31 @@
   /* --- bloco 3: mortes de chefe --- */
   /* --- sangue e terror: os dois quadrados de contagem --- */
 
+  /* --- a moldura do bloco só se mexe quando se olha para ele ---
+   *
+   * A borda sangrando e o tremor do Headless rodando sem parar deixavam a
+   * página sem ponto de descanso: são efeitos grandes, na periferia da visão,
+   * e acontecendo sempre nenhum deles chega a ser notado. Parados, viram
+   * resposta — o bloco reage a você.
+   *
+   * Isto vale só para o que é do bloco: a moldura, o tremor, as gotas que
+   * escorrem pela caixa. O conteúdo fica de fora — o número e o kanji seguem
+   * animando sozinhos o tempo todo, porque eles são a informação, e informação
+   * que só se mexe sob o ponteiro obriga a passar o mouse para ler.
+   *
+   * O mecanismo é uma variável só. O bloco declara `--anim: paused`, e as
+   * regras da moldura leem `animation-play-state: var(--anim)`. Variável de
+   * CSS é herdada, então alcança pseudo-elemento e filho sem repetir seletor.
+   * Pausada, a animação segura o primeiro quadro, que é justamente o repouso
+   * do desenho: gota com opacidade zero, tremor em deslocamento zero.
+   *
+   * Dois gatilhos porque são dois aparelhos. `:hover` cobre o mouse; a classe
+   * `animando`, posta por toque, cobre o celular, onde hover não existe.
+   */
+  .boss-quadro, .headless-quadro { --anim: paused; }
+  .boss-quadro:hover, .boss-quadro.animando,
+  .headless-quadro:hover, .headless-quadro.animando { --anim: running; }
+
   /* O sangue é o ponto do desenho. O resto da página é contido de propósito
      para que estes dois possam ser assim. */
   .boss-quadro {
@@ -571,6 +581,7 @@
       #400b07 0%, #8c1a10 18%, #d4462a 34%, #ff5b33 46%,
       #d4462a 58%, #8c1a10 78%, #400b07 100%) 1;
     animation: sangue-borda 2.6s ease-in-out infinite;
+    animation-play-state: var(--anim, running);
     pointer-events: none;
   }
   @keyframes sangue-borda {
@@ -599,9 +610,12 @@
     background: linear-gradient(180deg, #ff5b33, #8c1a10 60%, transparent);
     opacity: 0; pointer-events: none;
   }
-  .pingo.p1 { left: 22%; height: 12px; animation: gotejar 3.4s ease-in infinite; }
-  .pingo.p2 { left: 51%; height: 16px; animation: gotejar 4.7s ease-in 0.8s infinite; }
-  .pingo.p3 { left: 76%; height: 10px; animation: gotejar 5.9s ease-in 1.9s infinite; }
+  /* O play-state vai dentro de cada uma, depois do atalho: `animation`
+     reescreve todos os seus longhands, então a mesma declaração posta numa
+     regra `.pingo` acima seria zerada pela linha que define a queda. */
+  .pingo.p1 { left: 22%; height: 12px; animation: gotejar 3.4s ease-in infinite; animation-play-state: var(--anim, running); }
+  .pingo.p2 { left: 51%; height: 16px; animation: gotejar 4.7s ease-in 0.8s infinite; animation-play-state: var(--anim, running); }
+  .pingo.p3 { left: 76%; height: 10px; animation: gotejar 5.9s ease-in 1.9s infinite; animation-play-state: var(--anim, running); }
   @keyframes gotejar {
     0%       { transform: translateY(0) scaleY(0.3); opacity: 0; }
     12%      { transform: translateY(6px) scaleY(1); opacity: 1; }
@@ -616,6 +630,7 @@
     box-shadow: inset 0 0 26px rgba(124,58,186,0.45);
     overflow: hidden;
     animation: tremor 6.1s ease-in-out infinite;
+    animation-play-state: var(--anim, running);
   }
   .headless-quadro::before {
     content: "";
@@ -625,6 +640,7 @@
       #1b0f2b 0%, #4e1a78 20%, #7c3aba 38%, #b06bf0 50%,
       #7c3aba 62%, #4e1a78 80%, #1b0f2b 100%) 1;
     animation: medo-borda 3.7s ease-in-out infinite;
+    animation-play-state: var(--anim, running);
     pointer-events: none;
   }
   @keyframes medo-borda {
@@ -1142,6 +1158,31 @@
     .cat-mini-bar { display: none; }
     .cat-title { white-space: normal; }
     .cat-title-group { min-width: 0; }
+  }
+
+  /* --- menos movimento ---
+   *
+   * Fica no fim da folha de propósito, e isso é correção de um defeito, não
+   * arrumação. Estava declarado lá em cima, perto do painel de mortes, e
+   * `animation: none` com a mesma especificidade da regra que liga a animação
+   * perde para ela quando vem antes. Na prática: quem pedia menos movimento no
+   * sistema recebia o número de mortes parado, mas continuava levando a borda
+   * sangrando, o tremor do Headless e as gotas caindo — justamente os efeitos
+   * grandes, que são os que incomodam. Daqui do fim, vence todos.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .deaths-count, .deaths-kanji, .tempo-num, .boss-num, .headless-num,
+    .boss-quadro::before, .headless-quadro::before, .headless-quadro {
+      animation: none;
+    }
+    /* Sem a vela oscilando, o 死 fica na luz cheia em vez de num quadro
+       qualquer do ciclo. */
+    .deaths-kanji { opacity: 1; text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
+    .deaths-count { background-position: 50% 30%; }
+    .tempo-num { background-position: 40% 50%; }
+    .boss-num, .headless-num { background-position: 50% 30%; }
+    .boss-quadro::before, .headless-quadro::before { opacity: 0.85; }
+    .deaths-count::after, .pingo { display: none; }
   }
 
   a, button, input { -webkit-tap-highlight-color: transparent; }
@@ -2563,6 +2604,31 @@ async function pollProgress() {
   }
   render();
 }
+
+/**
+ * O gatilho de toque da moldura.
+ *
+ * No mouse quem liga é o `:hover`, direto no CSS. No celular hover não existe,
+ * então o toque precisa ligar — e desligar também, senão o primeiro toque
+ * deixaria tudo correndo para sempre e a pausa teria sido inútil.
+ *
+ * O ouvinte fica no documento, e não em cada bloco: os quadrados de chefe e de
+ * Headless são redesenhados a cada leitura do save, e ouvinte preso neles
+ * morreria junto. Daqui vale para qualquer bloco que exista agora ou venha a
+ * existir.
+ *
+ * Tocar num bloco desliga o outro. São duas molduras grandes competindo por
+ * atenção; deixar as duas correndo devolveria a página ao que ela era antes.
+ */
+const BLOCOS_ANIMADOS = ".boss-quadro, .headless-quadro";
+
+document.addEventListener("click", (ev) => {
+  const alvo = ev.target && ev.target.closest ? ev.target.closest(BLOCOS_ANIMADOS) : null;
+  for (const b of document.querySelectorAll(BLOCOS_ANIMADOS)) {
+    if (b === alvo) b.classList.toggle("animando");
+    else b.classList.remove("animando");
+  }
+});
 
 // open first category by default
 openState.add("essentials");
