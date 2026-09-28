@@ -655,24 +655,39 @@ async function rodar(log) {
   log(/\.headless-num \{[^}]*#2a1550/.test(src), 'a raiz do gradiente continua roxa',
     'o número resolve na cor do bloco, então segue no tema');
 
-  // --- a cortina tem de ler como pano, não como faixa de pedestre ---
-  // A primeira versão era uma fita de 10px com listras de mesma largura: o
-  // desenho exato de uma travessia de rua. O que corrige é proporção e queda,
-  // então é isso que se mede.
-  const curtina = /\.deaths-panel::before \{[\s\S]*?\n  \}/.exec(src);
-  const cssCurtina = curtina ? curtina[0] : '';
-  const altura = /height: (\d+)px/.exec(cssCurtina);
-  log(altura && Number(altura[1]) >= 30, 'a cortina tem altura de pano pendurado',
-    altura ? altura[1] + 'px' : 'não achei a altura');
-  // A queda de luz de cima para baixo é o que dá peso de pano pendurado; sem
-  // ela a faixa fica chapada e volta a ser fita.
-  log(/linear-gradient\(180deg,[\s\S]*?rgba\(0,0,0,0\.[5-9]/.test(cssCurtina),
-    'o pano perde luz para baixo, como cortina pendurada',
-    'gradiente vertical escurecendo até a barra');
-  log(/mask-image/.test(cssCurtina), 'e desbota na barra de baixo',
-    'sem corte reto, que era metade do efeito de fita');
-  log(!/repeating-linear-gradient/.test((/\.deaths-panel::after \{[\s\S]*?\n  \}/.exec(src) || [''])[0]),
-    'a barra do pé não repete o padrão', 'só sombra, sem listra');
+  /*
+   * --- o luto sem listra nenhuma ---
+   *
+   * A cortina 鯨幕 era a referência certa e falhou três vezes: fita fina virou
+   * faixa de pedestre, mais alta virou tecla de piano, apagada virou sujeira
+   * na borda. Claro e escuro alternando numa faixa horizontal é sinal de
+   * trânsito antes de ser qualquer outra coisa, e nenhuma dose conserta isso.
+   *
+   * O teste agora guarda a decisão de abandoná-la: padrão repetido em faixa
+   * está proibido no bloco, e o luto vem do 白菊, o crisântemo branco que o
+   * Japão põe no altar e na sepultura. Mesma referência cultural, em desenho
+   * em vez de padrão — e desenho não se confunde com pavimentação.
+   */
+  const painelMortes = /\.deaths-panel\b[\s\S]*?\.deaths-head \{/.exec(src);
+  const cssPainel = painelMortes ? painelMortes[0] : '';
+  log(!/repeating-linear-gradient/.test(cssPainel),
+    'o bloco de mortes não tem padrão repetido em faixa',
+    'é o desenho que lia como travessia de rua, em qualquer dose');
+  const fio = /\.deaths-panel::before \{[\s\S]*?\n  \}/.exec(src);
+  const cssFio = fio ? fio[0] : '';
+  const alturaFio = /height: (\d+)px/.exec(cssFio);
+  log(alturaFio && Number(alturaFio[1]) <= 2,
+    'no alto ficou só um fio de luz', alturaFio ? alturaFio[1] + 'px' : 'não achei');
+  log(/<div class="kiku"/.test(src) && /viewBox="0 0 100 100"/.test(src),
+    'e o luto vem do 白菊, desenhado', 'o crisântemo branco dos funerais japoneses');
+  const opKiku = /\.deaths-panel \.kiku \{[\s\S]*?opacity: ([\d.]+)/.exec(src);
+  log(opKiku && Number(opKiku[1]) <= 0.12,
+    'quase apagado, como marca d\'água de lápide',
+    opKiku ? 'opacidade ' + opKiku[1] : 'sem opacidade');
+  // Dezesseis pétalas em duas coroas: uma coroa só lê como estrela.
+  const petalas = (src.match(/<use href="#kikuCoroa"/g) || []).length * 2 + 2;
+  log(petalas >= 16, 'com pétalas bastantes para ler como crisântemo',
+    petalas + ' pétalas em duas coroas');
 
   // As almas: três, com tempos que não coincidem.
   // Conta os elementos na marcação, não as regras de CSS: uma alma pode ter
@@ -752,39 +767,9 @@ async function rodar(log) {
   // Os dois contadores dizem coisas diferentes e precisam parecer diferentes:
   // o de chefes é violência e sangra, este é luto e guarda. Sem isto os dois
   // viram o mesmo bloco vermelho com números distintos.
-  log(/\.deaths-panel::before \{[^}]*repeating-linear-gradient/.test(src),
-    'a moldura do bloco de mortes é a cortina de velório',
-    'listras alternadas no topo e no pé');
-  /*
-   * Estes dois testes mediam a implementação antiga — a cor exata das listras
-   * e a existência de um gradiente de dobra separado. Passavam enquanto o
-   * bloco parecia uma faixa de pedestre, porque "branca e preta" era
-   * exatamente o problema, não a solução.
-   *
-   * O que decide a leitura é contraste e aresta: listra clara contra escura em
-   * degrau reto é desenho gráfico em qualquer tamanho. Então é isso que se
-   * mede agora — que o padrão exista (é o 鯨幕), mas apagado e com as bordas
-   * dissolvidas.
-   */
-  const bloco = /\.deaths-panel::before \{[\s\S]*?\n  \}/.exec(src);
-  const cssBloco = bloco ? bloco[0] : '';
-  const cores = [...cssBloco.matchAll(/#([0-9a-f]{6})/gi)].map((m) => m[1]);
-  const brilhoDe = (c) => c
-    ? (parseInt(c.slice(0, 2), 16) + parseInt(c.slice(2, 4), 16) + parseInt(c.slice(4, 6), 16)) / 3
-    : -1;
-  const brilhos = cores.map(brilhoDe);
-  log(brilhos.some((b) => b > 150) && brilhos.some((b) => b < 40),
-    'a cortina alterna claro e escuro, como o 鯨幕',
-    cores.map((c, i) => '#' + c + '(' + brilhos[i].toFixed(0) + ')').join(' '));
-  const op = /opacity: ([\d.]+)/.exec(cssBloco);
-  log(op && Number(op[1]) <= 0.3,
-    'mas apagada: é o contraste que fazia ler como travessia de rua',
-    op ? 'opacidade ' + op[1] : 'sem opacidade declarada');
-  // Mais de dois pares de paradas por painel quer dizer aresta dissolvida: o
-  // degrau seco é o que desenha a faixa de pedestre.
-  const paradas = (cssBloco.match(/#[0-9a-f]{6} \d+px \d+px|#[0-9a-f]{6} 0 \d+px/gi) || []).length;
-  log(paradas >= 4, 'e com as bordas em gradiente, não em degrau',
-    paradas + ' paradas de cor no padrão');
+  log(!/repeating-linear-gradient/.test(cssPainel),
+    'o bloco de mortes guarda luto sem imitar pavimentação',
+    'a cortina listrada saiu; o 白菊 ficou no lugar dela');
 
   // O número não pode ter gradiente de sangue: a cor tem de ser de osso.
   const numMorte = /\.deaths-count \{[\s\S]*?background-image: linear-gradient\(\s*180deg,\s*(#[0-9a-f]{6})/i.exec(src);
@@ -900,11 +885,42 @@ async function rodar(log) {
   log(comTag.length === 1 && maisRara && comTag[0].nome === maisRara.nome,
     'e ela está na conquista mais rara de todas',
     comTag[0] ? comTag[0].nome + ' (' + comTag[0].raridade + '%)' : 'nenhuma');
-  log(/const SHINOBI_VISTO/.test(src) && /antes === "1" \|\| antes === null/.test(src),
-    'o 忍殺 só corre na transição, não a cada leitura',
+  log(/antes === "1" \|\| antes === null/.test(src),
+    'as cenas só correm na transição, não a cada leitura',
     'a página relê de 5 em 5s; sem isso o site piscaria para sempre');
   log(/\.golpe \{[^}]*pointer-events: none/.test(src),
     'e a cena não rouba o clique de nada', 'pointer-events: none');
+
+  /*
+   * Os três marcos de tela inteira, e a coerência de cada um com o seu bloco.
+   *
+   * Os kanji não são escolha de gosto e por isso viram teste: o 忍殺 é o que o
+   * jogo estampa no golpe mortal, o 怖 é o kanji que o Sekiro usa para o
+   * Terror (não o 恐怖 mais formal), e o 討 é o que o bloco de chefes já usa.
+   */
+  const blocoMarcos = /const MARCOS_CENA = \[[\s\S]*?\n\];/.exec(src);
+  const cenas = blocoMarcos ? blocoMarcos[0] : '';
+  log(/kanji: "忍殺"/.test(cenas) && /kanji: "討"/.test(cenas) && /kanji: "怖"/.test(cenas),
+    'há três marcos de tela inteira, com os kanji certos',
+    '忍殺 para a conquista, 討 para os chefes, 怖 para os Headless');
+  log(/s\.bosses\.every\(\(b\) => b\.defeated\)/.test(cenas),
+    'o dos chefes espera todos derrotados', 'every, não some');
+  log(/s\.headless\.every\(\(h\) => h\.defeated\)/.test(cenas),
+    'e o dos Headless também', 'every, não some');
+  // Lista vazia não é conquista: sem save lido, `every` de lista vazia é true
+  // e as três cenas disparariam juntas na primeira leitura ruim.
+  log(/\.length > 0\s*\n?\s*&& s\.bosses\.every/.test(cenas) || /s\.bosses\.length > 0/.test(cenas),
+    'lista vazia não conta como tudo derrotado',
+    'every de lista vazia é true, e isso dispararia a cena sem save');
+  // Cada cena fala a língua do bloco dela.
+  log(/\.golpe-chefes \.golpe-kanji \{[^}]*color: #e0301c/.test(src),
+    'a cena dos chefes é de sangue', 'vermelho, e os fios escorrem pela tela');
+  log(/\.golpe-headless \.golpe-kanji \{[^}]*color: #c98cf5/.test(src)
+      && /animation:[^;]*pavor/.test(src),
+    'a dos Headless é roxa e treme', 'os mesmos vetores de medo do bloco');
+  log(/@keyframes pavor \{[\s\S]*?25%\s*\{ margin: 3px 0 -3px -4px; \}/.test(src),
+    'e o tremor aponta para o sul, como no bloco',
+    'medo encolhe e recua para baixo, não pula');
 
   // O menu não pode precisar de arrasto: no celular o último item ficava
   // cortado na borda e só aparecia se você puxasse de lado.

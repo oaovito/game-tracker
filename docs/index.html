@@ -176,48 +176,50 @@
    * a barra inferior escurecendo como pano que some na penumbra. O branco
    * também saiu do puro: linho envelhecido, não tinta.
    */
+  /*
+   * A listra acabou.
+   *
+   * O 鯨幕 é a referência certa e mesmo assim não funcionou três vezes: como
+   * fita fina virou faixa de pedestre, mais alta virou tecla de piano, e
+   * apagada virou sujeira na borda. O problema não era o ajuste — é que
+   * claro-e-escuro alternando em faixa horizontal é um sinal de trânsito antes
+   * de ser qualquer outra coisa, e nenhuma dose conserta isso.
+   *
+   * No lugar, 白菊 — o crisântemo branco, a flor que o Japão põe no altar e na
+   * sepultura. É a mesma referência cultural (luto japonês), mas em desenho em
+   * vez de padrão, e desenho não se confunde com pavimentação. Elegância aqui
+   * é uma coisa só, grande, quase apagada, atrás do número: marca d'água de
+   * lápide, não decoração de borda.
+   *
+   * O fio de luz no alto fica, sozinho: um traço fino é o que separa uma placa
+   * memorial de um retângulo qualquer.
+   */
   .deaths-panel::before {
     left: 0; right: 0; top: 0;
-    height: 30px;
-    background:
-      /* o pano perde luz para baixo, como cortina pendurada */
-      linear-gradient(180deg,
-        rgba(255,255,255,0.10) 0 2px,
-        rgba(0,0,0,0) 22%,
-        rgba(0,0,0,0.5) 80%,
-        rgba(0,0,0,0.8) 100%),
-      /* As listras com as bordas dissolvidas, e não em degrau. O degrau é o
-         que fazia ler como tecla de piano: contraste duro em aresta reta é
-         desenho gráfico, não pano. Aqui cada painel nasce e morre em
-         gradiente, como vinco de tecido pega a luz. */
-      repeating-linear-gradient(90deg,
-        #b8b3a6 0 14px,
-        #2a2825 20px 24px,
-        #0e0d0f 30px 38px,
-        #2a2825 44px 48px,
-        #b8b3a6 54px 54px);
-    opacity: 0.22;
-    /* Barra desfiada embaixo: a cortina termina em franja, não em corte reto.
-       O corte reto era metade do efeito de fita. */
-    mask-image:
-      repeating-radial-gradient(circle at 50% 0, #000 0 9px, rgba(0,0,0,0.25) 11px 13px),
-      linear-gradient(180deg, #000 0 55%, rgba(0,0,0,0.3) 85%, transparent);
-    -webkit-mask-image:
-      repeating-radial-gradient(circle at 50% 0, #000 0 9px, rgba(0,0,0,0.25) 11px 13px),
-      linear-gradient(180deg, #000 0 55%, rgba(0,0,0,0.3) 85%, transparent);
-    mask-composite: intersect;
-    -webkit-mask-composite: source-in;
-    /* Pano parado é desenho de pano. A oscilação é mínima — dois pixels e meio
-       grau — mas é ela que faz a faixa ter peso: o olho lê tecido pendurado
-       respondendo a uma corrente de ar, não uma listra impressa na borda. */
-    transform-origin: 50% 0;
-    animation: balancar 11s ease-in-out infinite;
+    height: 1px;
+    background: linear-gradient(90deg,
+      rgba(226, 222, 212, 0) 0%,
+      rgba(226, 222, 212, 0.38) 22%,
+      rgba(226, 222, 212, 0.5) 50%,
+      rgba(226, 222, 212, 0.38) 78%,
+      rgba(226, 222, 212, 0) 100%);
   }
-  @keyframes balancar {
-    0%, 100% { transform: translateX(0)      skewX(0deg); }
-    28%      { transform: translateX(-2.5px) skewX(0.5deg); }
-    54%      { transform: translateX(1.5px)  skewX(-0.35deg); }
-    79%      { transform: translateX(-1px)   skewX(0.2deg); }
+  /* O crisântemo: grande, à direita, e tão apagado que só se percebe depois de
+     olhar. Gira devagaríssimo — uma volta a cada dez minutos —, o que o olho
+     não vê acontecer mas percebe que mudou. */
+  .deaths-panel .kiku {
+    position: absolute;
+    right: -6%; top: 50%;
+    width: 210px; height: 210px;
+    transform: translateY(-50%);
+    opacity: 0.07;
+    pointer-events: none;
+    animation: kiku-gira 600s linear infinite;
+  }
+  .deaths-panel .kiku svg { width: 100%; height: 100%; display: block; }
+  @keyframes kiku-gira {
+    0%   { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
   }
   /*
    * A névoa do chão, no lugar de uma sombra chapada.
@@ -920,8 +922,95 @@
     16%  { transform: rotate(-18deg) scaleX(1); opacity: 0; }
     100% { opacity: 0; }
   }
-  /* Enquanto a marca está conquistada, a página inteira guarda um fio de
-     vermelho na borda: o site não volta a ser o mesmo depois disso. */
+  /*
+   * --- 討: todos os chefes ---
+   *
+   * A linguagem do bloco de chefes é sangue, então a cena sangra: o vermelho
+   * vem de cima e ESCORRE, em vez de estampar e sair como o golpe mortal. Sete
+   * fios com tempos diferentes, porque sangue escorrendo em compasso vira
+   * cortina de teatro.
+   */
+  .golpe-chefes::before {
+    background:
+      radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0) 30%, rgba(74, 6, 4, 0.9) 100%),
+      linear-gradient(180deg, rgba(150, 18, 10, 0.75), rgba(150,18,10,0) 42%);
+  }
+  .golpe-chefes .golpe-kanji {
+    color: #e0301c;
+    text-shadow: 0 0 26px rgba(255, 50, 25, 0.8), 0 6px 14px rgba(0,0,0,0.95);
+  }
+  .golpe-fio {
+    position: absolute; top: 0;
+    width: 4px; height: 0;
+    border-radius: 0 0 60% 60%;
+    background: linear-gradient(180deg, #ff4522, #8c1a10 62%, rgba(90,10,6,0));
+    animation-name: escorrer-tela;
+    animation-timing-function: cubic-bezier(0.35, 0, 0.6, 1);
+    animation-fill-mode: forwards;
+  }
+  @keyframes escorrer-tela {
+    0%   { height: 0;    opacity: 0; }
+    12%  { opacity: 1; }
+    100% { height: 108vh; opacity: 0.85; }
+  }
+
+  /*
+   * --- 怖: todos os Headless ---
+   *
+   * 怖 é o kanji que o próprio Sekiro usa para o Terror — e o Terror é
+   * exatamente o que os Headless impõem. A cena treme, com os mesmos vetores
+   * apontando para o sul do bloco deles: medo encolhe e recua para baixo, não
+   * pula. A bruma roxa entra por baixo, que é de onde eles vêm.
+   */
+  .golpe-headless::before {
+    background:
+      radial-gradient(120% 90% at 50% 50%, rgba(0,0,0,0) 26%, rgba(26, 8, 44, 0.92) 100%),
+      radial-gradient(90% 60% at 50% 100%, rgba(124, 58, 186, 0.55), rgba(124,58,186,0) 72%);
+  }
+  .golpe-headless .golpe-kanji {
+    color: #c98cf5;
+    text-shadow: 0 0 28px rgba(176, 107, 240, 0.9), 0 0 60px rgba(90, 30, 150, 0.7),
+                 0 6px 14px rgba(0,0,0,0.95);
+    animation: golpe-kanji 3.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards,
+               pavor 0.42s steps(2, end) infinite;
+  }
+  /* O tremor da cena usa os vetores do bloco: sul, alternando sudoeste e
+     sudeste, e a escala só encolhe. */
+  @keyframes pavor {
+    0%, 100% { margin: 0; }
+    25%      { margin: 3px 0 -3px -4px; }
+    75%      { margin: 3px -4px -3px 0; }
+  }
+  .golpe-bruma {
+    position: absolute; left: -12%; right: -12%; bottom: -10%;
+    height: 70%;
+    background:
+      radial-gradient(52% 100% at 22% 100%, rgba(150, 90, 220, 0.5), rgba(150,90,220,0) 70%),
+      radial-gradient(46% 100% at 58% 100%, rgba(124, 58, 186, 0.55), rgba(124,58,186,0) 72%),
+      radial-gradient(58% 100% at 86% 100%, rgba(110, 50, 170, 0.45), rgba(110,50,170,0) 74%);
+    filter: blur(6px);
+    animation: subir-bruma 3.4s ease-out forwards;
+  }
+  @keyframes subir-bruma {
+    0%   { transform: translateY(40%) scaleY(0.6); opacity: 0; }
+    18%  { transform: translateY(0) scaleY(1);     opacity: 1; }
+    100% { transform: translateY(-22%) scaleY(1.3); opacity: 0; }
+  }
+
+  /* Enquanto o marco está de pé, a página guarda a cor dele na borda: o site
+     não volta a ser o mesmo depois disso. As três podem coexistir. */
+  body.tem-chefes::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    box-shadow: inset 0 0 0 2px rgba(168, 50, 31, 0.4),
+                inset 0 6px 40px rgba(140, 26, 16, 0.3);
+  }
+  body.tem-headless .topbar::before {
+    content: "";
+    position: fixed; left: 0; right: 0; bottom: 0; height: 90px;
+    z-index: 2; pointer-events: none;
+    background: linear-gradient(0deg, rgba(124, 58, 186, 0.22), rgba(124,58,186,0));
+  }
   body.tem-shinobi::after {
     content: "";
     position: fixed; inset: 0; z-index: 2;
@@ -1769,6 +1858,45 @@
 
   <!-- Bloco 2: mortes. -->
   <section class="deaths-panel" id="deaths" hidden>
+    <!--
+      白菊, o crisântemo branco: a flor que o Japão põe no altar e na
+      sepultura. Substituiu a cortina listrada, que pela terceira vez lia como
+      faixa de pedestre — a referência estava certa, o desenho é que não
+      sobrevive a ser uma faixa horizontal de claro e escuro.
+
+      Dezesseis pétalas em duas coroas, a de dentro girada meia pétala, que é
+      como a flor se abre. Desenhada e não emoji: emoji traz cor e brilho que
+      não são desta página, e não dá para deixar quase invisível.
+    -->
+    <div class="kiku" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <g fill="none" stroke="#efeadf" stroke-width="1.1" stroke-linecap="round">
+          <g id="kikuCoroa">
+            <path d="M50 50C50 34 50 22 50 12c6 6 9 14 9 22 0 7-4 12-9 16z"/>
+            <path d="M50 50C50 34 50 22 50 12c-6 6-9 14-9 22 0 7 4 12 9 16z"/>
+          </g>
+          <use href="#kikuCoroa" transform="rotate(45 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(90 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(135 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(180 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(225 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(270 50 50)"/>
+          <use href="#kikuCoroa" transform="rotate(315 50 50)"/>
+          <g opacity="0.75">
+            <use href="#kikuCoroa" transform="rotate(22.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(67.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(112.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(157.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(202.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(247.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(292.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+            <use href="#kikuCoroa" transform="rotate(337.5 50 50) scale(0.62) translate(30.6 30.6)"/>
+          </g>
+          <circle cx="50" cy="50" r="5.5"/>
+        </g>
+      </svg>
+    </div>
+
     <!-- As manchas da podridão. Vazio e invisível fora do efeito; um elemento
          próprio porque os dois pseudo-elementos do painel já são a cortina. -->
     <div class="manchas" aria-hidden="true"></div>
@@ -2717,6 +2845,7 @@ function renderDeaths() {
     // que já diz desde quando a conta vale e o que ela não pega.
     nota.textContent =
       d.how === "discovered" && d.count > TOPO ? "Past the end of the scale." : "";
+    guardarRessalva(box);
     return;
   }
 
@@ -2729,6 +2858,7 @@ function renderDeaths() {
   if (d.how === "not-in-save") {
     nota.textContent = "The save does not record deaths.";
     box.title = p.motivo || "";
+    guardarRessalva(box);
     return;
   }
   // Ainda procurando. O traço já diz que não se sabe; explicar isso em texto
@@ -2742,6 +2872,19 @@ function renderDeaths() {
       ? p.mortes + " death" + (p.mortes === 1 ? "" : "s") + " seen so far" +
         (p.candidatos ? ", " + p.candidatos + " candidate fields left." : ".")
       : "Waiting for the first death.");
+  guardarRessalva(box);
+}
+
+/**
+ * Guarda a ressalva do painel para quem vier depois compor em cima.
+ *
+ * Dois desenhos escreviam o mesmo `title`: este, que explica de onde vem a
+ * contagem, e o da podridão, que anuncia o efeito. O segundo roda depois e
+ * apagava o primeiro — o hover do bloco perdia a explicação sempre que não
+ * havia podridão acesa, que é quase sempre.
+ */
+function guardarRessalva(box) {
+  box.dataset.ressalva = box.title || "";
 }
 
 /** Liga o clique do ponto uma vez só: dentro do render, cada leitura
@@ -3204,6 +3347,7 @@ function render() {
 
   renderConquistas(conq);
   renderEfeitos();
+  renderMarcos();
 }
 
 /**
@@ -3367,42 +3511,118 @@ function renderConquistas(conq) {
  * marca gravada, considera-se que já se sabia: alguém abrindo o link pela
  * primeira vez não presenciou nada, e uma comemoração ali seria falsa.
  */
-const SHINOBI_VISTO = "shinobi-visto";
+/*
+ * Os marcos: três, e cada um com a linguagem do bloco a que pertence.
+ *
+ * Os kanji não foram escolhidos por soarem bem. O 忍殺 é o que o próprio jogo
+ * estampa no golpe mortal. O 怖 é o kanji que o Sekiro usa para o Terror, que
+ * é justamente o que os Headless causam — não o 恐怖 mais formal, o 怖 mesmo.
+ * O 討 é o que o bloco de chefes já usa; procurei o nome japonês da conquista
+ * de derrotar todos e as fontes não confirmam, então reaproveitar o kanji do
+ * bloco é melhor do que inventar uma expressão.
+ */
+const MARCOS_CENA = [
+  {
+    chave: "shinobi-visto",
+    classe: "tem-shinobi",
+    tipo: "shinobi",
+    kanji: "忍殺",
+    atingido: (s) => {
+      const m = s.achievements && Array.isArray(s.achievements.lista)
+        ? s.achievements.lista.find((a) => a.shinobi) : null;
+      return !!(m && m.conquistada);
+    },
+  },
+  {
+    chave: "chefes-visto",
+    classe: "tem-chefes",
+    tipo: "chefes",
+    kanji: "討",
+    atingido: (s) => Array.isArray(s.bosses) && s.bosses.length > 0
+      && s.bosses.every((b) => b.defeated),
+  },
+  {
+    chave: "headless-visto",
+    classe: "tem-headless",
+    tipo: "headless",
+    kanji: "怖",
+    atingido: (s) => Array.isArray(s.headless) && s.headless.length > 0
+      && s.headless.every((h) => h.defeated),
+  },
+];
 
-function renderGolpe(conq) {
-  const marca = conq && Array.isArray(conq.lista)
-    ? conq.lista.find((a) => a.shinobi) : null;
-  const caiu = !!(marca && marca.conquistada);
+/**
+ * Decide, para cada marco, se ele está atingido e se a cena deve rodar.
+ *
+ * Três coisas que o desenho tem de acertar, e as três são fáceis de errar:
+ *
+ * A primeira é não repetir. A página relê o progresso a cada cinco segundos, e
+ * rodar a cena a cada leitura em que o marco aparece atingido faria o site
+ * piscar para sempre. Quem decide é a TRANSIÇÃO — de não atingido para
+ * atingido —, e o estado anterior fica gravado no aparelho, para a cena também
+ * rodar quando o marco cair com a página fechada.
+ *
+ * A segunda é não rodar na primeira visita de quem já tinha aquilo feito. Sem
+ * marca gravada, considera-se que já se sabia: quem abre o link pela primeira
+ * vez não presenciou nada, e comemorar ali seria falso.
+ *
+ * A terceira é não empilhar duas cenas. Se dois marcos caírem na mesma
+ * leitura, a segunda entra na fila em vez de desenhar por cima da primeira.
+ */
+function renderMarcos() {
+  if (!temSync()) return;
+  let espera = 0;
+  for (const m of MARCOS_CENA) {
+    const caiu = (() => { try { return !!m.atingido(sync); } catch (e) { return false; } })();
+    document.body.classList.toggle(m.classe, caiu);
 
-  document.body.classList.toggle("tem-shinobi", caiu);
+    const antes = guardado(m.chave);
+    if (caiu) guardar(m.chave, "1");
+    else if (antes) esquecer(m.chave);
 
-  const antes = guardado(SHINOBI_VISTO);
-  if (caiu) guardar(SHINOBI_VISTO, "1");
-  else if (antes) esquecer(SHINOBI_VISTO);
-
-  // `antes === null` é primeira visita: nada a comemorar, só registrar.
-  if (!caiu || antes === "1" || antes === null) return;
-  tocarGolpe();
+    if (!caiu || antes === "1" || antes === null) continue;
+    setTimeout(() => tocarCena(m), espera);
+    espera += 4200;
+  }
 }
 
-function tocarGolpe() {
+function tocarCena(marco) {
   const velho = document.querySelector(".golpe");
   if (velho) velho.remove();
 
   const cena = document.createElement("div");
-  cena.className = "golpe";
+  cena.className = "golpe golpe-" + marco.tipo;
   cena.setAttribute("aria-hidden", "true");
 
-  const corte = document.createElement("div");
-  corte.className = "golpe-corte";
   const kanji = document.createElement("div");
   kanji.className = "golpe-kanji";
-  kanji.textContent = "忍殺";
-
+  kanji.textContent = marco.kanji;
   cena.appendChild(kanji);
-  cena.appendChild(corte);
-  document.body.appendChild(cena);
 
+  // O corte branco é do golpe mortal e só dele; sangue e terror têm os seus.
+  if (marco.tipo === "shinobi") {
+    const corte = document.createElement("div");
+    corte.className = "golpe-corte";
+    cena.appendChild(corte);
+  }
+  if (marco.tipo === "chefes") {
+    // Os fios de sangue escorrendo pela tela, em posições e tempos diferentes.
+    for (let i = 0; i < 7; i++) {
+      const fio = document.createElement("i");
+      fio.className = "golpe-fio";
+      fio.style.left = (6 + i * 13.5) + "%";
+      fio.style.animationDelay = (0.1 + i * 0.09).toFixed(2) + "s";
+      fio.style.animationDuration = (1.5 + (i % 3) * 0.45).toFixed(2) + "s";
+      cena.appendChild(fio);
+    }
+  }
+  if (marco.tipo === "headless") {
+    const bruma = document.createElement("i");
+    bruma.className = "golpe-bruma";
+    cena.appendChild(bruma);
+  }
+
+  document.body.appendChild(cena);
   // A classe entra num quadro seguinte para a animação começar do zero em vez
   // de o navegador considerar que ela já estava correndo.
   requestAnimationFrame(() => cena.classList.add("correndo"));
@@ -3425,9 +3645,17 @@ function renderEfeitos() {
   if (mortes) {
     const podre = ef.podridao > 0;
     mortes.classList.toggle("apodrecendo", podre);
-    if (podre) mortes.title = `Dragonrot: five or more deaths this session. `
-      + `${horas(ef.podridao)} h left.`;
-    else mortes.removeAttribute("title");
+    // Compõe em cima da ressalva em vez de trocá-la: o efeito é um aviso a
+    // mais, não um substituto da explicação de onde vem a contagem.
+    const ressalva = mortes.dataset.ressalva || "";
+    if (podre) {
+      mortes.title = `Dragonrot: five or more deaths this session. `
+        + `${horas(ef.podridao)} h left.` + (ressalva ? String.fromCharCode(10) + ressalva : "");
+    } else if (ressalva) {
+      mortes.title = ressalva;
+    } else {
+      mortes.removeAttribute("title");
+    }
   }
 }
 
