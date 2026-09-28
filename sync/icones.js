@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const DESTINO = path.join(__dirname, '..', 'site', 'icones');
+const DESTINO = path.join(__dirname, '..', 'docs', 'icones');
 const BASE = 'https://static0.fextralifeimages.com/file/sekiroshadowsdietwice';
 
 const MAPA = {

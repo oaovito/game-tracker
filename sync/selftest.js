@@ -650,55 +650,100 @@ check('o público não recebe quando a pessoa jogou', () => {
 });
 
 /*
- * 11. O código-fonte que vai junto do site.
+ * 11. O repositório se basta.
  *
- * O repositório mostrava "HTML 100%", porque só a página estava versionada
- * nele. O GitHub mede linguagem pelo que está lá, e o que estava lá não
- * descrevia o projeto. A cópia do fonte resolve isso, mas cria um risco novo:
- * é fácil publicar código de casa com o caminho de casa dentro. Por isso a
- * cópia é refeita a cada publicação e passa por uma conferência própria.
+ * Antes o repositório era só a página montada, com uma cópia do fonte dentro
+ * dela: clonar não dava um tracker que roda, e o GitHub media o projeto como
+ * "HTML 100%". Agora o repositório É o projeto, e a pasta publicada é uma
+ * saída dele. O que se testa aqui é o que essa inversão promete: que quem
+ * clonar tenha tudo, que nada seja resolvido para fora da pasta, e que nada do
+ * que está aqui identifique a máquina de onde saiu.
  */
-console.log('\n  === 11. O fonte publicado junto do site ===');
+console.log('\n  === 11. O repositório se basta ===');
 
-check('a cópia do fonte cobre as linguagens do projeto', () => {
-  const dir = path.join(RAIZ_PROJETO, 'site', 'src');
-  assert(fs.existsSync(dir), 'não há cópia do fonte no site');
+const { execFileSync: exec11 } = require('child_process');
+const rastreados = (() => {
+  try {
+    return exec11('git', ['ls-files'], { cwd: RAIZ_PROJETO, encoding: 'utf8', windowsHide: true })
+      .split('\n').filter(Boolean);
+  } catch (e) { return null; }
+})();
+
+check('o projeto inteiro está versionado, não só a página', () => {
+  assert(rastreados, 'não consegui listar os arquivos do git');
   const porExt = {};
-  const anda = (d) => {
-    for (const n of fs.readdirSync(d)) {
-      const c = path.join(d, n);
-      if (fs.statSync(c).isDirectory()) { anda(c); continue; }
-      const e = path.extname(n) || n;
-      porExt[e] = (porExt[e] || 0) + fs.statSync(c).size;
+  for (const a of rastreados) {
+    const e = path.extname(a) || a;
+    porExt[e] = (porExt[e] || 0) + 1;
+  }
+  for (const e of ['.js', '.ps1', '.html']) assert(porExt[e] > 0, 'nenhum ' + e + ' versionado');
+  assert(rastreados.includes('package.json'), 'sem package.json');
+  assert(rastreados.includes('sync/main.js'), 'sem o serviço');
+  assert(rastreados.includes('sekiro-progresso.html'), 'sem a página');
+  return rastreados.length + ' arquivos: ' + Object.entries(porExt)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([e, n]) => n + e).join(', ');
+});
+
+check('quem clonar recebe as artes junto', () => {
+  const artes = rastreados.filter((a) => a.startsWith('docs/icones/') && a.endsWith('.png'));
+  assert(artes.length > 0, 'nenhuma arte versionada; a lista de chefes cairia no kanji');
+  return artes.length + ' imagens no repositório';
+});
+
+check('nada é resolvido para fora da pasta clonada', () => {
+  const foraDaPasta = [];
+  for (const a of rastreados) {
+    if (!/\.(ps1|js|bat|vbs)$/i.test(a)) continue;
+    const t = fs.readFileSync(path.join(RAIZ_PROJETO, a), 'utf8');
+    // Subir um nível a partir de sync/ é a raiz do projeto, e isso vale. O que
+    // não vale é sair da raiz: era por aí que entrava o utilitário de terceiro
+    // que escondia a janela, morando numa pasta irmã que não vinha no clone.
+    if (/Split-Path \$PSScriptRoot -Parent/.test(t)) foraDaPasta.push(a + ': sobe acima da raiz');
+    if (/\.\.[\\/]\.\.[\\/]/.test(t)) foraDaPasta.push(a + ': caminho para fora da raiz');
+    // Um .exe de terceiro chamado por caminho é o caso que se quer impedir.
+    // O `(?![A-Za-z])` no fim existe porque sem ele todo `/regex/.exec(...)`
+    // do projeto casava com ".exe" e o teste acusava meia dúzia de arquivos
+    // que não chamam executável nenhum.
+    if (/[\\/][A-Za-z0-9_-]+\.exe(?![A-Za-z])/.test(t) && !/System32/i.test(t)) {
+      foraDaPasta.push(a + ': chama um executável por caminho');
     }
-  };
-  anda(dir);
-  for (const e of ['.js', '.ps1', '.html']) assert(porExt[e] > 0, 'nenhum ' + e + ' publicado');
-  return Object.entries(porExt).sort((a, b) => b[1] - a[1])
-    .map(([e, b]) => e + ' ' + (b / 1024).toFixed(0) + 'KB').join(', ');
+  }
+  assert(foraDaPasta.length === 0, foraDaPasta.join(' | '));
+  return 'nenhum caminho sai da raiz do projeto';
 });
 
-check('a cópia é refeita, e não envelhece à parte', () => {
-  const daqui = fs.readFileSync(path.join(RAIZ_PROJETO, 'sekiro-progresso.html'), 'utf8');
-  const dali = fs.readFileSync(path.join(RAIZ_PROJETO, 'site', 'src', 'sekiro-progresso.html'), 'utf8');
-  assert(daqui === dali, 'a cópia divergiu do arquivo que está rodando');
-  return 'idêntica ao arquivo em uso';
+check('a janela é escondida sem binário de terceiro', () => {
+  const vbs = path.join(RAIZ_PROJETO, 'sync', 'oculto.vbs');
+  assert(fs.existsSync(vbs), 'sem o lançador oculto');
+  const t = fs.readFileSync(vbs, 'utf8');
+  assert(/\.Run .*, 0, False/.test(t), 'não pede janela oculta');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'install-sync-service.ps1'), 'utf8');
+  assert(/wscript/i.test(inst), 'o instalador não usa o wscript');
+  return 'wscript.exe do próprio Windows, nada para baixar';
 });
 
-check('nada de máquina, conta ou rede foi junto no fonte', () => {
-  const dir = path.join(RAIZ_PROJETO, 'site', 'src');
+check('nada do que está versionado identifica esta máquina', () => {
   const sujos = [];
-  const anda = (d) => {
-    for (const n of fs.readdirSync(d)) {
-      const c = path.join(d, n);
-      if (fs.statSync(c).isDirectory()) { anda(c); continue; }
-      const v = publish.vazamentosNoCodigo(fs.readFileSync(c, 'utf8'));
-      if (v.length) sujos.push(path.relative(dir, c) + ': ' + v.join(', '));
-    }
-  };
-  anda(dir);
+  for (const a of rastreados) {
+    if (/\.(png|svg|bin|sl2|zip|exe|ico)$/i.test(a)) continue;
+    let t = '';
+    try { t = fs.readFileSync(path.join(RAIZ_PROJETO, a), 'utf8'); } catch (e) { continue; }
+    // A pasta publicada é dado, e vale o detector de forma; o resto é código,
+    // e vale o detector de valores concretos.
+    const v = a.startsWith('docs/') ? publish.vazamentos(t) : publish.vazamentosNoCodigo(t);
+    if (v.length) sujos.push(a + ': ' + v.join(', '));
+  }
   assert(sujos.length === 0, sujos.join(' | '));
-  return 'sem pasta pessoal, Steam ID ou IP desta máquina';
+  return rastreados.length + ' arquivos, nenhum com pasta pessoal, Steam ID ou IP';
+});
+
+check('o estado de execução ficou fora do git', () => {
+  const nunca = ['progress.json', 'deaths.json', 'bosskills.json', 'deaths-mem.json'];
+  const vazados = nunca.filter((n) => rastreados.includes(n));
+  assert(vazados.length === 0, 'versionado indevidamente: ' + vazados.join(', '));
+  // E o publicado, que é a versão saneada, tem de estar.
+  assert(rastreados.includes('docs/progress.json'), 'o progresso publicado não está versionado');
+  return 'o cru fora, o saneado dentro';
 });
 
 check('a conferência do fonte sabe distinguir falar de um caminho e escrever o seu', () => {
@@ -772,7 +817,7 @@ check('nenhum arquivo do projeto entrega de onde veio', () => {
 
 check('nenhuma mensagem de commit publicada entrega de onde veio', () => {
   const { execFileSync } = require('child_process');
-  const site = path.join(RAIZ_PROJETO, 'site');
+  const site = RAIZ_PROJETO;
   if (!fs.existsSync(path.join(site, '.git'))) return 'sem repositório publicado aqui';
   const log = execFileSync('git', ['log', '--all', '--format=%H%n%s%n%b'],
     { cwd: site, encoding: 'utf8', windowsHide: true });
@@ -785,7 +830,7 @@ check('nenhuma mensagem de commit publicada entrega de onde veio', () => {
 
 check('o histórico publicado tem um autor só', () => {
   const { execFileSync } = require('child_process');
-  const site = path.join(RAIZ_PROJETO, 'site');
+  const site = RAIZ_PROJETO;
   if (!fs.existsSync(path.join(site, '.git'))) return 'sem repositório publicado aqui';
   const quem = execFileSync('git', ['log', '--all', '--format=%an <%ae>|%cn <%ce>'],
     { cwd: site, encoding: 'utf8', windowsHide: true })

@@ -247,7 +247,7 @@ function hibernarAgora(e) {
 
 /* ------------------------------------------------------- GitHub Pages */
 
-const SITE = path.join(ROOT, 'site');
+const SITE = path.join(ROOT, 'docs');
 // Uma publicação a cada três minutos, no máximo. O save é gravado o tempo todo
 // enquanto se joga, e empurrar a cada gravação encheria o histórico de commits
 // e passaria o dia esperando o Pages reconstruir.

@@ -478,7 +478,7 @@ async function rodar(log) {
   // visita: hotlink quebra assim que o outro lado muda de caminho ou bloqueia.
   log(!/fextralifeimages\.com/i.test(src), 'a página não faz hotlink de imagem',
     'as artes são arquivos locais em icones/');
-  const dirIcones = path.join(RAIZ, 'site', 'icones');
+  const dirIcones = path.join(RAIZ, 'docs', 'icones');
   const arquivos = fs.existsSync(dirIcones) ? fs.readdirSync(dirIcones).filter((f) => f.endsWith('.png')) : [];
   const semArte = kills.filter((b) => !arquivos.includes(b.key + '.png'));
   log(arquivos.length > 0, 'há arte baixada para os chefes',
@@ -670,7 +670,7 @@ async function rodar(log) {
   const emma = kills.find((b) => b.key === "emma");
   log(!!(emma && emma.enquadre), "a arte da Emma tem enquadramento próprio",
     emma && emma.enquadre ? JSON.stringify(emma.enquadre) : "sem enquadre");
-  log(fs.existsSync(path.join(RAIZ, "site", "icones", "emma.png")),
+  log(fs.existsSync(path.join(RAIZ, "docs", "icones", "emma.png")),
     "a arte da Emma foi baixada", "icones/emma.png");
 
   // O painel de mortes não pode voltar a carregar parágrafo: o número é para

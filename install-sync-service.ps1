@@ -17,7 +17,9 @@ $ErrorActionPreference = 'Stop'
 $taskName   = 'TrackeroaoSync'
 $taskAntigo = 'SekiroProgressSync'
 $mainScript = Join-Path $PSScriptRoot 'sync\main.js'
-$nircmdPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'nircmd\nircmd.exe'
+# Tudo dentro do proprio projeto: nada resolvido para fora da pasta clonada.
+$ocultoVbs  = Join-Path $PSScriptRoot 'sync\oculto.vbs'
+$wscript    = Join-Path $env:WINDIR 'System32\wscript.exe'
 
 # --- node ---
 $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
@@ -38,17 +40,20 @@ if (-not (Test-Path $mainScript)) {
 }
 
 # node.exe abre janela de console propria; -WindowStyle nao se aplica a ele.
-# nircmd exec hide resolve no nivel do Windows, mesmo padrao do game-priority-watcher.
-if (Test-Path $nircmdPath) {
-    $action = New-ScheduledTaskAction -Execute $nircmdPath `
-        -Argument "exec hide `"$node`" `"$mainScript`"" `
+# Antes isso era resolvido por um utilitario de terceiro que morava numa pasta
+# irma, fora do projeto: dava para clonar o repositorio e a janela aparecer,
+# porque a dependencia nao vinha junto. O wscript.exe ja vem no Windows, e o
+# oculto.vbs ao lado faz a mesma coisa sem nada para baixar.
+if (Test-Path $ocultoVbs) {
+    $action = New-ScheduledTaskAction -Execute $wscript `
+        -Argument "`"$ocultoVbs`" `"$node`" `"$mainScript`"" `
         -WorkingDirectory $PSScriptRoot
-    Write-Host "janela : oculta via nircmd" -ForegroundColor DarkGray
+    Write-Host "janela : oculta via wscript (sem dependencia externa)" -ForegroundColor DarkGray
 } else {
     $action = New-ScheduledTaskAction -Execute $node `
         -Argument "`"$mainScript`"" `
         -WorkingDirectory $PSScriptRoot
-    Write-Host "janela : nircmd nao encontrado, a janela do node vai aparecer" -ForegroundColor Yellow
+    Write-Host "janela : oculto.vbs nao encontrado, a janela do node vai aparecer" -ForegroundColor Yellow
 }
 
 $trigger   = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME

@@ -94,7 +94,7 @@ function createServer(options) {
     // todo chefe caía no kanji de reserva enquanto no site público aparecia a
     // ilustração. Duas páginas iguais mostrando coisas diferentes.
     if (/^\/icones\//.test(urlPath) && !fs.existsSync(file)) {
-      const noSite = safeJoin(path.join(root, 'site'), urlPath);
+      const noSite = safeJoin(path.join(root, 'docs'), urlPath);
       if (noSite && fs.existsSync(noSite)) file = noSite;
     }
 

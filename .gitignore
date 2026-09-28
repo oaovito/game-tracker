@@ -1,0 +1,28 @@
+# O repositório é o projeto inteiro: clonar esta pasta e rodar tem de bastar.
+# O que fica de fora daqui é só o que nasce em tempo de execução nesta máquina,
+# nunca algo de que o projeto dependa para funcionar.
+
+# --- estado desta máquina ---
+# A leitura crua do save. A versão saneada dela vai publicada em docs/.
+/progress.json
+# O que cada contador já aprendeu. Carregam carimbo de hora de quando se jogou,
+# que é justamente o que não vai para o ar; e se perdidos, se refazem sozinhos.
+/deaths.json
+/deaths-mem.json
+/bosskills.json
+sync/.state.json
+
+# --- gerados ---
+qr-acesso.svg
+auditoria-publica.txt
+sync/sekiro-sync.log
+sync/sekiro-sync.log*
+# Despejos de memória do jogo para achar o offset das mortes: dezenas de MB.
+sync/snapshots/
+# Cópias da hibernação: contêm o save, com Steam ID. Nunca vão para o git.
+arquivo/
+
+# --- ambiente ---
+node_modules/
+sync/offsets.json.bak
+redirect/

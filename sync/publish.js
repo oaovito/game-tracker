@@ -103,35 +103,29 @@ function montar(destino) {
   // underscore e pode reescrever arquivo. Aqui não há nada para processar.
   fs.writeFileSync(path.join(dir, '.nojekyll'), '');
 
-  const fontes = copiarFontes(path.join(dir, 'src'));
-
   const antes = fs.statSync(path.join(RAIZ, 'progress.json')).size;
   const depois = fs.statSync(path.join(dir, 'progress.json')).size;
-  return { dir, antes, depois, campos: Object.keys(limpo).length, fontes };
+  return { dir, antes, depois, campos: Object.keys(limpo).length };
 }
 
 /**
- * O código-fonte, junto do site.
+ * Confere o código do projeto inteiro, que agora é o próprio repositório.
  *
- * Existe por dois motivos. O primeiro é que o GitHub mede as linguagens do
- * repositório pelo que está versionado nele: com só a página publicada, o
- * projeto aparecia como "HTML 100%", o que não descreve nada — a maior parte
- * do trabalho é JavaScript de leitura do save e PowerShell de leitura de
- * memória. O segundo é que uma cópia feita à mão envelhece: esta é refeita a
- * cada publicação, então nunca diverge do que está rodando.
+ * Isto substituiu uma cópia do fonte que era feita para dentro do site. A
+ * cópia existia porque o repositório publicado era só a página montada; agora
+ * o repositório é o projeto, então não há o que copiar — mas há mais o que
+ * conferir, porque tudo que está aqui está no ar.
  *
- * Nada entra sem ser conferido, mas a conferência aqui é outra. O detector do
- * progresso é de forma: qualquer "AppData", qualquer "S0000.sl2" é vazamento,
- * porque no arquivo de dados essas palavras só apareceriam dentro de um
- * caminho real. No código elas são a descrição do formato — o parser precisa
- * dizer onde o save mora —, e recusar por isso deixaria de fora justamente os
- * arquivos que explicam o projeto. Então aqui se procura pelos valores
- * concretos desta máquina: o nome de usuário do Windows, os IPs das placas de
- * rede, um Steam ID de verdade, um caminho de usuário com nome no lugar do
- * marcador. É a diferença entre falar de um endereço e escrever o seu.
+ * A conferência é diferente da do progresso. O detector dos dados é de forma:
+ * qualquer "AppData", qualquer "S0000.sl2" é vazamento, porque num arquivo de
+ * dados essas palavras só apareceriam dentro de um caminho real. No código
+ * elas são a descrição do formato — o parser precisa dizer onde o save mora —,
+ * e recusar por isso acusaria justamente os arquivos que explicam o projeto.
+ * Então aqui se procura pelos valores concretos desta máquina. É a diferença
+ * entre falar de um endereço e escrever o seu.
  */
-const FORA = new Set(['node_modules', '.git', 'site', 'docs', 'redirect', 'snapshots', 'icones']);
-const EXTS = new Set(['.js', '.ps1', '.html', '.md', '.bat', '.gitignore']);
+const FORA = new Set(['node_modules', '.git', 'docs', 'redirect', 'snapshots', 'arquivo', 'icones']);
+const EXTS = new Set(['.js', '.ps1', '.vbs', '.html', '.md', '.bat', '.gitignore']);
 /*
  * JSON é a exceção, e por lista fechada.
  *
@@ -140,40 +134,35 @@ const EXTS = new Set(['.js', '.ps1', '.html', '.md', '.bat', '.gitignore']);
  * quando). Os de estado carregam carimbo de hora — `iniciadoEm`, `ultima`,
  * `contandoDesde` —, que é a mesma informação que a data da última partida,
  * justamente o que não vai para o ar. Como a diferença não está na extensão,
- * ela precisa estar escrita: entra quem está aqui, o resto fica.
+ * ela precisa estar escrita: entra quem está aqui, o resto fica de fora do
+ * git e fora desta conferência.
  */
 const JSON_DE_PROJETO = new Set(['package.json', path.join('sync', 'offsets.json')]);
 
-function copiarFontes(destino) {
-  const copiados = [];
-  const recusados = [];
+/** Percorre o projeto e devolve os arquivos que não podem ser publicados. */
+function conferirFontes() {
+  const sujos = [];
+  let vistos = 0;
 
-  const anda = (de, para) => {
+  const anda = (de) => {
     for (const nome of fs.readdirSync(de)) {
       if (FORA.has(nome)) continue;
       const cheio = path.join(de, nome);
-      const st = fs.statSync(cheio);
-      if (st.isDirectory()) { anda(cheio, path.join(para, nome)); continue; }
+      if (fs.statSync(cheio).isDirectory()) { anda(cheio); continue; }
       const ext = path.extname(nome) || nome;
       const relativo = path.relative(RAIZ, cheio);
       if (ext === '.json') {
         if (!JSON_DE_PROJETO.has(relativo)) continue;
       } else if (!EXTS.has(ext)) continue;
-      // O log traz caminho de máquina em cada linha.
       if (/\.log(\.\d+)?$/.test(nome)) continue;
-      const texto = fs.readFileSync(cheio, 'utf8');
-      const achados = vazamentosNoCodigo(texto);
-      if (achados.length) { recusados.push({ arquivo: path.relative(RAIZ, cheio), achados }); continue; }
-      fs.mkdirSync(para, { recursive: true });
-      fs.writeFileSync(path.join(para, nome), texto);
-      copiados.push(path.relative(destino, path.join(para, nome)));
+      vistos++;
+      const achados = vazamentosNoCodigo(fs.readFileSync(cheio, 'utf8'));
+      if (achados.length) sujos.push({ arquivo: relativo, achados });
     }
   };
 
-  // Refaz do zero: arquivo apagado no projeto não pode sobreviver no site.
-  fs.rmSync(destino, { recursive: true, force: true });
-  anda(RAIZ, destino);
-  return { copiados: copiados.length, recusados };
+  anda(RAIZ);
+  return { vistos, sujos };
 }
 
 /** Confere que nada que identifica a máquina passou. */
@@ -244,7 +233,7 @@ function vazamentosNoCodigo(texto) {
   return [...new Set(achados)];
 }
 
-module.exports = { sanitizar, fonteLimpa, montar, copiarFontes, vazamentos, vazamentosNoCodigo, CAMPOS_PUBLICOS };
+module.exports = { sanitizar, fonteLimpa, montar, conferirFontes, vazamentos, vazamentosNoCodigo, CAMPOS_PUBLICOS };
 
 if (require.main === module) {
   const r = montar(process.argv[2]);
