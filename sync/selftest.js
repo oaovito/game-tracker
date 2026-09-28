@@ -980,6 +980,24 @@ check('o histórico publicado tem um autor só', () => {
   return distintos[0];
 });
 
+check('nem o nome de nenhuma referência entrega de onde veio', () => {
+  // Esta é a brecha por onde escapou de verdade, e por isso vira teste.
+  //
+  // A conferência olhava arquivo, mensagem de commit e autor — e passava. O
+  // que aparecia na lista de contribuidores do GitHub vinha de outro lugar:
+  // três branches cujos próprios NOMES começavam com a marca, com commits
+  // assinados por ela. Nome de referência não é conteúdo nem mensagem, então
+  // nenhuma das conferências anteriores olhava para lá.
+  const { execFileSync } = require('child_process');
+  if (!fs.existsSync(path.join(RAIZ_PROJETO, '.git'))) return 'sem repositório aqui';
+  const refs = execFileSync('git', ['for-each-ref', '--format=%(refname)'],
+    { cwd: RAIZ_PROJETO, encoding: 'utf8', windowsHide: true })
+    .split('\n').filter(Boolean);
+  const sujas = refs.filter((r) => marcado(r).length);
+  assert(sujas.length === 0, 'referências marcadas: ' + sujas.join(', '));
+  return refs.length + ' referências, todas limpas';
+});
+
 function resumo() {
   console.log('');
   console.log(`  === Resultado: ${pass} ok, ${fail} falha(s) ===`);
