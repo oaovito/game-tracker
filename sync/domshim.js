@@ -18,6 +18,8 @@ class El {
     this._text = '';
     this._html = '';
     this.dataset = {};
+    this.pai = null;
+    this.open = false;
     // `style` de verdade tem setProperty, usado para as variáveis CSS. Sem
     // isto a página estourava dentro do catch do poll, sem erro visível.
     this.style = {
@@ -57,12 +59,76 @@ class El {
   get innerHTML() { return this._html; }
   set innerHTML(v) { this._html = String(v); this._text = ''; this.children = []; }
 
-  appendChild(c) { this.children.push(c); return c; }
+  appendChild(c) {
+    // Mover de verdade: tira do pai antigo antes de entrar no novo. A página
+    // empresta seções para dentro da janela e as devolve depois, e sem isto
+    // a mesma seção ficaria listada nos dois lugares.
+    if (c.pai && c.pai !== this) {
+      const i = c.pai.children.indexOf(c);
+      if (i >= 0) c.pai.children.splice(i, 1);
+    }
+    c.pai = this;
+    this.children.push(c);
+    return c;
+  }
+
+  get parentNode() { return this.pai; }
   addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); }
   setAttribute(k, v) { this.attrs[k] = String(v); }
   getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; }
   removeAttribute(k) { delete this.attrs[k]; }
   querySelectorAll() { return []; }
+
+  /*
+   * O suficiente de `dialog` para o DOM de brinquedo.
+   *
+   * A página passou a abrir as listas em janela nativa, e o teste roda fora do
+   * navegador: sem isto, `showModal` não existe e o render inteiro estoura.
+   * Não se imita foco preso nem backdrop — o que os testes precisam saber é se
+   * a janela está aberta e se fechar dispara quem escuta.
+   */
+  showModal() {
+    this.open = true;
+    this.setAttribute('open', '');
+  }
+
+  close() {
+    if (!this.open) return;
+    this.open = false;
+    this.removeAttribute('open');
+    for (const fn of (this.listeners.close || []).slice()) {
+      try { fn({ type: 'close', target: this }); } catch (e) { /* ouvinte não derruba */ }
+    }
+    // `{ once: true }` é o uso real na página; simular é só esvaziar a fila.
+    this.listeners.close = [];
+  }
+
+  /** O ancestral mais próximo cujo nome de tag bate. Só o que a página usa. */
+  closest(seletor) {
+    const alvo = String(seletor).toLowerCase();
+    let no = this;
+    while (no) {
+      if (no.tagName && no.tagName.toLowerCase() === alvo) return no;
+      no = no.pai || null;
+    }
+    return null;
+  }
+
+  /** O primeiro descendente com a classe pedida. Só aceita ".classe". */
+  querySelector(seletor) {
+    const s = String(seletor);
+    if (s[0] !== '.') return null;
+    const classe = s.slice(1);
+    const procurar = (no) => {
+      for (const f of no.children) {
+        if (f.classList && f.classList.contains(classe)) return f;
+        const achado = procurar(f);
+        if (achado) return achado;
+      }
+      return null;
+    };
+    return procurar(this);
+  }
 
   /** Todo o HTML da subárvore, o que basta para procurar texto e contar linhas. */
   get outerHTML() {

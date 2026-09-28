@@ -16,7 +16,10 @@ const PAGINA = path.join(RAIZ, 'trackeroao.html');
 const IDS = ['categories', 'topics', 'essentials', 'beads', 'seeds', 'bosses', 'minibosses', 'headless',
   'deaths', 'deathsCount', 'deathsNote', 'syncDot', 'syncText', 'anelFio', 'overallPct', 'overallCount', 'tempoNum', 'skillEmote', 'marcos', 'bossPanel', 'bossHead', 'bossNum', 'bossLista', 'bossNota', 'quadroTempo', 'tempoRot', 'therm', 'thermFill', 'thermPin',
   'idols', 'novidades', 'syncDot', 'syncText', 'overallCount', 'overallLabel', 'overallBar',
-  'themeBtn'];
+  'themeBtn',
+  // As listas passaram a morar dentro de janelas nativas.
+  'bossJanela', 'headlessJanela', 'conqJanela', 'headlessPanel', 'headlessHead',
+  'headlessNum', 'headlessLista', 'anelPanel', 'anelHead', 'conqLista'];
 
 /**
  * Carrega o <script> da página num contexto com `sync` já preenchido.
@@ -466,24 +469,34 @@ async function rodar(log) {
   log(/boss-card-n/.test(nodes.bossLista.outerHTML), 'cada bloco traz a contagem no topo',
     'contagem por chefe presente');
 
-  // Fechada por padrão, e o clique abre — é o que torna óbvio que dá para abrir.
-  log(nodes.bossLista.hidden !== false || /hidden/.test(src.match(/id="bossLista"[^>]*/)[0]),
-    'a lista de chefes começa fechada', 'atributo hidden na marcação');
-  // No navegador a lista nasce com `hidden` na marcação; o DOM de brinquedo
-  // não lê marcação, então o teste parte do mesmo ponto.
-  nodes.bossLista.hidden = true;
+  /*
+   * A lista abre em JANELA, não empurrando a página.
+   *
+   * Antes ela entrava no fluxo do documento e jogava tudo que vinha abaixo
+   * para longe — clicar num contador obrigava a rolar de volta. Os testes
+   * mediam esse comportamento; agora medem o contrário, que é o pedido.
+   */
+  log(nodes.bossJanela && nodes.bossJanela.open === false,
+    'a janela dos chefes começa fechada',
+    'open=' + (nodes.bossJanela && nodes.bossJanela.open));
   nodes.bossHead.listeners.click[0]({});
-  log(nodes.bossLista.hidden === false && /aberto/.test(nodes.bossPanel.className),
-    'clicar no contador abre a lista e muda o tom do bloco',
-    'hidden=' + nodes.bossLista.hidden + ', classe="' + nodes.bossPanel.className + '"');
+  log(nodes.bossJanela.open === true
+      && nodes.bossHead.getAttribute('aria-expanded') === 'true',
+    'clicar no contador abre a janela',
+    'open=' + nodes.bossJanela.open);
+  log(/com-janela/.test(ctx.document.body.className),
+    'e a página de trás trava a rolagem enquanto ela está aberta',
+    'classe no body: "' + ctx.document.body.className + '"');
 
-  // E tem de recolher: abrir sem fechar foi o defeito relatado.
-  nodes.bossHead.listeners.click[0]({});
-  const recolheu = nodes.bossLista.hidden === true &&
-    !/aberto/.test(nodes.bossPanel.className) &&
-    nodes.bossHead.getAttribute('aria-expanded') === 'false';
-  log(recolheu, 'clicar de novo recolhe e volta a ser só a contagem',
-    'hidden=' + nodes.bossLista.hidden + ', classe="' + nodes.bossPanel.className + '"');
+  nodes.bossJanela.close();
+  log(nodes.bossJanela.open === false
+      && nodes.bossHead.getAttribute('aria-expanded') === 'false'
+      && !/com-janela/.test(ctx.document.body.className),
+    'fechar devolve tudo ao lugar',
+    'open=' + nodes.bossJanela.open + ', body="' + ctx.document.body.className + '"');
+  // A lista não pode mais estar no fluxo: se estivesse, continuaria empurrando.
+  log(/<dialog class="janela" id="bossJanela"/.test(src),
+    'a lista mora dentro de um dialog', 'backdrop, foco preso e Esc sem script');
 
   // Emblema por chefe, e o convite a abrir legível sem hover.
   const comEmblema = kills.filter((b) => b.emblema).length;
@@ -949,10 +962,33 @@ async function rodar(log) {
   log(!/<header class="top">[\s\S]{0,400}syncDot/.test(src),
     'e saiu do cabeçalho', 'cabeçalho ficou com título e assinatura');
 
-  // A assinatura ganhou peso.
+  /*
+   * A assinatura destaca por peso e espaço, não por corpo.
+   *
+   * O teste antigo cobrava 0.85rem, de quando destaque era tamanho. Ela
+   * disputava corpo com um título três vezes maior e perdia de qualquer jeito;
+   * encolhida, ganha o que o título não tem. Medir o corpo aqui seria medir a
+   * coisa errada de novo.
+   */
   const assin = /\.assinatura \{[^}]*font-size: ([\d.]+)rem/.exec(src);
-  log(assin && Number(assin[1]) >= 0.85, 'a assinatura ficou maior',
+  const blocoAssin = /\.assinatura \{[\s\S]*?\n  \}/.exec(src);
+  const cssAssin = blocoAssin ? blocoAssin[0] : '';
+  log(assin && Number(assin[1]) <= 0.85,
+    'a assinatura encolheu, para o corpo da página caber',
     assin ? assin[1] + 'rem' : 'não achei');
+  const pesoAssin = /font-weight: (\d+)/.exec(cssAssin);
+  const entreAssin = /letter-spacing: ([\d.]+)em/.exec(cssAssin);
+  log(pesoAssin && Number(pesoAssin[1]) >= 700 && entreAssin && Number(entreAssin[1]) >= 0.3,
+    'e destaca por peso e entreletra em vez de corpo',
+    (pesoAssin ? pesoAssin[1] : '?') + ' / ' + (entreAssin ? entreAssin[1] + 'em' : '?'));
+  log(/\.assinatura::before,/.test(src) && /\.assinatura::after \{/.test(src),
+    'com um fio de cada lado isolando a linha', 'lê como legenda de placa');
+  // O título não pode ter encolhido junto: o pedido foi o cabeçalho menor com
+  // o título intacto.
+  const alturaCab = /header\.top \{[\s\S]*?padding-bottom: (\d+)px[\s\S]*?margin-bottom: (\d+)px/.exec(src);
+  log(alturaCab && Number(alturaCab[1]) + Number(alturaCab[2]) <= 32,
+    'e o cabeçalho ficou mais baixo sem mexer no título',
+    alturaCab ? alturaCab[1] + 'px + ' + alturaCab[2] + 'px' : 'não achei');
   log(/\.assinatura \{[^}]*color: var\(--gold\)/.test(src),
     'e ganhou cor própria', 'dourado, não cinza apagado');
 

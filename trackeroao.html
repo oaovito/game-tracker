@@ -58,14 +58,18 @@
   }
   .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
 
+  /* O cabeçalho encolheu sem o título encolher: o que saiu foi espaço — a
+     folga interna, a margem abaixo e o vão entre título e assinatura. São
+     ~26px devolvidos ao corpo da página, que é o que se via de diferença numa
+     tela de celular. */
   header.top {
     border-bottom: 1px solid var(--line);
-    padding-bottom: 22px;
-    margin-bottom: 24px;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
   }
   /* Tudo do cabeçalho numa coluna centrada: o título manda, e o que vem
      depois é subordinado a ele em vez de disputar a linha. */
-  .top-centro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .top-centro { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   /*
    * O título, na tipografia do logo do jogo.
    *
@@ -581,15 +585,35 @@
   .theme-toggle:hover { opacity: 1; color: var(--text); }
   /* Assinatura: presente, mas sem puxar o olho para longe do progresso. */
   /* Assinatura com peso: é o nome do projeto, não uma nota de rodapé. */
+  /*
+   * Menor e ainda assim mais presente.
+   *
+   * Tamanho não é a única moeda de destaque, e aqui era a errada: a assinatura
+   * competia por corpo com um título três vezes maior e perdia de qualquer
+   * jeito. Encolhida, ela ganha o que o título não tem — peso alto, entreletra
+   * bem aberta e um fio dourado de cada lado, que isola a linha em vez de
+   * deixá-la solta embaixo. Lê-se como legenda de placa, não como sobra.
+   */
   .assinatura {
     font-family: var(--font-display);
-    font-size: 0.92rem;
-    font-weight: 500;
+    font-size: 0.78rem;
+    font-weight: 800;
     color: var(--gold);
-    letter-spacing: 0.22em;
+    letter-spacing: 0.34em;
     text-transform: lowercase;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 0 14px rgba(168, 133, 61, 0.35);
   }
+  .assinatura::before,
+  .assinatura::after {
+    content: "";
+    width: 26px; height: 1px;
+    background: linear-gradient(90deg, rgba(168,133,61,0), var(--gold));
+  }
+  .assinatura::after { background: linear-gradient(90deg, var(--gold), rgba(168,133,61,0)); }
   .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
 
   .overall {
@@ -783,10 +807,23 @@
   }
   .deaths-panel.apodrecendo .deaths-kanji { color: #b6bf94; }
   /* As almas também: alma de quem morreu de podridão não sobe branca. */
+  /*
+   * A podridão adoece a alma pelo filtro, não por fundo.
+   *
+   * Esta regra vinha de quando `.alma` ERA o desenho — um blob com
+   * `border-radius`, onde pintar o fundo pintava o fantasma. Depois que o
+   * desenho virou SVG lá dentro, o mesmo `background` passou a pintar a caixa
+   * de 28×38 atrás dele: cinco retângulos verdes acesos no bloco, que era o
+   * que se via. Tingir o próprio traço não tem esse efeito colateral.
+   */
   .deaths-panel.apodrecendo .alma {
-    background: radial-gradient(60% 55% at 50% 38%,
-      #eef6dd 0%, #c3d79a 34%, #8ba25e 62%, rgba(110,130,70,0) 100%);
-    filter: blur(0.4px) drop-shadow(0 0 7px rgba(170, 200, 110, 0.7));
+    filter: sepia(0.55) hue-rotate(35deg) saturate(1.5) brightness(0.92)
+            drop-shadow(0 0 8px rgba(150, 180, 95, 0.55))
+            drop-shadow(0 0 18px rgba(110, 140, 70, 0.3));
+  }
+  .deaths-panel.apodrecendo .alma::after {
+    background: radial-gradient(50% 42% at 50% 0%,
+      rgba(206, 224, 160, 0.26) 0%, rgba(170, 195, 120, 0.1) 46%, rgba(150,180,100,0) 78%);
   }
 
   /* --- a lista de conquistas --- */
@@ -801,6 +838,66 @@
     margin: -6px 0 22px;
   }
   .conq-lista[hidden] { display: none; }
+
+  /* --- a janela --- */
+  .janela {
+    width: min(680px, calc(100vw - 32px));
+    max-height: 86vh;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--bg-panel);
+    color: var(--text);
+    overflow: hidden;
+    /* `dialog` aberto é flex para o corpo poder rolar sozinho; fechado o
+       navegador esconde, e `display: flex` aqui venceria isso. */
+    flex-direction: column;
+  }
+  .janela[open] { display: flex; }
+  .janela::backdrop {
+    background: rgba(6, 5, 6, 0.78);
+    backdrop-filter: blur(2px);
+  }
+  .janela-topo {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    flex: 0 0 auto;
+  }
+  .janela-titulo {
+    font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .janela-fecha {
+    appearance: none; background: none; border: 0;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 1rem; line-height: 1;
+    padding: 6px 8px; margin: -6px -8px -6px 0;
+  }
+  .janela-fecha:hover { color: var(--text); }
+  /* O corpo rola; o topo fica. Sem isto a janela inteira cresceria além da
+     tela e o botão de fechar sairia de vista. */
+  .janela-corpo {
+    overflow-y: auto;
+    padding: 14px 16px 16px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .janela-corpo .boss-lista,
+  .janela-corpo .conq-lista,
+  .janela-corpo .category { margin: 0; }
+  /* Seção dentro da janela não precisa do cabeçalho que abre e fecha: quem
+     escolheu o tópico no menu já disse o que quer ver. */
+  .janela-corpo .category { border-bottom: 0; }
+  .janela-corpo .cat-header { cursor: default; padding-top: 0; }
+  .janela-corpo .cat-header .pin,
+  .janela-corpo .chevron { display: none; }
+
+  /* Com a janela aberta a página de trás não rola: sem isto, chegar ao fim da
+     lista continua rolando o que está embaixo, e ao fechar a pessoa está num
+     lugar diferente de onde abriu — o incômodo que a janela veio resolver. */
+  body.com-janela { overflow: hidden; }
   /* O cabeçalho de cada faixa de dificuldade. */
   .conq-faixa {
     display: flex; align-items: baseline; gap: 10px;
@@ -1200,9 +1297,14 @@
     animation-play-state: var(--anim, running);
     pointer-events: none;
   }
+  /* A borda pulsa como pressão arterial: sobe rápido, sustenta, e cai devagar
+     — em vez do vai e vem simétrico, que lia como brilho de néon. */
   @keyframes sangue-borda {
-    0%, 100% { opacity: 0.55; filter: saturate(1) brightness(0.9); }
-    50%      { opacity: 1;    filter: saturate(1.9) brightness(1.35); }
+    0%, 100% { opacity: 0.45; filter: saturate(1) brightness(0.8); }
+    12%      { opacity: 1;    filter: saturate(2.4) brightness(1.6); }
+    28%      { opacity: 0.9;  filter: saturate(2) brightness(1.35); }
+    40%      { opacity: 1;    filter: saturate(2.6) brightness(1.7); }
+    100%     { opacity: 0.45; filter: saturate(1) brightness(0.8); }
   }
   .boss-kanji { color: #ff5b33; text-shadow: 0 0 14px rgba(255,91,51,0.85), 0 0 34px rgba(168,50,31,0.6); }
   .boss-num {
@@ -1229,9 +1331,81 @@
   /* O play-state vai dentro de cada uma, depois do atalho: `animation`
      reescreve todos os seus longhands, então a mesma declaração posta numa
      regra `.pingo` acima seria zerada pela linha que define a queda. */
-  .pingo.p1 { left: 22%; height: 12px; animation: gotejar 3.4s ease-in infinite; animation-play-state: var(--anim, running); }
-  .pingo.p2 { left: 51%; height: 16px; animation: gotejar 4.7s ease-in 0.8s infinite; animation-play-state: var(--anim, running); }
-  .pingo.p3 { left: 76%; height: 10px; animation: gotejar 5.9s ease-in 1.9s infinite; animation-play-state: var(--anim, running); }
+  /* Os fios são seis e mais grossos, e descem o bloco inteiro em vez de
+     morrer no meio. */
+  .pingo.p1 { left: 9%;  width: 5px; height: 22px; animation: gotejar 3.4s ease-in infinite;        animation-play-state: var(--anim, running); }
+  .pingo.p2 { left: 24%; width: 3px; height: 16px; animation: gotejar 4.7s ease-in 0.8s infinite;   animation-play-state: var(--anim, running); }
+  .pingo.p3 { left: 41%; width: 6px; height: 26px; animation: gotejar 3.9s ease-in 1.5s infinite;   animation-play-state: var(--anim, running); }
+  .pingo.p4 { left: 58%; width: 4px; height: 19px; animation: gotejar 5.3s ease-in 0.4s infinite;   animation-play-state: var(--anim, running); }
+  .pingo.p5 { left: 74%; width: 5px; height: 24px; animation: gotejar 4.1s ease-in 2.2s infinite;   animation-play-state: var(--anim, running); }
+  .pingo.p6 { left: 89%; width: 3px; height: 14px; animation: gotejar 5.9s ease-in 1.1s infinite;   animation-play-state: var(--anim, running); }
+
+  /*
+   * O jorro: sai de baixo sob pressão, sobe, e desaba.
+   *
+   * É o gesto que o jogo faz no golpe mortal — gêiser arterial, não gota. Sem
+   * esta camada o bloco continua parecendo um cano furado em vez de um corte.
+   */
+  .jorro {
+    position: absolute; bottom: 0;
+    width: 7px; height: 8px;
+    border-radius: 60% 60% 40% 40%;
+    background: linear-gradient(0deg, #ff6a3d, #d4462a 42%, #8c1a10 78%, rgba(90,10,6,0));
+    opacity: 0; pointer-events: none;
+    filter: blur(0.3px);
+  }
+  .jorro.j1 { left: 17%; animation: jorrar 4.3s cubic-bezier(0.15,0.7,0.4,1) 0.2s infinite;  animation-play-state: var(--anim, running); }
+  .jorro.j2 { left: 44%; animation: jorrar 5.7s cubic-bezier(0.15,0.7,0.4,1) 1.9s infinite;  animation-play-state: var(--anim, running); }
+  .jorro.j3 { left: 68%; animation: jorrar 3.7s cubic-bezier(0.15,0.7,0.4,1) 3.1s infinite;  animation-play-state: var(--anim, running); }
+  .jorro.j4 { left: 86%; animation: jorrar 6.1s cubic-bezier(0.15,0.7,0.4,1) 0.9s infinite;  animation-play-state: var(--anim, running); }
+  @keyframes jorrar {
+    0%   { transform: translateY(0) scaleY(0.4) scaleX(1);   opacity: 0; }
+    6%   { transform: translateY(-18px) scaleY(2.6) scaleX(0.8); opacity: 1; }
+    16%  { transform: translateY(-62px) scaleY(4.2) scaleX(0.6); opacity: 0.95; }
+    26%  { transform: translateY(-88px) scaleY(2.2) scaleX(0.9); opacity: 0.7; }
+    38%  { transform: translateY(-58px) scaleY(1.4) scaleX(1.3); opacity: 0.45; }
+    52%  { transform: translateY(-14px) scaleY(0.9) scaleX(1.8); opacity: 0.2; }
+    64%, 100% { transform: translateY(0) scaleY(0.4) scaleX(2.2); opacity: 0; }
+  }
+
+  /* O respingo aparece de uma vez, como gota que bateu, e escurece secando. */
+  .respingo {
+    position: absolute;
+    width: 6px; height: 5px;
+    border-radius: 54% 46% 62% 38% / 58% 62% 38% 42%;
+    background: #a8201a;
+    opacity: 0; pointer-events: none;
+  }
+  .respingo.r1 { left: 13%; top: 22%; animation: bater 5.1s steps(1, end) 0.3s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r2 { left: 31%; top: 61%; animation: bater 6.3s steps(1, end) 1.7s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r3 { left: 47%; top: 34%; animation: bater 4.7s steps(1, end) 2.9s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r4 { left: 62%; top: 72%; animation: bater 7.1s steps(1, end) 0.8s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r5 { left: 79%; top: 45%; animation: bater 5.9s steps(1, end) 3.6s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r6 { left: 22%; top: 84%; animation: bater 6.7s steps(1, end) 2.2s infinite;  animation-play-state: var(--anim, running); }
+  .respingo.r7 { left: 91%; top: 18%; animation: bater 4.3s steps(1, end) 4.4s infinite;  animation-play-state: var(--anim, running); }
+  @keyframes bater {
+    0%, 4%   { opacity: 0;    transform: scale(0.4); }
+    5%       { opacity: 0.95; transform: scale(1.35); }
+    9%       { opacity: 0.9;  transform: scale(1); }
+    60%      { opacity: 0.5;  transform: scale(1); filter: brightness(0.6); }
+    100%     { opacity: 0;    transform: scale(1); filter: brightness(0.35); }
+  }
+
+  /* A poça: cresce e não recua, porque sangue não volta. */
+  .poca {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 26px;
+    background: linear-gradient(0deg, rgba(120, 14, 9, 0.85), rgba(120,14,9,0.25) 55%, rgba(120,14,9,0));
+    opacity: 0; pointer-events: none;
+    transform-origin: 50% 100%;
+    animation: empocar 9.4s ease-in-out infinite;
+    animation-play-state: var(--anim, running);
+  }
+  @keyframes empocar {
+    0%   { opacity: 0.18; transform: scaleY(0.35); }
+    55%  { opacity: 0.7;  transform: scaleY(1.15); }
+    100% { opacity: 0.18; transform: scaleY(0.35); }
+  }
   @keyframes gotejar {
     0%       { transform: translateY(0) scaleY(0.3); opacity: 0; }
     12%      { transform: translateY(6px) scaleY(1); opacity: 1; }
@@ -1308,6 +1482,13 @@
   }
   .headless-quadro .pingo {
     background: linear-gradient(180deg, #b06bf0, #3d1361 60%, transparent);
+  }
+  .headless-quadro .jorro {
+    background: linear-gradient(0deg, #c98cf5, #7c3aba 42%, #3d1361 78%, rgba(40,12,70,0));
+  }
+  .headless-quadro .respingo { background: #6b2ba6; }
+  .headless-quadro .poca {
+    background: linear-gradient(0deg, rgba(74, 26, 120, 0.85), rgba(74,26,120,0.25) 55%, rgba(74,26,120,0));
   }
 
   /* --- a lista que os dois quadrados abrem --- */
@@ -1851,10 +2032,38 @@
     </section>
   </div>
 
-  <!-- Fora da grade de propósito: aberta, empurra o que vem abaixo; fechada,
-       devolve tudo ao lugar. Fluxo normal do documento, sem script. -->
-  <div class="boss-lista" id="bossLista" hidden></div>
-  <div class="boss-lista headless-lista" id="headlessLista" hidden></div>
+  <!--
+    As listas abrem em janela, e não empurrando a página.
+
+    Antes elas entravam no fluxo do documento: clicar em Boss kills abria 19
+    cartões ali mesmo e jogava tudo que vinha abaixo para longe, obrigando a
+    rolar para voltar ao que se estava vendo. Numa página que é um painel de
+    números, deslocar o painel para mostrar um detalhe é o avesso do que se
+    quer.
+
+    `dialog` nativo em vez de div com `position: fixed`: traz fundo escurecido,
+    foco preso dentro da janela, Esc para fechar e devolução do foco ao botão —
+    tudo isso sem uma linha de script.
+  -->
+  <dialog class="janela" id="bossJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo">boss kills</span>
+      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="janela-corpo">
+      <div class="boss-lista" id="bossLista"></div>
+    </div>
+  </dialog>
+
+  <dialog class="janela" id="headlessJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo">headless</span>
+      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="janela-corpo">
+      <div class="boss-lista headless-lista" id="headlessLista"></div>
+    </div>
+  </dialog>
 
   <!-- Bloco 2: mortes. -->
   <section class="deaths-panel" id="deaths" hidden>
@@ -2038,9 +2247,23 @@
     </section>
   </div>
 
-  <!-- Fora da grade, logo depois dela: aberta, empurra o resto para baixo pelo
-       fluxo normal do documento, como as listas de chefe e de Headless. -->
-  <div class="conq-lista" id="conqLista" hidden></div>
+  <dialog class="janela" id="abaJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo"></span>
+      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="janela-corpo"></div>
+  </dialog>
+
+  <dialog class="janela" id="conqJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo">achievements</span>
+      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="janela-corpo">
+      <div class="conq-lista" id="conqLista"></div>
+    </div>
+  </dialog>
 
 
   <div id="novidades"></div>
@@ -2346,20 +2569,58 @@ function secoesDoTopico(nome) {
   return (GRUPOS[nome] || GAVETA[nome] || [nome]);
 }
 
+/**
+ * Mostra as seções do tópico escolhido — dentro da janela.
+ *
+ * Valem as mesmas regras dos contadores, inclusive para o que está atrás dos
+ * três risquinhos: escolher um tópico não pode empurrar a página. Antes as
+ * seções apareciam no fluxo do documento, e clicar em "Items" jogava 178
+ * linhas entre você e o resto do painel.
+ *
+ * As seções ficam onde sempre estiveram no documento e são MOVIDAS para o
+ * corpo da janela quando escolhidas, voltando ao lugar quando ela fecha.
+ * Movê-las preserva os nós — os ouvintes de clique e o estado aberto seguem
+ * valendo — e evita manter duas cópias da mesma seção em sincronia.
+ */
 function aplicarAba() {
+  const janela = document.getElementById("abaJanela");
+  const corpo = janela ? janela.querySelector(".janela-corpo") : null;
   const alvo = abaAtual ? secoesDoTopico(abaAtual) : [];
+
+  /*
+   * O corpo da janela é refeito do zero a cada aplicação.
+   *
+   * `render()` reconstrói as seções inteiras — nós novos a cada leitura, de
+   * cinco em cinco segundos. Mover só os atuais para dentro deixava os
+   * antigos lá, e a janela mostrava a cópia velha: os números apareciam como
+   * traço porque aquele nó nunca mais fora atualizado. Esvaziar antes custa
+   * nada e garante que o que está na janela é o que acabou de ser desenhado.
+   */
+  if (corpo) corpo.innerHTML = "";
+
   for (const t of topicos) {
     const mostrar = alvo.indexOf(t.nome) >= 0;
     t.section.hidden = !mostrar;
-    // A aba escolhida já vem aberta: escolher no menu e ainda ter de clicar no
-    // cabeçalho para ver o conteúdo seria um passo a mais sem motivo.
-    if (mostrar) {
-      t.section.classList.add("open");
-      openState.add(t.section.dataset.idx);
-      // A ordem do grupo manda: contas, sementes e materiais antes do resto.
-      t.section.style.order = alvo.indexOf(t.nome);
-    }
+    if (!mostrar) continue;
+    t.section.classList.add("open");
+    openState.add(t.section.dataset.idx);
+    // A ordem do grupo manda: contas, sementes e materiais antes do resto.
+    t.section.style.order = alvo.indexOf(t.nome);
+    if (corpo) corpo.appendChild(t.section);
   }
+
+  if (!janela) return;
+  ligarJanela(janela, null);
+  // Fechar a janela é fechar a aba: sem isto o menu continuaria marcado e o
+  // tópico ficaria "escolhido" sem nada na tela, que é um estado mentiroso.
+  if (!janela.dataset.aoFechar) {
+    janela.dataset.aoFechar = "1";
+    janela.addEventListener("close", () => { if (abaAtual) selecionarAba(null); });
+  }
+  const titulo = janela.querySelector(".janela-titulo");
+  if (titulo) titulo.textContent = abaAtual || "";
+  if (alvo.length) abrirJanela(janela, null);
+  else if (janela.open) janela.close();
 }
 
 function renderTopicos() {
@@ -3002,12 +3263,40 @@ function renderTempo() {
 /* --------------------------------------------------- mortes de chefe */
 
 /** Três gotas com tempos diferentes, para não virar metrônomo. */
+/*
+ * O sangue do bloco de chefes, no volume que a referência pede.
+ *
+ * Eram três fios escorrendo devagar. O que o próprio jogo faz no golpe mortal
+ * é outra coisa: jorro arterial em gêiser, herdado do Tenchu e da tradição
+ * chanbara do cinema samurai, onde o sangue sai sob pressão e pinta a cena
+ * inteira — não pinga.
+ *
+ * Então são três camadas, e nenhuma delas sozinha faria o efeito:
+ *   jorro    — sai de baixo para cima, sob pressão, e desaba
+ *   fio      — escorre pela parede do bloco, engrossando
+ *   respingo — pontos que aparecem de uma vez e escurecem, como gota que
+ *              bateu e secou
+ * A poça no rodapé cresce e nunca recua, porque sangue não volta.
+ */
 function porGotas(quadro) {
-  for (const c of ["p1", "p2", "p3"]) {
+  for (let i = 0; i < 4; i++) {
+    const j = document.createElement("span");
+    j.className = "jorro j" + (i + 1);
+    quadro.appendChild(j);
+  }
+  for (let i = 0; i < 6; i++) {
     const g = document.createElement("span");
-    g.className = "pingo " + c;
+    g.className = "pingo p" + (i + 1);
     quadro.appendChild(g);
   }
+  for (let i = 0; i < 7; i++) {
+    const r = document.createElement("i");
+    r.className = "respingo r" + (i + 1);
+    quadro.appendChild(r);
+  }
+  const poca = document.createElement("span");
+  poca.className = "poca";
+  quadro.appendChild(poca);
 }
 
 /**
@@ -3023,7 +3312,12 @@ function renderContador(cfg) {
   const lista = document.getElementById(cfg.lista);
   const dados = temSync() && Array.isArray(sync[cfg.campo]) ? sync[cfg.campo] : null;
 
-  if (!dados || !dados.length) { painel.hidden = true; lista.hidden = true; return; }
+  if (!dados || !dados.length) {
+    painel.hidden = true;
+    const j = lista.closest("dialog");
+    if (j && j.open) j.close();
+    return;
+  }
   painel.hidden = false;
   num.textContent = cfg.total(dados);
   // Marca no próprio nó em vez de procurar por seletor: o desenho acontece a
@@ -3109,20 +3403,47 @@ function renderHeadlessConta() {
   });
 }
 
+/**
+ * Abre uma janela e devolve a página ao estado anterior ao fechar.
+ *
+ * `showModal` cuida do fundo, do foco e do Esc. O que ele não faz é travar a
+ * rolagem de trás: sem isso, rolar dentro da lista continua rolando a página
+ * embaixo quando a lista chega ao fim, e a pessoa fecha a janela num lugar
+ * diferente de onde abriu — que é exatamente o incômodo que a janela veio
+ * resolver.
+ */
+function abrirJanela(janela, botao) {
+  if (!janela || janela.open) return;
+  document.body.classList.add("com-janela");
+  janela.showModal();
+  if (botao) botao.setAttribute("aria-expanded", "true");
+  janela.addEventListener("close", () => {
+    document.body.classList.remove("com-janela");
+    if (botao) botao.setAttribute("aria-expanded", "false");
+  }, { once: true });
+}
+
+function ligarJanela(janela, botao) {
+  if (!janela || janela.dataset.ligada) return;
+  janela.dataset.ligada = "1";
+  const fechar = janela.querySelector(".janela-fecha");
+  if (fechar) fechar.addEventListener("click", () => janela.close());
+  // Clique fora fecha: o alvo do clique é o próprio `dialog` só quando cai no
+  // backdrop, porque o conteúdo está todo dentro dos filhos.
+  janela.addEventListener("click", (ev) => { if (ev.target === janela) janela.close(); });
+}
+
 function ligarQuadrosAbrem() {
-  for (const [botao, painel, lista] of [
-    ["bossHead", "bossPanel", "bossLista"],
-    ["headlessHead", "headlessPanel", "headlessLista"],
+  for (const [botao, janela] of [
+    ["bossHead", "bossJanela"],
+    ["headlessHead", "headlessJanela"],
   ]) {
     const b = document.getElementById(botao);
-    const p = document.getElementById(painel);
-    const l = document.getElementById(lista);
-    b.addEventListener("click", () => {
-      const abrir = l.hidden;
-      l.hidden = !abrir;
-      p.classList.toggle("aberto", abrir);
-      b.setAttribute("aria-expanded", abrir ? "true" : "false");
-    });
+    const j = document.getElementById(janela);
+    if (!b || !j || b.dataset.ligado) continue;
+    b.dataset.ligado = "1";
+    ligarJanela(j, b);
+    b.addEventListener("click", () => abrirJanela(j, b));
   }
 }
 
@@ -3364,11 +3685,11 @@ function renderConquistas(conq) {
   const botao = document.getElementById("anelHead");
   if (!painel || !lista) return;
 
+  const janela = document.getElementById("conqJanela");
   const itens = conq && Array.isArray(conq.lista) ? conq.lista : null;
   if (!itens || !itens.length) {
-    lista.hidden = true;
+    if (janela && janela.open) janela.close();
     botao.setAttribute("aria-expanded", "false");
-    painel.classList.remove("aberto");
     return;
   }
 
@@ -3473,19 +3794,12 @@ function renderConquistas(conq) {
     }
   }
 
-  // O estado aberto/fechado é do nó, e sobrevive ao redesenho.
-  const aberto = painel.classList.contains("aberto");
-  lista.hidden = !aberto;
-  botao.setAttribute("aria-expanded", aberto ? "true" : "false");
-
+  // A janela sobrevive ao redesenho: o conteúdo é refeito, mas se ela estava
+  // aberta continua aberta, e a pessoa não perde o lugar a cada leitura.
+  ligarJanela(janela, botao);
   if (!botao.dataset.ligado) {
     botao.dataset.ligado = "1";
-    botao.addEventListener("click", () => {
-      const vai = !painel.classList.contains("aberto");
-      painel.classList.toggle("aberto", vai);
-      lista.hidden = !vai;
-      botao.setAttribute("aria-expanded", vai ? "true" : "false");
-    });
+    botao.addEventListener("click", () => abrirJanela(janela, botao));
   }
 }
 

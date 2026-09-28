@@ -783,15 +783,30 @@ check('o público não recebe quando a pessoa jogou', () => {
 console.log('\n  === 11. O repositório se basta ===');
 
 const { execFileSync: exec11 } = require('child_process');
+/*
+ * A lista de arquivos versionados, ou null quando não há checkout.
+ *
+ * O instalador entrega o projeto a partir do zip que o GitHub publica, e zip
+ * não traz `.git`. As conferências que dependem do git não têm o que medir
+ * ali — e reprovar faria uma instalação perfeitamente boa terminar com sete
+ * falhas na tela, assustando justamente quem acabou de instalar.
+ */
 const rastreados = (() => {
   try {
+    if (!fs.existsSync(path.join(RAIZ_PROJETO, '.git'))) return null;
     return exec11('git', ['ls-files'], { cwd: RAIZ_PROJETO, encoding: 'utf8', windowsHide: true })
       .split('\n').filter(Boolean);
   } catch (e) { return null; }
 })();
 
+/** Sai pulando quando não há checkout git para inspecionar. */
+function exigeGit() {
+  if (!rastreados) pular('instalado a partir do zip; não há checkout git para conferir');
+  return rastreados;
+}
+
 check('o projeto inteiro está versionado, não só a página', () => {
-  assert(rastreados, 'não consegui listar os arquivos do git');
+  exigeGit();
   const porExt = {};
   for (const a of rastreados) {
     const e = path.extname(a) || a;
@@ -806,12 +821,14 @@ check('o projeto inteiro está versionado, não só a página', () => {
 });
 
 check('quem clonar recebe as artes junto', () => {
+  exigeGit();
   const artes = rastreados.filter((a) => a.startsWith('docs/icones/') && a.endsWith('.png'));
   assert(artes.length > 0, 'nenhuma arte versionada; a lista de chefes cairia no kanji');
   return artes.length + ' imagens no repositório';
 });
 
 check('nada é resolvido para fora da pasta clonada', () => {
+  exigeGit();
   const foraDaPasta = [];
   for (const a of rastreados) {
     if (!/\.(ps1|js|bat|vbs)$/i.test(a)) continue;
@@ -844,6 +861,7 @@ check('a janela é escondida sem binário de terceiro', () => {
 });
 
 check('nada do que está versionado identifica esta máquina', () => {
+  exigeGit();
   const sujos = [];
   for (const a of rastreados) {
     if (/\.(png|svg|bin|sl2|zip|exe|ico)$/i.test(a)) continue;
@@ -859,6 +877,7 @@ check('nada do que está versionado identifica esta máquina', () => {
 });
 
 check('nada no projeto carrega o nome antigo', () => {
+  exigeGit();
   // O projeto se chama trackeroao. "Progress — Sekiro" era o título da aba, e
   // "sekiro-progresso" era o nome do arquivo da página, do log e das chaves de
   // armazenamento. O nome do jogo continua valendo onde é o jogo que está
@@ -905,6 +924,7 @@ check('quem já usava a página não perde as preferências', () => {
 });
 
 check('o estado de execução ficou fora do git', () => {
+  exigeGit();
   const nunca = ['progress.json', 'deaths.json', 'bosskills.json', 'deaths-mem.json'];
   const vazados = nunca.filter((n) => rastreados.includes(n));
   assert(vazados.length === 0, 'versionado indevidamente: ' + vazados.join(', '));
