@@ -1,17 +1,26 @@
-# Sekiro — tracker de progresso com sync do save
+# trackeroao
 
-Lê o save do Sekiro (`S0000.sl2`), extrai o que dá para extrair com confiança e
-alimenta o `trackeroao.html`. A página é **somente leitura**: tudo que
-ela mostra vem do save, não existe marcação manual.
+Tracker de progresso que lê o save do jogo e monta uma página com o que
+encontrou. Hoje cobre **Sekiro: Shadows Die Twice**.
 
-**O save nunca é escrito.** Todo o código abre o arquivo somente para leitura.
+A página é **somente leitura**: tudo que ela mostra vem do save, do processo do
+jogo ou da Steam — não existe marcação manual, e não existe número digitado.
+Onde o jogo não registra algo, a página diz que não sabe em vez de estimar.
 
-## Instalando (o jeito normal)
+**Nada é escrito no jogo.** O save é aberto somente para leitura, e o handle do
+processo é pedido sem permissão de escrita (`PROCESS_VM_READ` e
+`PROCESS_QUERY_INFORMATION`, nada além).
 
-Precisa de Node.js (>= 16). Nenhuma dependência: não existe `npm install` aqui.
+Site publicado: https://oaovito.github.io/trackeroao/
+
+## Instalando
+
+Precisa de Node.js (>= 16). Nenhuma dependência: não existe `npm install` aqui,
+e nada é baixado em tempo de execução. Clonar o repositório e rodar basta.
 
 ```powershell
-cd C:\BrincadeiraDeCrianca\tools\completionist
+git clone https://github.com/oaovito/trackeroao.git
+cd trackeroao
 .\install-sync-service.ps1
 ```
 
@@ -198,6 +207,45 @@ vez de reportar bit lido do lugar errado.
 > tabela de itens é localizada pela estrutura, não por endereço — mas se algo
 > parecer errado depois de uma atualização, rode `npm run selftest`.
 
+## O contador de mortes
+
+O Sekiro não mostra quantas vezes você morreu, e o save não guarda essa conta —
+isso foi verificado por busca exaustiva, não suposto: a procura rodou, eliminou
+todos os candidatos e o motivo ficou gravado em `deaths.json`.
+
+O jogo guarda, porém, na memória. O número sai do `GameDataMan`, a struct que o
+save carrega, no campo `+0x90`. Ela é encontrada por **padrão de bytes**, e não
+por endereço fixo: as duas ferramentas públicas de contagem de mortes para
+Sekiro gravam o endereço direto, e nenhuma das duas resolve na versão atual —
+o ponteiro volta nulo. Procurar pelo padrão sobrevive a atualização do jogo.
+
+A struct foi confirmada, não deduzida. O tempo de jogo interno é campo dela
+(`+0x9c`), e dá para conferir contra as horas que a Steam registra: 54,7 h de
+tempo interno contra 82,3 h de relógio, com menu e carregamento explicando a
+diferença. Observando por uma hora, o tempo interno andou exatamente uma hora e
+o campo das mortes não se moveu — o que separa um contador de evento de um
+contador de quadro ou de relógio.
+
+Existe também um contador **de sessão**, achado por diferença de snapshots da
+memória, que serve de reserva se o padrão deixar de casar numa versão futura.
+Ele zera quando o jogo abre, então mede só a partida atual. O escopo viaja
+junto com o número (`"escopo": "jornada"` ou `"sessao"`), para a página nunca
+mostrar um pelo outro.
+
+```bash
+npm run deaths            # mostra jornada, sessão, e compara com a última vez
+npm run deaths mark       # tira uma foto da memória
+npm run deaths confirm 3  # depois de morrer 3 vezes, cruza e acha o offset
+```
+
+O `mark`/`confirm` só é necessário para calibrar a reserva de sessão: a
+contagem da jornada funciona sem calibração nenhuma.
+
+**Nada disso escreve.** O handle é aberto com `PROCESS_VM_READ` e
+`PROCESS_QUERY_INFORMATION` — sem `PROCESS_VM_WRITE`, sem
+`PROCESS_VM_OPERATION`, e o `WriteProcessMemory` nem é importado. A suíte
+verifica isso lendo o próprio `mem.ps1`.
+
 ## Descobrindo o que falta
 
 Para mapear uma flag (um mini-chefe, um Ídolo) ou confirmar um material:
@@ -242,30 +290,61 @@ e diz no terminal que foi chute. Para fixar, ponha `"slot": 1` no
 
 ## Arquivos
 
+O repositório **é** o projeto: clonar e rodar basta, e `docs/` é a saída dele —
+a mesma pasta que o GitHub Pages serve. Nada é resolvido fora desta pasta.
+
 ```
-tools/completionist/
-  trackeroao.html   a página (abra pelo servidor, não por file://)
-  progress.json           gerado pelo sync; a página lê daqui
-  run.bat                 execução manual
-  install-sync-service.ps1    registra a tarefa agendada
+trackeroao/
+  trackeroao.html             a página (abra pelo servidor, não por file://)
+  run.bat                     execução manual
+  install-sync-service.ps1    registra a tarefa agendada (não precisa de admin)
   uninstall-sync-service.ps1  remove a tarefa e encerra o serviço
-  package.json            scripts npm (sem dependências)
+  reativar.ps1                volta do arquivamento, se o jogo for reinstalado
+  package.json                scripts npm (sem dependências)
+
+  docs/                       o que vai para o ar (GitHub Pages)
+    index.html                cópia da página, gerada
+    progress.json             progresso saneado, sem nada de máquina ou conta
+    icones/                   arte dos chefes, baixada uma vez
+
   sync/
-    main.js               poll do processo + watcher + servidor
-    sl2.js                container BND4, MD5, acha o save
-    inventory.js          tabela de itens (id + quantidade)
-    parse.js              monta o progress.json
-    discover.js           descoberta por diff
-    serve.js              servidor estático + IP da LAN + QR
-    qr.js                 gerador de QR sem dependências
-    qrfile.js             grava o QR como SVG (npm run qr)
-    selftest.js           testes contra o save real
-    flags.js              event flags (mini-chefes)
-    offsets.json          toda a configuração e os IDs
-    trackeroao.log       saída do serviço quando roda oculto (gerado)
-    .state.json           slot aprendido (gerado)
-    snapshots/            snapshots do discover (gerado)
+    main.js                   poll do processo + watcher + servidor + publicação
+    parse.js                  junta tudo e monta o progress.json
+
+    sl2.js                    container BND4, MD5, acha o save
+    inventory.js              tabela de itens (id + quantidade)
+    flags.js                  event flags (chefes, mini-chefes, itens)
+    offsets.json              toda a configuração e os IDs
+
+    memoria.js                ponte para o leitor de memória (somente leitura)
+    mem.ps1                   o leitor em si: P/Invoke, varredura por padrão
+    deathsmem.js              contagem de mortes lida da memória do jogo
+    deaths.js                 contagem por save, reserva do método acima
+
+    achievements.js           conquistas da Steam (KeyValues binário)
+    tempo.js                  tempo de jogo, do localconfig.vdf da Steam
+    bosskills.js              conta cada vez que um chefe cai
+    icones.js                 baixa a arte dos chefes uma vez
+
+    publish.js                monta docs/ e barra o que identificaria a máquina
+    serve.js                  servidor estático + IP da LAN
+    mdns.js                   nome .local na rede, sem dependência
+    qr.js / qrfile.js         QR do endereço da LAN, sem dependência
+    oculto.vbs                sobe o serviço sem janela, via wscript do Windows
+
+    instalacao.js             detecta se o jogo foi desinstalado
+    hibernar.js               arquiva tudo e remove a tarefa agendada
+    discover.js               descoberta de offsets por diff
+    auditoria.js              relatório do que está público
+
+    selftest.js               a suíte inteira
+    pagetest.js               roda a página num DOM de brinquedo
+    domshim.js                esse DOM de brinquedo
 ```
+
+Fora do git, porque nascem em tempo de execução e carregam dados da máquina:
+`progress.json` (a leitura crua, com o caminho do save), `deaths.json`,
+`deaths-mem.json`, `bosskills.json`, `sync/trackeroao.log`, `sync/snapshots/`.
 
 ## Se der problema
 

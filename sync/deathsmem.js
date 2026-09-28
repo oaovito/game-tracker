@@ -234,12 +234,60 @@ function daJornada() {
   const igtMs = campo(memoria.GAME_DATA.igt);
   if (mortes === null || mortes > 100000) return null;
 
-  return {
+  const leitura = {
     mortes,
     fonte: 'memoria',
     escopo: 'jornada',
     igtHoras: igtMs === null ? null : igtMs / 3600000,
     em: new Date().toISOString(),
+  };
+  registrar(leitura);
+  return leitura;
+}
+
+/**
+ * Guarda a última leitura boa, para o número não sumir com o jogo fechado.
+ *
+ * Grava só quando muda, ou a cada dez minutos: isto roda a cada ciclo de
+ * leitura enquanto o jogo está aberto, e reescrever o arquivo a cada cinco
+ * segundos seria castigar o disco para não guardar nada de novo.
+ */
+function registrar(j) {
+  const e = carregar() || {};
+  const antes = e.ultimaObservacao;
+  const mudou = !antes || antes.mortes !== j.mortes;
+  const velha = antes && (Date.now() - new Date(antes.em).getTime()) > 600000;
+  if (!mudou && !velha) return;
+  const s = (() => { try { return daSessao(); } catch (err) { return null; } })();
+  e.ultimaObservacao = {
+    mortes: j.mortes,
+    igtHoras: j.igtHoras,
+    sessao: s ? s.mortes : null,
+    em: j.em,
+  };
+  gravar(e);
+}
+
+/**
+ * A última contagem que se conseguiu ler, com o jogo fechado.
+ *
+ * Existe porque a alternativa é pior: sem isto, fechar o jogo derrubava o
+ * número de 221 para 6 — a estimativa do save — e quem abrisse o link público
+ * fora do horário de jogo veria o número errado. Contagem de mortes não
+ * diminui quando se fecha o jogo. O que muda é ela deixar de ser ao vivo, e é
+ * isso que o campo `aoVivo` diz.
+ */
+function ultimaConhecida() {
+  const e = carregar();
+  const o = e && e.ultimaObservacao;
+  if (!o || typeof o.mortes !== 'number') return null;
+  return {
+    mortes: o.mortes,
+    fonte: 'memoria',
+    escopo: 'jornada',
+    igtHoras: o.igtHoras === undefined ? null : o.igtHoras,
+    aoVivo: false,
+    em: o.em,
   };
 }
 
@@ -282,7 +330,7 @@ function estado() {
   };
 }
 
-module.exports = { marcar, confirmar, varrer, contagem, daJornada, daSessao, estado, carregar, ESTADO, FOTO, TETO_MORTES };
+module.exports = { marcar, confirmar, varrer, contagem, daJornada, daSessao, ultimaConhecida, estado, carregar, ESTADO, FOTO, TETO_MORTES };
 
 if (require.main === module) {
   const [cmd, arg] = process.argv.slice(2);

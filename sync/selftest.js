@@ -437,12 +437,23 @@ if (jogoAberto.ok) {
   console.log('   --    (jogo fechado: os testes contra o processo vivo ficam de fora)');
 }
 
-check('a contagem por memória se cala quando não está calibrada', () => {
+check('a contagem por memória se cala quando não tem o que ler', () => {
+  // A premissa antiga era "calibrado, logo tem número", e ela quebrou no
+  // primeiro dia em que o jogo estava fechado na hora do teste. Calibração é
+  // sobre saber ONDE ler; ter o que ler depende do jogo estar aberto. São
+  // duas condições, e confundi-las fazia um estado perfeitamente normal
+  // aparecer como defeito.
   const e = deathsmem.estado();
   const c = deathsmem.contagem();
-  if (e.calibrado) {
-    assert(c && typeof c.mortes === 'number', 'calibrado mas não devolveu número');
-    return `calibrado: ${c.mortes} mortes`;
+  const aberto = memoria.conectar().ok;
+
+  if (!aberto) {
+    assert(c === null, 'devolveu número com o jogo fechado');
+    return 'jogo fechado: devolve null em vez de repetir a última leitura';
+  }
+  if (e.calibrado || c) {
+    assert(c && typeof c.mortes === 'number', 'jogo aberto e calibrado, mas sem número');
+    return `${c.mortes} mortes, escopo "${c.escopo}"`;
   }
   assert(c === null, 'devolveu número sem estar calibrado');
   return 'sem offset ainda, devolve null em vez de inventar';
@@ -470,6 +481,26 @@ check('a contagem é da jornada inteira, não da sessão', () => {
     return `${j.mortes} mortes, IGT ${j.igtHoras.toFixed(1)}h contra ${t.horas}h de relógio`;
   }
   return `${j.mortes} mortes na jornada`;
+});
+
+check('fechar o jogo não derruba a contagem', () => {
+  // É o estado em que o link público passa a maior parte do tempo, e era onde
+  // estava errado: sem a última leitura guardada, a página caía para a
+  // estimativa do save e mostrava 6 onde são 221. Morte não desaparece porque
+  // o jogo saiu da memória.
+  const guardada = deathsmem.ultimaConhecida();
+  if (!guardada) return 'ainda não houve leitura boa para guardar';
+  const p = parse.buildProgress({});
+  const aberto = memoria.conectar().ok;
+  assert(p.deaths.count >= guardada.mortes,
+    `a página diz ${p.deaths.count} e a última leitura boa foi ${guardada.mortes}`);
+  assert(p.deaths.how === 'memoria',
+    'com leitura guardada a via deveria ser "memoria", e é "' + p.deaths.how + '"');
+  if (!aberto) {
+    assert(p.deaths.aoVivo === false, 'jogo fechado, mas a página diz que é ao vivo');
+    return `jogo fechado: mantém ${p.deaths.count}, marcado como não ao vivo`;
+  }
+  return `jogo aberto: ${p.deaths.count} ao vivo, ${guardada.mortes} guardadas`;
 });
 
 check('a contagem de sessão continua existindo como reserva', () => {

@@ -380,6 +380,11 @@ function buildDeaths(payload, config, goods, weapons, slot, opts) {
   let m = null;
   try {
     m = deathsmem.contagem();
+    // Com o jogo fechado não há o que ler, mas a última leitura continua
+    // valendo: morte não desaparece porque o jogo saiu da memória. Sem isto a
+    // página caía para a estimativa do save e o número despencava de 221 para
+    // 6 toda vez que o Sekiro fechava.
+    if (!m) m = deathsmem.ultimaConhecida();
   } catch (e) { /* jogo fechado, ou ainda sem calibração */ }
   if (m) {
     // `escopo` viaja junto porque muda o que o número significa. "jornada" é a
@@ -392,6 +397,9 @@ function buildDeaths(payload, config, goods, weapons, slot, opts) {
       confidence: m.escopo === 'jornada' ? 'high' : 'likely',
       how: 'memoria',
       escopo: m.escopo || 'jornada',
+      // `false` quer dizer "é a última leitura, o jogo está fechado agora".
+      // O número continua certo; o que ele não é, é deste instante.
+      aoVivo: m.aoVivo !== false,
       em: m.em,
     };
   }
