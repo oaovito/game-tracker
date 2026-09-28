@@ -369,12 +369,21 @@ function buildDeaths(payload, config, goods, weapons, slot, opts) {
   }
   // A memória do jogo manda, quando está calibrada e o jogo aberto: o número
   // é o do próprio jogo, exato e em tempo real. O save é reserva.
+  //
+  // O `catch` aqui é estreito de propósito. Antes ele envolvia também a
+  // construção do objeto, e `confidence: high` estava escrito sem aspas — um
+  // ReferenceError que o próprio catch engolia. O resultado era o pior tipo de
+  // defeito: a leitura da memória funcionava, devolvia o número certo, e a
+  // página mostrava a contagem do save como se a calibração nunca tivesse
+  // acontecido. Nada falhava; só estava errado. Agora só a chamada que pode
+  // legitimamente falhar — o jogo fechado — fica protegida.
+  let m = null;
   try {
-    const m = deathsmem.contagem();
-    if (m) {
-      return { known: true, count: m.mortes, confidence: high, how: memoria, em: m.em };
-    }
+    m = deathsmem.contagem();
   } catch (e) { /* jogo fechado, ou ainda sem calibração */ }
+  if (m) {
+    return { known: true, count: m.mortes, confidence: 'high', how: 'memoria', em: m.em };
+  }
   return deaths.paraProgresso(estado);
 }
 

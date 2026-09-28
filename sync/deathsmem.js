@@ -104,6 +104,97 @@ function confirmar(mortes) {
   };
 }
 
+/**
+ * Confirma sem que ninguém precise ter contado as mortes.
+ *
+ * O `confirmar` acima exige o número exato, e isso obriga quem está jogando a
+ * contar — o que é fácil de errar e, errado, elimina justamente o offset certo.
+ * Aqui a memória é varrida uma vez só e os deslocamentos são separados em
+ * baldes por quanto subiram. O contador de mortes está no balde `d`, onde `d`
+ * é quantas vezes se morreu; não se sabe qual é, mas sabe-se que ele existe.
+ *
+ * Duas rodadas resolvem. Para cada par de baldes (um de cada rodada), cruzam-se
+ * os deslocamentos; o offset verdadeiro aparece em exatamente um par, porque
+ * qualquer outro contador que tenha subido junto numa rodada dificilmente sobe
+ * na proporção certa na outra. Quando o cruzamento deixa um só, está achado.
+ *
+ * O teto de 20 existe porque acima disso não é morte: é contador de quadro, de
+ * tique de relógio, de partícula. Morrer mais de vinte vezes entre duas fotos
+ * é possível, e nesse caso o balde certo fica de fora e a rodada não resolve —
+ * o que o código diz, em vez de inventar um offset.
+ */
+const TETO_MORTES = 20;
+
+function varrer() {
+  const e = carregar();
+  if (!e || !e.base) return { ok: false, erro: 'tire a foto primeiro: npm run deaths mark' };
+  const c = memoria.conectar();
+  if (!c.ok) return { ok: false, erro: c.erro || 'jogo fechado' };
+  if (c.base !== e.base) return { ok: false, erro: 'o jogo reiniciou desde a foto; tire outra' };
+
+  const r = memoria.executar([{
+    tipo: 'varredura', nome: 'v', arquivo: FOTO,
+    inicio: e.base, tamanho: e.tamanho, maxDelta: TETO_MORTES,
+  }], { timeout: 240000 });
+  if (!r.ok || !r.res || !r.res.v) return { ok: false, erro: r.erro || 'varredura falhou' };
+
+  const baldes = {};
+  for (const [d, offs] of Object.entries(r.res.v.baldes || {})) {
+    baldes[d] = (offs || []).map(Number);
+  }
+
+  const rodadas = Array.isArray(e.rodadas) ? e.rodadas : [];
+  rodadas.push({ baldes, em: new Date().toISOString() });
+  e.rodadas = rodadas.slice(-3);          // três bastam; guardar mais é peso à toa
+  e.fotoEm = null;                        // a foto foi consumida por esta rodada
+
+  // Cruza a última rodada com cada anterior, balde a balde.
+  let achado = null;
+  const pares = [];
+  for (let i = 0; i < e.rodadas.length - 1; i++) {
+    const antiga = e.rodadas[i].baldes;
+    for (const [da, offsA] of Object.entries(antiga)) {
+      const setA = new Set(offsA);
+      for (const [db, offsB] of Object.entries(baldes)) {
+        const comum = offsB.filter((o) => setA.has(o));
+        if (!comum.length) continue;
+        pares.push({ da: Number(da), db: Number(db), n: comum.length, offsets: comum });
+        if (comum.length === 1) achado = { offset: comum[0], da: Number(da), db: Number(db) };
+      }
+    }
+  }
+
+  // Havendo mais de um par com um só deslocamento, não dá para escolher entre
+  // eles sem chutar — e chutar aqui grava um offset errado como se fosse certo.
+  const unicos = pares.filter((p) => p.n === 1);
+  if (unicos.length === 1) {
+    e.offset = unicos[0].offsets[0];
+    e.resolvidoEm = new Date().toISOString();
+    achado = { offset: e.offset, da: unicos[0].da, db: unicos[0].db };
+  } else {
+    achado = null;
+  }
+
+  e.candidatos = achado ? [achado.offset] : [];
+  e.ultimaRodada = {
+    baldes: Object.keys(baldes).length,
+    total: Object.values(baldes).reduce((a, b) => a + b.length, 0),
+    em: new Date().toISOString(),
+  };
+  gravar(e);
+
+  return {
+    ok: true,
+    rodadas: e.rodadas.length,
+    baldes: Object.keys(baldes).length,
+    total: e.ultimaRodada.total,
+    pares: pares.length,
+    unicos: unicos.length,
+    offset: achado ? achado.offset : null,
+    mortes: achado ? { rodada1: achado.da, rodada2: achado.db } : null,
+  };
+}
+
 /** A contagem agora, se já houver offset e o jogo estiver aberto. */
 function contagem() {
   const e = carregar();
@@ -128,7 +219,7 @@ function estado() {
   };
 }
 
-module.exports = { marcar, confirmar, contagem, estado, carregar, ESTADO, FOTO };
+module.exports = { marcar, confirmar, varrer, contagem, estado, carregar, ESTADO, FOTO, TETO_MORTES };
 
 if (require.main === module) {
   const [cmd, arg] = process.argv.slice(2);

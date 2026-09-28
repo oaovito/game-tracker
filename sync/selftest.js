@@ -447,6 +447,25 @@ check('a contagem por memória se cala quando não está calibrada', () => {
   return 'sem offset ainda, devolve null em vez de inventar';
 });
 
+check('calibrado e com o jogo aberto, quem manda é a memória', () => {
+  const e = deathsmem.estado();
+  const c = deathsmem.contagem();
+  if (!e.calibrado) return 'ainda sem offset; nada a comparar';
+  if (!c) return 'calibrado, mas o jogo está fechado agora';
+  const p = parse.buildProgress({});
+  // Este teste nasce de um defeito que não falhava: a leitura da memória
+  // funcionava e devolvia o número certo, mas a linha que montava a resposta
+  // usava `confidence: high` sem aspas. O ReferenceError caía no catch em
+  // volta, e a página mostrava a contagem do save como se a calibração nunca
+  // tivesse ocorrido. Comparar a via, e não só o número, é o que pega isso.
+  assert(p.deaths.how === 'memoria',
+    'a via é "' + p.deaths.how + '" com o contador calibrado e o jogo aberto');
+  assert(p.deaths.count === c.mortes,
+    'a página diz ' + p.deaths.count + ' e a memória diz ' + c.mortes);
+  assert(p.deaths.confidence === 'high', 'confiança "' + p.deaths.confidence + '", esperada "high"');
+  return `${c.mortes} mortes, lidas de 0x${e.offset.toString(16)}`;
+});
+
 check('o save é a reserva enquanto a memória não fecha', () => {
   const p = parse.buildProgress({});
   assert(p.deaths, 'sem contagem nenhuma');

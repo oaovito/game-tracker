@@ -194,6 +194,52 @@ try {
                 } finally { $fs.Close() }
                 $res[$op.nome] = @{ total = $achados.Count; offsets = @($achados | Select-Object -First 4000) }
             }
+            elseif ($op.tipo -eq 'varredura') {
+                # Igual ao diff, mas sem saber de quanto subiu: agrupa os
+                # deslocamentos por quanto cresceram, de 1 ate `maxDelta`.
+                #
+                # Existe porque o `diff` obriga a informar o numero exato de
+                # mortes, e quem esta jogando teria de contar. Numa passada so
+                # pela memoria da para separar em baldes; depois, o cruzamento
+                # de duas rodadas diz qual balde de cada uma contem o contador
+                # de verdade, sem ninguem ter contado nada.
+                $fs = [System.IO.File]::OpenRead($op.arquivo)
+                $baldes = @{}
+                $maxD = [int]$op.maxDelta
+                $teto = 3000
+                try {
+                    $bloco = 0x100000
+                    $velho = New-Object byte[] $bloco
+                    $pos = [long]$op.inicio
+                    $desl = [long]0
+                    $fim = $pos + [long]$op.tamanho
+                    while ($pos -lt $fim) {
+                        $ler = [int][Math]::Min([long]$bloco, $fim - $pos)
+                        $lidosArq = $fs.Read($velho, 0, $ler)
+                        if ($lidosArq -le 0) { break }
+                        $novo = [Mem]::Read($pos, $lidosArq)
+                        if ($null -ne $novo) {
+                            for ($i = 0; $i + 4 -le $lidosArq; $i += 4) {
+                                $a = [BitConverter]::ToUInt32($velho, $i)
+                                $b2 = [BitConverter]::ToUInt32($novo, $i)
+                                $d = [long]$b2 - [long]$a
+                                if ($d -ge 1 -and $d -le $maxD) {
+                                    $k = [string]$d
+                                    if (-not $baldes.ContainsKey($k)) {
+                                        $baldes[$k] = New-Object System.Collections.Generic.List[long]
+                                    }
+                                    if ($baldes[$k].Count -lt $teto) { $baldes[$k].Add($desl + $i) }
+                                }
+                            }
+                        }
+                        $pos += $lidosArq
+                        $desl += $lidosArq
+                    }
+                } finally { $fs.Close() }
+                $saida = @{}
+                foreach ($k in $baldes.Keys) { $saida[$k] = @($baldes[$k]) }
+                $res[$op.nome] = @{ baldes = $saida }
+            }
             elseif ($op.tipo -eq 'cadeia') {
                 # Segue uma cadeia de ponteiros: le 8 bytes, soma o offset,
                 # le de novo. O ultimo offset nao e desreferenciado.
