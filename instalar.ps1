@@ -20,9 +20,14 @@ O que ele NAO faz, de proposito:
     elevar registraria para o usuario errado
 #>
 
+# Os valores padrao aceitam vir do ambiente porque e assim que o
+# trackeroao-instalador.exe repassa o que recebeu na linha de comando dele. A
+# razao de nao repassar por argumento esta comentada no construir-exe.ps1.
 param(
-  [string]$Destino = (Join-Path $env:LOCALAPPDATA 'trackeroao'),
-  [string]$Repo = 'https://github.com/oaovito/trackeroao'
+  [string]$Destino = $(if ($env:TRACKEROAO_DESTINO) { $env:TRACKEROAO_DESTINO }
+                       else { Join-Path $env:LOCALAPPDATA 'trackeroao' }),
+  [string]$Repo = $(if ($env:TRACKEROAO_REPO) { $env:TRACKEROAO_REPO }
+                    else { 'https://github.com/oaovito/trackeroao' })
 )
 
 $ErrorActionPreference = 'Stop'

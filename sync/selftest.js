@@ -909,6 +909,68 @@ check('quem clonar recebe as artes dos Headless tambem', () => {
   return cfg.headless.list.length + ' Headless com arte, no mesmo lugar das dos chefes';
 });
 
+/*
+ * 15. O instalador nao pode parecer malware.
+ *
+ * O executavel nasceu passando o script por -EncodedCommand com
+ * -ExecutionPolicy Bypass na linha de comando. Funciona em teoria e nao
+ * funciona na pratica: o Windows Defender mata o processo antes de ele
+ * existir e classifica como Trojan:Win32/ClickFix.PM!MTB. A assinatura nao e
+ * do nosso script -- e da forma "um .exe abre o powershell com um blob
+ * codificado", que e o padrao das campanhas em que a pessoa e convencida a
+ * colar um comando codificado no Executar.
+ *
+ * O que custou tempo foi o sintoma: vem como "Access is denied" do
+ * CreateProcess, como se faltasse permissao para rodar o powershell.exe.
+ * Nada aponta para antivirus. Por isso isto e teste e nao so comentario: se
+ * alguem "simplificar" de volta para -EncodedCommand, o instalador para de
+ * funcionar em toda maquina com Defender ligado, que sao praticamente todas,
+ * e o erro nao vai dizer o motivo.
+ */
+check('o instalador nao usa os padroes que o antivirus derruba', () => {
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'construir-exe.ps1'), 'utf8');
+  const gerado = /\$cs = @"([\s\S]*?)"@/.exec(construir);
+  assert(gerado, 'nao achei o C# embutido no construir-exe.ps1');
+  /*
+   * Os comentarios saem antes da conferencia.
+   *
+   * Eles citam os padroes proibidos de proposito -- e ali que fica escrito
+   * o motivo de nao usa-los, que e a parte que evita o retrabalho. Sem tirar
+   * o comentario, o teste se acusaria pelo proprio texto que o justifica.
+   */
+  const cs = gerado[1]
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+  const proibidos = [];
+  if (/-EncodedCommand/.test(cs)) proibidos.push('-EncodedCommand');
+  if (/-ExecutionPolicy\s+Bypass/.test(cs)) proibidos.push('-ExecutionPolicy Bypass na linha de comando');
+  if (/FromBase64String[\s\S]{0,200}ScriptBlock/.test(cs)) proibidos.push('base64 virando ScriptBlock na linha');
+  assert(proibidos.length === 0, 'padrao que o Defender derruba: ' + proibidos.join(', '));
+
+  // E o que entrou no lugar tem de estar la, senao o instalador nao roda em
+  // Windows novo, onde a politica padrao e Restricted.
+  assert(/-File/.test(cs), 'o script precisa ser chamado por -File');
+  assert(/PSExecutionPolicyPreference/.test(cs),
+    'sem a politica pelo ambiente, o -File nao roda em maquina com politica Restricted');
+  return 'script em disco, chamado por -File, politica pelo ambiente';
+});
+
+check('o executavel do instalador esta versionado e atual', () => {
+  const exe = path.join(RAIZ_PROJETO, 'trackeroao-instalador.exe');
+  assert(fs.existsSync(exe), 'o .exe nao esta na pasta');
+  /*
+   * O .exe carrega o instalar.ps1 dentro dele, em base64. Se o .ps1 mudar e
+   * ninguem reconstruir, o que se distribui e a versao velha -- e como o
+   * arquivo e binario, nada no diff denuncia. Comparar as datas pega isso.
+   */
+  const doExe = fs.statSync(exe).mtimeMs;
+  const doPs1 = fs.statSync(path.join(RAIZ_PROJETO, 'instalar.ps1')).mtimeMs;
+  assert(doExe >= doPs1,
+    'o instalar.ps1 mudou depois da ultima compilacao: rode construir-exe.ps1');
+  return (fs.statSync(exe).size / 1024).toFixed(1) + ' KB, mais novo que o script que ele carrega';
+});
+
 check('nenhum modulo do sync esta quebrado', () => {
   /*
    * Parece obvio demais para ser teste, e nao e: o icones.js passou um tempo

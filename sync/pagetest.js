@@ -843,6 +843,12 @@ async function rodar(log) {
   log(/selo\.addEventListener\("click", tocarKaiden\)/.test(src),
     'e ela responde à interação com o selo', 'clicar recomeça a cena');
 
+  // O fio embaixo do cabeçalho saiu: a página já tem a pincelada do menu logo
+  // abaixo, e duas horizontais a poucos pixels uma da outra são uma a mais.
+  log(!/border-bottom/.test(cssDe("header.top")),
+    'não há linha entre o título e o corpo',
+    'o espaço e a diferença de corpo já separam os dois');
+
   // O tempo de jogo: "h" no número, e nenhum nome de metal na tela.
   log(/\+ "h";/.test(src), 'o número de horas traz o "h"', 'colado no número');
   log(!/getElementById\("tempoRot"\)\.textContent = d\[1\]/.test(src),
