@@ -303,9 +303,48 @@ if (require.main === module) {
       else console.log(`  ${r.candidatos} candidatos (de ${r.brutos}). Tire outra foto e repita com número diferente.`);
     }
   } else {
+    /*
+     * O estado, e a comparação com a última vez que se olhou.
+     *
+     * A comparação existe para responder sozinha a única pergunta que ficou
+     * em aberto na calibração: a contagem é da jornada ou só da sessão. Se for
+     * da jornada, ela sobrevive a fechar e reabrir o jogo; se for da sessão,
+     * volta do zero. Guardando a leitura de hoje, a de amanhã se explica sem
+     * ninguém precisar lembrar de qual era o número.
+     */
     const e = estado();
-    console.log(`  calibrado: ${e.calibrado ? 'sim, offset 0x' + e.offset.toString(16) : 'não'}  |  candidatos: ${e.candidatos}`);
-    const c = contagem();
-    if (c) console.log(`  mortes agora: ${c.mortes}`);
+    console.log(`  calibrado: ${e.calibrado ? 'sim, offset de sessão 0x' + e.offset.toString(16) : 'não'}`);
+    const j = daJornada();
+    const s = daSessao();
+    const guardado = carregar() || {};
+    const antes = guardado.ultimaObservacao || null;
+
+    if (j) {
+      console.log(`  jornada  : ${j.mortes} mortes` +
+        (j.igtHoras ? `  |  tempo interno ${j.igtHoras.toFixed(2)} h` : ''));
+      if (s) console.log(`  sessão   : ${s.mortes} mortes desde que o jogo abriu`);
+      if (antes) {
+        const reiniciou = s && antes.sessao !== null && s.mortes < antes.sessao;
+        console.log(`  antes    : ${antes.mortes} mortes em ${new Date(antes.em).toLocaleString()}`);
+        if (reiniciou) {
+          console.log(j.mortes >= antes.mortes
+            ? '  -> o jogo reiniciou e a contagem se manteve: é da jornada, confirmado'
+            : '  -> o jogo reiniciou e a contagem caiu: NÃO é da jornada');
+        } else if (j.mortes > antes.mortes) {
+          console.log(`  -> subiu ${j.mortes - antes.mortes} desde a última olhada`);
+        }
+      }
+      guardado.ultimaObservacao = {
+        mortes: j.mortes,
+        igtHoras: j.igtHoras,
+        sessao: s ? s.mortes : null,
+        em: new Date().toISOString(),
+      };
+      gravar(guardado);
+    } else if (s) {
+      console.log(`  sessão   : ${s.mortes} (a struct da jornada não respondeu; jogo no menu?)`);
+    } else {
+      console.log('  jogo fechado, ou ainda sem calibração');
+    }
   }
 }
