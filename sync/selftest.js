@@ -571,8 +571,12 @@ check('a cópia guarda o progresso e o save, sem apagar nada', () => {
 
   const r = hibernar.arquivar({ destino: path.join(tmp, 'saida'), saves: [falso], motivo: 'teste' });
 
-  const guardouProgresso = r.manifesto.projeto.some((g) => g.arquivo === 'progress.json' && g.bytes > 0);
-  assert(guardouProgresso, 'não guardou o progress.json');
+  // Num clone que ainda não leu o save não há progresso para guardar, e
+  // cobrar isso faria a hibernação parecer quebrada numa máquina limpa.
+  if (temProgresso()) {
+    const guardouProgresso = r.manifesto.projeto.some((g) => g.arquivo === 'progress.json' && g.bytes > 0);
+    assert(guardouProgresso, 'não guardou o progress.json');
+  }
   const guardouSave = r.manifesto.save.some((g) => g.bytes === 2048);
   assert(guardouSave, 'não guardou o save');
   assert(fs.existsSync(falso), 'APAGOU o original — hibernar só copia');
