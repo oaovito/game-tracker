@@ -1,0 +1,214 @@
+{
+ "_README": [
+  "As 34 conquistas do Sekiro, na ordem do proprio jogo (AwardAchievement 0-33).",
+  "Nome e descricao sao os da Steam; as ocultas levam a descricao da lista de trofeus",
+  "do PlayStation, que e o mesmo conjunto (ver conquistas.js). E o que a pagina mostra",
+  "quando nao ha Steam na maquina."
+ ],
+ "lista": [
+  {
+   "indice": 0,
+   "nome": "Sekiro",
+   "descricao": "All achievements have been unlocked.",
+   "oculta": false
+  },
+  {
+   "indice": 1,
+   "nome": "Man Without Equal",
+   "descricao": "Defeated all bosses",
+   "oculta": true
+  },
+  {
+   "indice": 2,
+   "nome": "Ashina Traveler",
+   "descricao": "Traveled to all areas of the game",
+   "oculta": false
+  },
+  {
+   "indice": 3,
+   "nome": "Master of the Prosthetic",
+   "descricao": "Upgraded all Prosthetic Tools to their limit",
+   "oculta": false
+  },
+  {
+   "indice": 4,
+   "nome": "Height of Technique",
+   "descricao": "Acquired all skills",
+   "oculta": true
+  },
+  {
+   "indice": 5,
+   "nome": "All Prosthetic Tools",
+   "descricao": "Acquired all Prosthetic Tools",
+   "oculta": false
+  },
+  {
+   "indice": 6,
+   "nome": "All Ninjutsu Techniques",
+   "descricao": "Acquired all Ninjutsu Techniques",
+   "oculta": false
+  },
+  {
+   "indice": 7,
+   "nome": "Peak Physical Strength",
+   "descricao": "Upgraded Vitality and Posture to their limit",
+   "oculta": false
+  },
+  {
+   "indice": 8,
+   "nome": "Ultimate Healing Gourd",
+   "descricao": "Fully upgraded the \"Healing Gourd\"",
+   "oculta": false
+  },
+  {
+   "indice": 9,
+   "nome": "Immortal Severance",
+   "descricao": "Attained the 'Immortal Severance' ending",
+   "oculta": true
+  },
+  {
+   "indice": 10,
+   "nome": "Purification",
+   "descricao": "Attained the 'Purification' ending",
+   "oculta": true
+  },
+  {
+   "indice": 11,
+   "nome": "Dragon's Homecoming",
+   "descricao": "Attained the 'Return' ending",
+   "oculta": true
+  },
+  {
+   "indice": 12,
+   "nome": "Shura",
+   "descricao": "Attained the 'Shura' ending",
+   "oculta": true
+  },
+  {
+   "indice": 13,
+   "nome": "Sword Saint, Isshin Ashina",
+   "descricao": "Defeated 'Sword Saint Isshin Ashina'",
+   "oculta": true
+  },
+  {
+   "indice": 14,
+   "nome": "Master of the Arts",
+   "descricao": "Grasped the inner mysteries of any combat style",
+   "oculta": true
+  },
+  {
+   "indice": 15,
+   "nome": "Lazuline Upgrade",
+   "descricao": "Used Lapis Lazuli to upgrade any tool to its limit",
+   "oculta": true
+  },
+  {
+   "indice": 16,
+   "nome": "Revered Blade",
+   "descricao": "Received the \"Kusabimaru\" from Kuro",
+   "oculta": false
+  },
+  {
+   "indice": 17,
+   "nome": "Shinobi Prosthetic",
+   "descricao": "Acquired the Shinobi Prosthetic",
+   "oculta": false
+  },
+  {
+   "indice": 18,
+   "nome": "Memorial Mob",
+   "descricao": "Encountered the Memorial Mob",
+   "oculta": false
+  },
+  {
+   "indice": 19,
+   "nome": "Resurrection",
+   "descricao": "Returned from the dead using \"Resurrection\" for the first time",
+   "oculta": false
+  },
+  {
+   "indice": 20,
+   "nome": "Gyoubu Masataka Oniwa",
+   "descricao": "Defeated 'Gyoubu Masataka Oniwa'",
+   "oculta": true
+  },
+  {
+   "indice": 21,
+   "nome": "The Phantom Lady Butterfly",
+   "descricao": "Defeated 'Lady Butterfly'",
+   "oculta": true
+  },
+  {
+   "indice": 22,
+   "nome": "Genichiro Ashina",
+   "descricao": "Defeated 'Genichiro Ashina'",
+   "oculta": true
+  },
+  {
+   "indice": 23,
+   "nome": "Guardian Ape",
+   "descricao": "Defeated the 'Guardian Ape'",
+   "oculta": true
+  },
+  {
+   "indice": 24,
+   "nome": "Guardian Ape Immortality Severed",
+   "descricao": "Used the Mortal Blade to sever the Guardian Ape's undying",
+   "oculta": true
+  },
+  {
+   "indice": 25,
+   "nome": "Folding Screen Monkeys",
+   "descricao": "Caught the Folding Screen Monkeys",
+   "oculta": true
+  },
+  {
+   "indice": 26,
+   "nome": "Great Shinobi - Owl",
+   "descricao": "Defeated 'Great Shinobi – Owl'",
+   "oculta": true
+  },
+  {
+   "indice": 27,
+   "nome": "Father Surpassed",
+   "descricao": "Defeated 'Great Shinobi – Owl' at the Hirata Estate",
+   "oculta": true
+  },
+  {
+   "indice": 28,
+   "nome": "Corrupted Monk",
+   "descricao": "Defeated the 'Corrupted Monk'",
+   "oculta": true
+  },
+  {
+   "indice": 29,
+   "nome": "Gracious Gift of Tears",
+   "descricao": "Defeated the 'Divine Dragon' and obtained the 'Divine Dragon's Tears'",
+   "oculta": true
+  },
+  {
+   "indice": 30,
+   "nome": "Isshin Ashina",
+   "descricao": "Defeated 'Isshin Ashina'",
+   "oculta": true
+  },
+  {
+   "indice": 31,
+   "nome": "Demon of Hatred",
+   "descricao": "Defeated the 'Demon of Hatred'",
+   "oculta": true
+  },
+  {
+   "indice": 32,
+   "nome": "Great Serpent",
+   "descricao": "Defeated the 'Great Serpent'",
+   "oculta": true
+  },
+  {
+   "indice": 33,
+   "nome": "Great Colored Carp",
+   "descricao": "Defeated the 'Great Colored Carp'",
+   "oculta": true
+  }
+ ]
+}

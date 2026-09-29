@@ -799,6 +799,12 @@
     background: linear-gradient(90deg, rgba(168,133,61,0), var(--gold));
   }
   .assinatura::after { background: linear-gradient(90deg, var(--gold), rgba(168,133,61,0)); }
+  .assinatura.sem-nome { opacity: 0.45; }
+  .assinatura-campo {
+    background: none; border: 0; border-bottom: 1px solid var(--gold);
+    color: var(--gold); font: inherit; letter-spacing: inherit; text-align: center;
+    width: 14em; max-width: 60vw; padding: 0 0 2px; outline: 0;
+  }
   .theme-toggle:hover { color: var(--text); border-color: var(--gold); }
 
   .overall {
@@ -1313,6 +1319,10 @@
   }
   .conq.presa .conq-marca { color: var(--text-dim); }
   .conq-texto { min-width: 0; }
+  .conq-origem {
+    margin-top: 3px; font-size: 0.62rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--gold); opacity: 0.8;
+  }
   .conq-nome {
     font-family: var(--font-display);
     font-size: 0.9rem; line-height: 1.25; color: var(--text);
@@ -4462,9 +4472,56 @@ function renderRotLista(d) {
 function renderAssinatura() {
   const el = document.getElementById("assinatura");
   if (!el) return;
+  if (el.dataset && el.dataset.editando) return;
   const nick = temSync() && sync.jogador && sync.jogador.nick ? sync.jogador.nick : null;
-  el.hidden = !nick;
-  el.textContent = nick ? nick + " game progress" : "";
+  /*
+   * No próprio computador o nome se escolhe aqui, com ou sem Steam: um clique
+   * na assinatura vira campo de texto. Sem Steam e sem nome escolhido, a
+   * linha aparece só ali, como convite discreto; no link público ela continua
+   * sumindo quando não há nome.
+   */
+  const local = daMaquinaLocal() && temSync();
+  el.hidden = !nick && !local;
+  el.textContent = nick ? nick + " game progress" : (local ? "name this progress" : "");
+  if (el.classList) el.classList.toggle("sem-nome", !nick);
+  if (local && !el.dataset.ligado) {
+    el.dataset.ligado = "1";
+    el.title = "Click to choose the name shown here.";
+    el.style.cursor = "pointer";
+    el.addEventListener("click", editarAssinatura);
+  }
+}
+
+function editarAssinatura() {
+  const el = document.getElementById("assinatura");
+  if (!el || el.dataset.editando) return;
+  el.dataset.editando = "1";
+  const atual = sync.jogador && sync.jogador.fonte === "escolhido" ? sync.jogador.nick : (sync.jogador && sync.jogador.nick) || "";
+  el.textContent = "";
+  const campo = document.createElement("input");
+  campo.className = "assinatura-campo";
+  campo.maxLength = 32;
+  campo.value = atual;
+  campo.placeholder = "your name";
+  campo.setAttribute("aria-label", "Name shown on the page");
+  el.appendChild(campo);
+  campo.focus();
+  const fim = (gravar) => {
+    if (!el.dataset.editando) return;
+    delete el.dataset.editando;
+    if (!gravar) { renderAssinatura(); return; }
+    fetch("/jogador", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ nick: campo.value }),
+    }).then((r) => r.json()).then((j) => { sync.jogador = j; renderAssinatura(); })
+      .catch(() => renderAssinatura());
+  };
+  campo.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") fim(true);
+    if (ev.key === "Escape") fim(false);
+  });
+  campo.addEventListener("blur", () => fim(true));
 }
 
 function renderBossKills() {
@@ -5161,6 +5218,24 @@ function renderConquistas(conq) {
     if (c.descricaoOculta) desc.title = "The game hides this one's text until you unlock it; "
       + "this is the same trophy's description on PlayStation.";
     if (desc.textContent) texto.appendChild(desc);
+    /*
+     * De onde veio a resposta. As conquistas saem do save; a Steam, quando
+     * está na máquina, confere. Duas situações pedem uma linha: o save não
+     * tem como provar esta (e não há Steam para dizer), e os dois discordam.
+     */
+    let origem = "";
+    if (c.incerta) origem = "not provable from the save";
+    else if (c.confere === false) origem = c.conquistada ? "Steam has it; this save does not" : "the save has it; Steam does not";
+    if (origem) {
+      const o = document.createElement("div");
+      o.className = "conq-origem";
+      o.textContent = origem;
+      texto.appendChild(o);
+    }
+    el.title = c.fonte === "ambos" ? "Proven by the save, confirmed by Steam."
+      : c.fonte === "save" ? "Proven by the save."
+      : c.fonte === "steam" ? "Unlocked on Steam; the save alone cannot show it."
+      : "";
     el.appendChild(texto);
 
     if (c.shinobi) {

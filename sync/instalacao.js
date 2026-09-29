@@ -77,9 +77,7 @@ function estado() {
   }
 
   const steam = steamPath();
-  if (!steam) {
-    return { instalado: null, checagemValida: false, evidencias: ['Steam não localizado no registro'] };
-  }
+  if (!steam) return semSteam();
 
   const evidencias = [];
   let achou = false;
@@ -102,7 +100,49 @@ function estado() {
   return { instalado: achou, checagemValida: true, evidencias };
 }
 
-module.exports = { estado, steamPath, bibliotecas, APP_ID };
+/*
+ * Sem Steam, a pergunta continua tendo resposta.
+ *
+ * A varredura de jogos (biblioteca.js) acha o Sekiro pelo disco, pelo
+ * registro ou pela Epic, e a pasta em que ele foi visto fica lembrada aqui.
+ * Pasta lembrada que existe é "instalado". Pasta lembrada que sumiu, e que a
+ * varredura seguinte também não achou em outro lugar, é "não instalado". Sem
+ * nunca ter visto pasta nenhuma, a resposta honesta continua sendo "não sei"
+ * -- e "não sei" nunca vira hibernação.
+ */
+const LEMBRADA = path.join(__dirname, '.jogo-pasta.json');
+
+function pastaDaVarredura() {
+  try {
+    const b = require('./biblioteca').ultima();
+    const j = b && (b.jogos || []).find((x) => String(x.appId) === APP_ID ||
+      require('./biblioteca').normalizar(x.nome) === 'sekiroshadowsdietwice');
+    return j && j.pasta ? { pasta: j.pasta, em: b.em } : { pasta: null, em: b ? b.em : null };
+  } catch (e) { return { pasta: null, em: null }; }
+}
+
+function semSteam(opts) {
+  const o = opts || {};
+  const achada = o.varredura || pastaDaVarredura();
+  let lembrada = null;
+  try { lembrada = JSON.parse(fs.readFileSync(o.lembrada || LEMBRADA, 'utf8')).pasta || null; } catch (e) { lembrada = null; }
+
+  if (achada.pasta && fs.existsSync(achada.pasta)) {
+    if (achada.pasta !== lembrada) {
+      try { fs.writeFileSync(o.lembrada || LEMBRADA, JSON.stringify({ pasta: achada.pasta })); } catch (e) { /* só memória */ }
+    }
+    return { instalado: true, checagemValida: true, evidencias: ['achado sem Steam em ' + achada.pasta] };
+  }
+  if (lembrada && fs.existsSync(lembrada)) {
+    return { instalado: true, checagemValida: true, evidencias: ['pasta lembrada em ' + lembrada] };
+  }
+  if (lembrada && achada.em && !achada.pasta) {
+    return { instalado: false, checagemValida: true, evidencias: [`a pasta ${lembrada} sumiu e a varredura não achou o jogo em outro lugar`] };
+  }
+  return { instalado: null, checagemValida: false, evidencias: ['sem Steam e sem pasta conhecida do jogo'] };
+}
+
+module.exports = { estado, semSteam, steamPath, bibliotecas, APP_ID };
 
 if (require.main === module) {
   const e = estado();

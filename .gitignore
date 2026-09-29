@@ -30,3 +30,5 @@ redirect/
 /selecao.json
 /biblioteca.json
 sync/cache/
+sync/.jogo-pasta.json
+/jogador.json

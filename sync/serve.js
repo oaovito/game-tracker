@@ -127,6 +127,24 @@ function createServer(options) {
       return;
     }
 
+    // O nome do cabeçalho, escolhido na página: o caminho sem Steam.
+    if (urlPath === '/jogador') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
+      let corpo = '';
+      req.on('data', (c) => { corpo += c; if (corpo.length > 1024) req.destroy(); });
+      req.on('end', () => {
+        try {
+          const jogador = require('./jogador');
+          jogador.escolher(JSON.parse(corpo).nick);
+          res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(jogador.quem()));
+        } catch (e) {
+          res.writeHead(400, { 'content-type': 'application/json' }).end('{"erro":"pedido malformado"}');
+        }
+      });
+      return;
+    }
+
     if (urlPath === '/selecao') {
       const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
       if (!daMaquina) {

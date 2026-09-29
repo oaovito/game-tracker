@@ -63,7 +63,47 @@ function id64DoSave(caminhoSave) {
  * `fonte` existe para a página poder dizer a verdade sobre o que está
  * mostrando, e para o teste poder cobrar que ela não invente.
  */
+/*
+ * O nome escolhido na própria página, gravado em jogador.json.
+ *
+ * É o caminho sem Steam: numa máquina sem ela, a pessoa dá o nome uma vez e
+ * o cabeçalho passa a tê-lo. Com a Steam presente, o escolhido continua
+ * mandando -- é uma decisão de quem usa -- e o apelido da Steam vai junto só
+ * como conferência.
+ */
+const ESCOLHIDO = path.join(__dirname, '..', 'jogador.json');
+
+function escolhido(arq) {
+  try {
+    const j = JSON.parse(fs.readFileSync(arq || ESCOLHIDO, 'utf8'));
+    const nick = limpar(j.nick);
+    return nick || null;
+  } catch (e) { return null; }
+}
+
+/** Nome de cabeçalho: uma linha, sem controle, até 32 caracteres. */
+function limpar(nick) {
+  return String(nick || '').replace(/[\u0000-\u001f]/g, ' ').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 32);
+}
+
+/** Grava (ou apaga, com nome vazio) o nome escolhido. */
+function escolher(nick, arq) {
+  const n = limpar(nick);
+  const alvo = arq || ESCOLHIDO;
+  if (!n) { try { fs.unlinkSync(alvo); } catch (e) { /* já não havia */ } return null; }
+  fs.writeFileSync(alvo, JSON.stringify({ nick: n }, null, 2) + '\n');
+  return n;
+}
+
 function quem(opts) {
+  const o = opts || {};
+  const meu = escolhido(o.arquivo);
+  const daSteam = doSteam(o);
+  if (meu) return { nick: meu, fonte: 'escolhido', steam: daSteam ? daSteam.nick : null };
+  return daSteam;
+}
+
+function doSteam(opts) {
   const o = opts || {};
   const steam = o.steam || instalacao.steamPath();
   if (!steam) return null;
@@ -81,7 +121,7 @@ function quem(opts) {
   return { nick: escolhida.persona, fonte: 'steam' };
 }
 
-module.exports = { quem, contasDoArquivo, id64DoSave };
+module.exports = { quem, escolher, escolhido, limpar, contasDoArquivo, id64DoSave, ESCOLHIDO };
 
 if (require.main === module) {
   const sl2 = require('./sl2');

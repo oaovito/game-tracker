@@ -1318,6 +1318,87 @@ check('nenhum carimbo de hora sobra no arquivo publico', () => {
  * clonar tenha tudo, que nada seja resolvido para fora da pasta, e que nada do
  * que está aqui identifique a máquina de onde saiu.
  */
+
+/*
+ * 21. Sem Steam.
+ *
+ * A regra é que nada dependa da Steam: sem ela, cada coisa tem outra fonte, e
+ * com ela a Steam só confere. Os testes montam uma máquina sem Steam de
+ * brinquedo e cobram que as quatro peças que antes sumiam continuem de pé:
+ * conquistas, nome do cabeçalho, detecção de instalação e lista de jogos.
+ */
+console.log('\n  === 21. Sem Steam ===');
+
+check('as 34 conquistas saem do save, sem Steam', () => {
+  const cs = require('./conquistasave');
+  const on = new Set([6801, 6802, 6830, 8250, 9370]);
+  const d = cs.derivar({
+    f: (id) => on.has(id), goods: new Map([[2300, 1]]), armas: new Set(cs.PROTESES),
+    essenciais: { prayerBeads: { necklaces: 10, totalNecklaces: 10 }, gourdSeeds: { charges: 3, maxCharges: 10 } },
+  });
+  assert(d.length === 34, 'não devolveu as 34');
+  const v = (i) => d.find((x) => x.indice === i).conquistada;
+  assert(v(20) === true && v(21) === true && v(22) === false, 'chefes pelas flags 68xx');
+  assert(v(9) === true && v(10) === false, 'finais pelas flags 6830-6833');
+  assert(v(19) === true, 'Resurrection pela flag 8250');
+  assert(v(5) === true && v(3) === false, 'próteses pelo inventário');
+  assert(v(7) === true && v(8) === false, 'colares e cabaça pelos essenciais');
+  assert(v(33) === true, 'Great Colored Carp pela flag 9370');
+  const j = cs.juntar(d, null);
+  assert(j.fonte === 'save' && j.total === 34, 'sem Steam a lista não se fechou pelo save');
+  return j.desbloqueadas + ' de 34 provadas só pelo save';
+});
+
+check('com Steam, ela confere e marca o desencontro', () => {
+  const cs = require('./conquistasave');
+  const d = cs.derivar({ f: (id) => id === 6801, goods: new Map(), armas: new Set(), essenciais: null });
+  const steam = { lista: cs.LISTA.map((a) => ({ nome: a.nome, conquistada: a.indice === 21 })) };
+  const j = cs.juntar(d, steam);
+  const gyoubu = j.lista[20];
+  const borboleta = j.lista[21];
+  assert(gyoubu.conquistada && gyoubu.confere === false && gyoubu.fonte === 'save', 'o save sozinho não valeu');
+  assert(borboleta.conquistada && borboleta.fonte === 'steam', 'a Steam não somou o que a conta tem');
+  return j.divergentes.length + ' desencontro(s) marcado(s)';
+});
+
+check('o nome do cabeçalho existe sem Steam', () => {
+  const jogador = require('./jogador');
+  const tmp = path.join(require('os').tmpdir(), 'trackeroao-jogador-' + process.pid + '.json');
+  try {
+    jogador.escolher('  lobo\n  solitário <b> ', tmp);
+    const r = jogador.quem({ arquivo: tmp, steam: path.join(require('os').tmpdir(), 'sem-steam-aqui') });
+    assert(r && r.nick === 'lobo solitário b' && r.fonte === 'escolhido', 'veio ' + JSON.stringify(r));
+    return r.nick;
+  } finally { try { fs.unlinkSync(tmp); } catch (e) { /* */ } }
+});
+
+check('a instalação do jogo é detectada sem Steam', () => {
+  const instalacao = require('./instalacao');
+  const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'trackeroao-inst-'));
+  try {
+    const pasta = path.join(tmp, 'Sekiro');
+    fs.mkdirSync(pasta);
+    const lembrada = path.join(tmp, 'lembrada.json');
+    const a = instalacao.semSteam({ varredura: { pasta, em: 'x' }, lembrada });
+    assert(a.instalado === true && a.checagemValida, 'achado pela varredura e não reconheceu');
+    fs.rmdirSync(pasta);
+    const b = instalacao.semSteam({ varredura: { pasta: null, em: 'x' }, lembrada });
+    assert(b.instalado === false && b.checagemValida, 'a pasta sumiu e não percebeu');
+    const c = instalacao.semSteam({ varredura: { pasta: null, em: null }, lembrada: path.join(tmp, 'nada.json') });
+    assert(c.instalado === null && !c.checagemValida, '"não sei" virou resposta');
+    return 'instalado, desinstalado e "não sei"';
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('lê os arquivos VDF da Steam', () => {
+  const b = require('./biblioteca');
+  const v = b.lerVdf('"AppState" { "appid" "814380" "name" "Sekiro" "UserConfig" { "language" "english" } }');
+  assert(v.appstate.appid === '814380' && v.appstate.userconfig.language === 'english', JSON.stringify(v));
+  assert(b.normalizar("Baldur's Gate 3") === b.normalizar('Baldurs Gate 3'), 'grafias diferentes não casaram');
+  assert(b.normalizar('ELDEN RING™') === 'eldenring', 'marca registrada ficou no nome');
+  return 'appmanifest e nomes';
+});
+
 console.log('\n  === 11. O repositório se basta ===');
 
 const { execFileSync: exec11 } = require('child_process');
@@ -1905,6 +1986,41 @@ function resumo() {
     fail++;
     failures.push('o GET /abrir do atalho chega ao processo residente');
     console.log('   FALHA o GET /abrir do atalho chega ao processo residente\n            ' + err.message);
+  }
+
+  console.log('\n  === 22. A varredura de jogos ===');
+  {
+    const nome = 'acha jogos pelo disco e pelo registro, sem Steam e sem rede';
+    const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'trackeroao-bib-'));
+    try {
+      const b = require('./biblioteca');
+      const jogos = path.join(tmp, 'Games');
+      const programas = path.join(tmp, 'Program Files');
+      fs.mkdirSync(path.join(jogos, 'VALORANT'), { recursive: true });
+      fs.mkdirSync(path.join(jogos, 'ELDEN RING', 'Game'), { recursive: true });
+      fs.writeFileSync(path.join(jogos, 'ELDEN RING', 'Game', 'eldenring.exe'), Buffer.alloc(2048));
+      fs.writeFileSync(path.join(jogos, 'ELDEN RING', 'Game', 'unins000.exe'), Buffer.alloc(4096));
+      fs.mkdirSync(path.join(programas, 'Blender'), { recursive: true });
+      const r = await b.varrer({
+        steam: null, semRede: true, naoGravar: true, registro: [{ nome: 'Genshin Impact', pasta: null, editora: 'miHoYo' }],
+        raizes: [{ pasta: jogos, tipo: 'jogo' }, { pasta: programas, tipo: 'programa' }],
+      });
+      const nomes = r.jogos.map((j) => j.nome);
+      const elden = r.jogos.find((j) => /elden/i.test(j.nome));
+      if (!nomes.includes('VALORANT')) throw new Error('não achou o VALORANT pela pasta');
+      if (!elden || elden.processos[0] !== 'eldenring.exe') throw new Error('não achou o executável do Elden Ring: ' + JSON.stringify(elden));
+      if (!nomes.includes('Genshin Impact')) throw new Error('não achou o Genshin pelo registro');
+      if (nomes.includes('Blender')) throw new Error('um programa virou jogo');
+      if (r.comSteam) throw new Error('disse que tinha Steam');
+      pass++;
+      console.log('   ok    ' + nome + '  -  ' + nomes.join(', '));
+    } catch (err) {
+      fail++;
+      failures.push(nome);
+      console.log('   FALHA ' + nome + '\n            ' + err.message);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   }
 
   resumo();

@@ -15,7 +15,8 @@
     "conquistas": "node sync/conquistas.js",
     "deaths": "node sync/deathsmem.js",
     "mem": "node sync/memoria.js",
-    "instalacao": "node sync/instalacao.js"
+    "instalacao": "node sync/instalacao.js",
+    "jogos": "node sync/biblioteca.js"
   },
   "engines": {
     "node": ">=16"

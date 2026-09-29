@@ -19,6 +19,7 @@ const deathsmem = require('./deathsmem');
 const tempo = require('./tempo');
 const bosskills = require('./bosskills');
 const achievements = require('./achievements');
+const conquistasave = require('./conquistasave');
 const jogador = require('./jogador');
 const jogosCat = require('./jogos');
 const conquistas = require('./conquistas');
@@ -527,8 +528,30 @@ function buildProgress(options) {
   // contagem para saber quantas conquistas caíram nesta sessão. Ler o arquivo
   // do Steam duas vezes por ciclo seria trabalho repetido para o mesmo número.
   const conq = (() => {
+    /*
+     * As conquistas vêm do save (conquistasave.js), e a Steam confere.
+     *
+     * Antes era o contrário: sem a Steam na máquina, o bloco inteiro sumia.
+     * A regra do projeto é que nada dependa dela, e as provas estão no save:
+     * flags de chefe e de final, e o inventário. A Steam, quando existe,
+     * acrescenta o que a conta tem de outros saves e marca onde os dois não
+     * concordam.
+     */
+    let daSteam = null;
+    try { daSteam = achievements.conquistas({ conta: tempo.contaDoSave(file) }); } catch (e) { daSteam = null; }
     let c = null;
-    try { c = achievements.conquistas({ conta: tempo.contaDoSave(file) }); } catch (e) { return null; }
+    try {
+      const cal = mini.calibration;
+      const efetivo = cal && cal.how !== 'failed' && typeof cal.base === 'number'
+        ? Object.assign({}, config.eventFlags, { base: cal.base }) : null;
+      const doSave = conquistasave.derivar({
+        f: efetivo ? (id) => flags.read(payload, efetivo, id) : null,
+        goods, armas: weapons, essenciais: essentials,
+      });
+      c = conquistasave.juntar(doSave, daSteam);
+    } catch (e) {
+      c = daSteam;
+    }
     if (!c || !Array.isArray(c.lista)) return c;
     /*
      * Ícone e dificuldade entram por NOME, não por posição.

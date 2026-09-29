@@ -80,6 +80,7 @@ const PODAS = {
       oculta: x.oculta, conquistada: x.conquistada,
       icone: x.icone, dificuldade: x.dificuldade, raridade: x.raridade, shinobi: x.shinobi,
       descricaoOculta: x.descricaoOculta,
+      fonte: x.fonte, incerta: x.incerta, confere: x.confere,
     })),
   }) : a),
   /*
@@ -103,7 +104,7 @@ const PODAS = {
    * tem mais de um campo. Apelido do Steam é público por natureza — é o nome
    * que aparece na lista de amigos de quem quer que seja.
    */
-  jogador: (j) => (j ? { nick: j.nick, fonte: j.fonte } : j),
+  jogador: (j) => (j ? { nick: j.nick, fonte: j.fonte } : j),  // sem o apelido de conferência
   /*
    * Dos jogos saem nome, pinos e escolha. A hora da varredura fica: ela diz
    * quando o computador estava ligado, que é do mesmo tipo da hora de jogo.

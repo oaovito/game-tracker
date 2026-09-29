@@ -48,9 +48,9 @@ const DIA = 24 * 60 * 60 * 1000;
  */
 function normalizar(nome) {
   return String(nome || '')
+    .replace(/[™®©]/g, '')
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[™®©]/g, '')
     .replace(/&/g, 'and')
     .replace(/[^a-z0-9]+/g, '');
 }
