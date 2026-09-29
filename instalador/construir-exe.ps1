@@ -315,6 +315,9 @@ class Janela : Form {
   string registro, pastaTemp;
   public int Codigo = 1;
   Process ps;
+  // Fotos da janela, para a Action mostrar como ela ficou (TRACKEROAO_FOTO).
+  readonly string foto = Environment.GetEnvironmentVariable("TRACKEROAO_FOTO");
+  bool fotoTirada;
 
   Rectangle btPrimario, btSecundario, btFechar;
   string rotPrimario, rotSecundario;
@@ -358,6 +361,10 @@ class Janela : Form {
       if (Math.Abs(alvo - atual) < 0.05f) atual = alvo;
       brilho = (brilho + 0.006f) % 1.6f;
       Invalidate();
+      if (foto != null && !fotoTirada && modo == Modo.Trabalhando && alvo >= 40f && Math.Abs(alvo - atual) < 0.5f) {
+        fotoTirada = true;
+        Fotografar("trabalhando");
+      }
     };
     relogio.Start();
     FormClosing += delegate(object s, FormClosingEventArgs e) {
@@ -497,8 +504,6 @@ class Janela : Form {
     Codigo = m == Modo.Pronto ? 0 : 1;
     if (m == Modo.Pronto) { alvo = 100f; passo = fraseFinal; }
     else passo = desinstalando ? "N\u00e3o foi poss\u00edvel remover" : "N\u00e3o foi poss\u00edvel instalar";
-    if (fechar) { relogio.Stop(); Close(); return; }
-
     if (m == Modo.Pronto && !desinstalando) { rotPrimario = "Abrir o Trackeroao"; rotSecundario = "Fechar"; }
     else if (m == Modo.Pronto) { rotPrimario = "Fechar"; rotSecundario = null; }
     else { rotPrimario = "Fechar"; rotSecundario = "Ver registro"; }
@@ -511,6 +516,17 @@ class Janela : Form {
     }
     ClientSize = new Size(ClientSize.Width, S(168) + S(44) + Math.Max(0, extra - S(18)));
     Invalidate();
+    if (foto != null) { atual = alvo; Fotografar(m == Modo.Pronto ? "pronto" : "erro"); }
+    if (fechar) { relogio.Stop(); Close(); }
+  }
+
+  void Fotografar(string nome) {
+    try {
+      using (Bitmap b = new Bitmap(ClientSize.Width, ClientSize.Height)) {
+        DrawToBitmap(b, new Rectangle(Point.Empty, ClientSize));
+        b.Save(Path.Combine(foto, nome + ".png"), System.Drawing.Imaging.ImageFormat.Png);
+      }
+    } catch { }
   }
 
   List<string> LinhasFinais() {
