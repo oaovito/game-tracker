@@ -466,6 +466,15 @@ o que está no computador e o que está na biblioteca da Steam. No computador qu
 roda o serviço, tocar no pino de vigia liga e desliga a vigia daquele jogo, e
 "Search again" pede uma nova varredura.
 
+Essa tela tem identidade visual própria, deliberadamente distinta da página do
+Sekiro: por ser a porta de entrada para qualquer jogo, ela não herda o papel, o
+vermelho e o dourado daquela página. O tema é o dos jogos em geral, com fundo
+noturno de painel, uma grade fina ao fundo, destaques em violeta e ciano e
+tipografia técnica (Chakra Petch nos títulos, Inter no texto). Abre sempre no
+modo escuro, e o botão de tema no canto alterna para o claro; a escolha é
+guardada à parte, de modo que o tema escolhido para a página do Sekiro não
+interfere no desta tela, e vice-versa.
+
 A lista vem de `sync/biblioteca.js`, que consulta três fontes de nomes: a
 biblioteca da Steam da pessoa, quando existe (os `appmanifest` de cada
 biblioteca e o que a conta já jogou, segundo o `localconfig.vdf`); o catálogo

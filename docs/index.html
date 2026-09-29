@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="trackeroao">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #16130f;
@@ -2561,99 +2561,189 @@
    * Ela só existe quando a leitura trouxe a lista de jogos. Sem ela, a página
    * abre direto no progresso, como sempre abriu.
    */
+  /*
+   * Identidade própria, sem nada do Sekiro.
+   *
+   * Esta tela é a porta de entrada para qualquer jogo, então não herda o
+   * papel, o sangue e o dourado da página do Sekiro. O tema é "jogos": fundo
+   * noturno de painel de console, grade fina de tela, dois brilhos (violeta e
+   * ciano) e tipografia técnica (Chakra Petch nos títulos, Inter no texto).
+   * Tudo sai dos tokens --j-*, definidos só quando o corpo está numa das duas
+   * vistas, de modo que nada disso vaza para a página de um jogo.
+   *
+   * O escuro é o padrão desta tela, com chave de tema própria ("theme-jogos"):
+   * quem deixou o Sekiro no claro continua abrindo a tela de jogos no escuro.
+   */
+  body.vista-hub, body.vista-bibli {
+    --j-bg: #090b12;
+    --j-painel: #11141f;
+    --j-painel-2: #171b2a;
+    --j-texto: #e9ecf6;
+    --j-apagado: #8c93ab;
+    --j-linha: rgba(140, 147, 171, 0.18);
+    --j-roxo: #8b6cff;
+    --j-ciano: #33e1ed;
+    --j-verde: #3fdc9a;
+    --j-grade: rgba(140, 147, 171, 0.06);
+    --j-sombra: rgba(0, 0, 0, 0.45);
+    --text: var(--j-texto);
+    --text-dim: var(--j-apagado);
+    --line: var(--j-linha);
+    --gold: var(--j-roxo);
+    --font-display: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background-color: var(--j-bg);
+    background-image:
+      radial-gradient(ellipse 70% 45% at 12% -8%, rgba(139, 108, 255, 0.22), rgba(139, 108, 255, 0) 70%),
+      radial-gradient(ellipse 60% 40% at 100% 108%, rgba(51, 225, 237, 0.14), rgba(51, 225, 237, 0) 70%),
+      linear-gradient(var(--j-grade) 1px, transparent 1px),
+      linear-gradient(90deg, var(--j-grade) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    background-repeat: no-repeat, no-repeat, repeat, repeat;
+    background-attachment: fixed;
+    color: var(--j-texto);
+    font-family: var(--font-body);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] body.vista-hub, :root[data-theme="light"] body.vista-bibli {
+    --j-bg: #f2f3f9;
+    --j-painel: #ffffff;
+    --j-painel-2: #eceef7;
+    --j-texto: #151827;
+    --j-apagado: #5b6179;
+    --j-linha: rgba(21, 24, 39, 0.12);
+    --j-roxo: #5b3df0;
+    --j-ciano: #0a93a8;
+    --j-verde: #11875a;
+    --j-grade: rgba(21, 24, 39, 0.05);
+    --j-sombra: rgba(40, 44, 80, 0.14);
+    color-scheme: light;
+  }
+  /* Os efeitos de borda e as cenas da página do Sekiro não entram aqui. */
+  body.vista-hub::before, body.vista-hub::after,
+  body.vista-bibli::before, body.vista-bibli::after,
+  .vista-hub .topbar::before, .vista-bibli .topbar::before,
+  .vista-hub .kaiden-cena, .vista-bibli .kaiden-cena { display: none !important; }
   .vista-hub .wrap > :not(.topbar):not(#hub),
   .vista-bibli .wrap > :not(.topbar):not(#bibli) { display: none !important; }
+  .vista-hub .wrap, .vista-bibli .wrap { max-width: 64rem; }
+  .vista-hub ::selection, .vista-bibli ::selection { background: var(--j-roxo); color: #fff; }
+
   .hub, .bibli { padding-top: 6px; }
-  .hub-cabeca { text-align: center; margin: 10px 0 26px; }
+  .hub-cabeca { text-align: center; margin: 14px 0 30px; }
   .hub-titulo {
-    font-family: var(--font-display); font-weight: 800;
-    font-size: 2.4rem; letter-spacing: 0.06em; line-height: 1.1;
-    text-transform: none;
-    color: var(--text); margin: 0;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 2.6rem; letter-spacing: 0.02em; line-height: 1.1;
+    text-transform: none; color: var(--j-texto); margin: 0;
   }
-  .hub-titulo span { color: var(--blood-bright); }
+  .hub-titulo span {
+    background: linear-gradient(90deg, var(--j-roxo), var(--j-ciano));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--j-roxo);
+  }
   .hub-sub {
-    margin-top: 8px; font-size: 0.72rem; letter-spacing: 0.22em;
-    text-transform: uppercase; color: var(--gold);
+    display: inline-block; margin-top: 12px;
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--j-apagado);
+    border: 1px solid var(--j-linha); border-radius: 999px; padding: 5px 14px;
+    background: var(--j-painel);
   }
   .hub-grade {
-    display: grid; gap: 14px;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
   .jogo-card {
     position: relative; display: flex; flex-direction: column;
     min-width: 0; text-align: left;
-    background: var(--bg-panel); color: var(--text);
-    border: 1px solid var(--line); border-radius: 0; padding: 0;
-    font: inherit; cursor: pointer; overflow: hidden;
-    transition: border-color 0.2s ease, transform 0.2s ease;
+    background: var(--j-painel); color: var(--j-texto);
+    border: 1px solid var(--j-linha); border-radius: 14px; padding: 0;
+    font: inherit; cursor: default; overflow: hidden;
+    box-shadow: 0 6px 18px var(--j-sombra);
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   }
-  .jogo-card:hover, .jogo-card:focus-visible { border-color: var(--gold); outline: 0; transform: translateY(-2px); }
+  .jogo-card.lido { cursor: pointer; }
+  .jogo-card.lido:hover, .jogo-card.lido:focus-visible {
+    border-color: var(--j-roxo); outline: 0; transform: translateY(-3px);
+    box-shadow: 0 10px 28px var(--j-sombra), 0 0 0 1px var(--j-roxo), 0 0 24px rgba(139, 108, 255, 0.28);
+  }
   .jogo-capa {
     position: relative; aspect-ratio: 460 / 215; max-width: 100%;
-    background: linear-gradient(135deg, #2a241c, #16130f);
+    background: linear-gradient(135deg, rgba(139, 108, 255, 0.35), rgba(51, 225, 237, 0.25)), var(--j-painel-2);
     display: grid; place-items: center; overflow: hidden;
   }
   .jogo-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .jogo-capa-letra {
-    font-family: var(--font-display); font-size: 2.6rem; font-weight: 800;
-    color: rgba(236, 228, 211, 0.35);
+    font-family: var(--font-display); font-size: 2.6rem; font-weight: 700;
+    color: var(--j-texto); opacity: 0.6;
   }
-  .jogo-corpo { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-width: 0; }
+  .jogo-corpo { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-width: 0; flex: 1; }
   .jogo-card-nome {
-    font-family: var(--font-display); font-size: 0.98rem; line-height: 1.3;
+    font-family: var(--font-display); font-weight: 600; font-size: 1rem; line-height: 1.3;
     overflow-wrap: anywhere;
   }
-  .jogo-pinos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .jogo-pinos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pino {
     display: inline-flex; align-items: center; gap: 5px;
-    font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--text-dim); opacity: 0.45;
-    background: none; border: 1px solid transparent; padding: 3px 6px 3px 4px; font-family: inherit;
+    font-family: var(--font-body); font-weight: 600;
+    font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--j-apagado); opacity: 0.55;
+    background: var(--j-painel-2); border: 1px solid transparent; border-radius: 999px;
+    padding: 4px 9px 4px 7px;
   }
   .pino svg { width: 12px; height: 12px; display: block; }
   .pino.on { opacity: 1; }
-  .pino-instalado.on { color: #9fd3a8; border-color: rgba(159, 211, 168, 0.35); }
-  .pino-vigiado.on { color: #7fd4f5; border-color: rgba(127, 212, 245, 0.4); }
+  .pino-instalado.on { color: var(--j-verde); border-color: currentColor; }
+  .pino-vigiado.on { color: var(--j-ciano); border-color: currentColor; }
   button.pino { cursor: pointer; }
   button.pino:hover { opacity: 1; }
   .jogo-abre {
-    font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold);
+    margin-top: auto; align-self: flex-start;
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--j-roxo);
   }
-  .jogo-card.lido { border-color: rgba(168, 133, 61, 0.55); }
-  .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 8px; }
+  .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 30px 0 8px; }
   .hub-bt {
-    appearance: none; background: none; color: var(--text);
-    border: 1px solid var(--line); padding: 11px 18px; cursor: pointer;
-    font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase;
+    appearance: none; cursor: pointer; color: #fff;
+    background: linear-gradient(90deg, var(--j-roxo), var(--j-ciano));
+    border: 0; border-radius: 999px; padding: 12px 24px;
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase;
+    box-shadow: 0 6px 20px rgba(139, 108, 255, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .hub-bt:hover, .hub-bt:focus-visible { border-color: var(--gold); color: var(--paper); outline: 0; }
-  .hub-nota { text-align: center; font-size: 0.74rem; color: var(--text-dim); margin-top: 10px; }
-  .bibli-grupo { margin-bottom: 26px; }
+  .hub-bt:hover, .hub-bt:focus-visible { outline: 0; transform: translateY(-1px); box-shadow: 0 8px 26px rgba(139, 108, 255, 0.45); }
+  .hub-nota { text-align: center; font-size: 0.78rem; color: var(--j-apagado); margin-top: 12px; }
+  .bibli-grupo {
+    margin-bottom: 22px; padding: 16px 18px;
+    background: var(--j-painel); border: 1px solid var(--j-linha); border-radius: 14px;
+  }
   .bibli-grupo h2 {
-    font-family: var(--font-display); font-size: 0.84rem; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--gold); font-weight: 700;
-    margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
+    font-family: var(--font-display); font-size: 0.86rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--j-texto); font-weight: 600;
+    margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--j-linha);
   }
   .bibli-linha {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 10px 0; border-bottom: 1px solid var(--line);
+    padding: 10px 0; border-bottom: 1px solid var(--j-linha);
   }
-  .bibli-linha:last-child { border-bottom: 0; }
-  .bibli-nome { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
-  .bibli-vazio { font-size: 0.82rem; color: var(--text-dim); }
+  .bibli-linha:last-child { border-bottom: 0; padding-bottom: 2px; }
+  .bibli-nome { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; font-weight: 500; }
+  .bibli-vazio { font-size: 0.82rem; color: var(--j-apagado); margin: 8px 0 0; }
   .volta-jogos {
     appearance: none; background: none; border: 0; cursor: pointer;
     color: var(--text-dim); font-family: inherit; font-size: 0.72rem;
     letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; padding: 2px 4px;
   }
   .volta-jogos:hover { opacity: 1; color: var(--text); }
+  .bibli .volta-jogos { color: var(--j-roxo); font-family: var(--font-display); font-weight: 600; opacity: 1; }
   @media (max-width: 460px) {
-    .hub-titulo { font-size: 1.9rem; }
+    .hub-titulo { font-size: 2rem; }
     .hub-grade { grid-template-columns: 1fr 1fr; gap: 10px; }
     .jogo-corpo { padding: 10px 10px 12px; }
-    .jogo-card-nome { font-size: 0.85rem; }
-    .pino { font-size: 0.56rem; letter-spacing: 0.08em; }
+    .jogo-card-nome { font-size: 0.86rem; }
+    .pino { font-size: 0.56rem; letter-spacing: 0.04em; padding: 3px 7px 3px 5px; }
+    .bibli-grupo { padding: 12px 14px; }
   }
 
   a, button, input { -webkit-tap-highlight-color: transparent; }
@@ -2680,7 +2770,7 @@
   <!-- A tela de jogos, antes da página de cada um. Ver o CSS "tela de jogos". -->
   <section class="hub" id="hub" hidden>
     <div class="hub-cabeca">
-      <h1 class="hub-titulo">tracker<span>oao</span></h1>
+      <h1 class="hub-titulo">Tracker<span>oao</span></h1>
       <div class="hub-sub">your games</div>
     </div>
     <div class="hub-grade" id="hubGrade"></div>
@@ -2693,7 +2783,7 @@
   <!-- Todos os jogos: o que está no computador e o que está na Steam. -->
   <section class="bibli" id="bibli" hidden>
     <div class="hub-cabeca">
-      <h1 class="hub-titulo">all <span>games</span></h1>
+      <h1 class="hub-titulo">All <span>games</span></h1>
       <div class="hub-sub" id="bibliSub">on this computer and in the Steam library</div>
     </div>
     <div id="bibliGrupos"></div>
@@ -4759,12 +4849,27 @@ function vistaAtual() {
   return "hub";
 }
 
+/* A tela de jogos tem tema próprio, escuro por padrão, separado do da página
+   do jogo: quem deixou o Sekiro no claro continua vendo a tela de jogos no
+   escuro até escolher o contrário ali mesmo. */
+const TEMA_JOGOS = "theme-jogos";
+function naTelaDeJogos() {
+  const c = typeof document !== "undefined" && document.body && document.body.classList;
+  return !!(c && (c.contains("vista-hub") || c.contains("vista-bibli")));
+}
+function chaveDoTema() { return naTelaDeJogos() ? TEMA_JOGOS : THEME_KEY; }
+
 function aplicarVista() {
   const v = vistaAtual();
   const corpo = document.body;
   if (corpo && corpo.classList) {
+    const antes = naTelaDeJogos();
     corpo.classList.toggle("vista-hub", v === "hub");
     corpo.classList.toggle("vista-bibli", v === "bibli");
+    // Cada lado guarda o próprio tema; ao atravessar, vale o do lado novo.
+    if (antes !== naTelaDeJogos() && typeof applyTheme === "function" && document.getElementById("themeToggle")) {
+      applyTheme(guardado(chaveDoTema()));
+    }
   }
   const hub = document.getElementById("hub");
   const bibli = document.getElementById("bibli");
@@ -5483,15 +5588,17 @@ function applyTheme(t) {
   const proximo = efetivo === "light" ? "dark" : "light";
   botao.title = "Switch to " + proximo + " mode";
   botao.setAttribute("aria-label", botao.title);
+  const cor = document.querySelector('meta[name="theme-color"]');
+  if (cor) cor.setAttribute("content", naTelaDeJogos() ? (efetivo === "light" ? "#f2f3f9" : "#090b12") : (efetivo === "light" ? "#ece4d3" : "#16130f"));
 }
 let savedTheme = null;
-savedTheme = guardado(THEME_KEY);
+savedTheme = guardado(chaveDoTema());
 applyTheme(savedTheme);
 ligarPontoDeSync();
 ligarQuadrosAbrem();
 document.getElementById("themeToggle").addEventListener("click", () => {
   const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
-  guardar(THEME_KEY, next);
+  guardar(chaveDoTema(), next);
   applyTheme(next);
 });
 
