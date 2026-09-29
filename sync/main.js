@@ -96,12 +96,11 @@ const PORT = Number(process.env.PORT || 8777);
  * consulta de DNS comum, não chegaria até aqui, e morreria no servidor do
  * provedor.
  *
- * `oaovito.sekiro.local` vem primeiro por ser o mais parecido com o nome
- * pedido; os outros dois ficam como garantia, porque nem todo resolvedor
- * procura nomes de vários rótulos dentro de `.local` - alguns só tratam o
- * nome simples.
+ * `trackeroao.local` é o nome do aplicativo de tela inicial do celular: é por
+ * ele que o iPhone e o Android acham este computador na rede de casa, sem IP
+ * e sem domínio. Os outros ficam por quem já usava os nomes antigos.
  */
-const NOMES_REDE = ['oaovito.sekiro.local', 'sekiro.local', 'oaovito.local'];
+const NOMES_REDE = ['trackeroao.local', 'oaovito.sekiro.local', 'sekiro.local', 'oaovito.local'];
 
 const ROOT = path.join(__dirname, '..');
 const OUT_FILE = path.join(ROOT, 'progress.json');
@@ -702,8 +701,8 @@ async function run() {
   if (nomeador.ativo()) {
     const porta = extra.ok ? '' : ':' + PORT;
     console.log('');
-    console.log('  Link para mandar a quem está no mesmo Wi-Fi:');
-    console.log(`      http://sekiro.local${porta}`);
+    console.log('  No celular, no mesmo Wi-Fi:');
+    console.log(`      http://trackeroao.local${porta}`);
     console.log('');
   }
 
