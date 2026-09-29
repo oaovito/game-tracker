@@ -148,6 +148,11 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe' OR Name = 'powershell.e
     Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
     $encerrados++
   }
+# A janela do Trackeroao, se estiver aberta: a pasta app nao sai com ela de pe.
+$pastaApp = Join-Path $Destino 'app'
+Get-Process -Name 'Trackeroao' -ErrorAction SilentlyContinue |
+  Where-Object { $_.Path -and $_.Path.StartsWith($pastaApp, [StringComparison]::OrdinalIgnoreCase) } |
+  ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue; $encerrados++ }
 if ($encerrados) { Ok "$encerrados processo(s) encerrado(s)" } else { Nota 'nada rodando' }
 
 # ================================================================ 2. atalho

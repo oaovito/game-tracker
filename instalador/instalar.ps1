@@ -398,6 +398,27 @@ Detalhe 'Ele acompanha o jogo sem abrir janela nenhuma'
 $instalador = Join-Path $Destino 'windows\install-sync-service.ps1'
 & $instalador -NodePath $node -Usuario $UsuarioOriginal
 
+<#
+  A janela do Trackeroao (app\Trackeroao.exe), que o .exe do instalador traz
+  dentro dele e entrega aqui por TRACKEROAO_APP. Ela substitui a anterior no
+  lugar: a pasta app e trocada inteira, e uma janela aberta e fechada antes.
+  Pela linha de comando, num clone, ela nao existe, e o atalho abre a pagina
+  local como antes.
+#>
+$janela = $null
+if ($env:TRACKEROAO_APP -and (Test-Path (Join-Path $env:TRACKEROAO_APP 'Trackeroao.exe'))) {
+  Etapa 70 'Instalando a janela do Trackeroao'
+  $pastaApp = Join-Path $Destino 'app'
+  Get-Process -Name 'Trackeroao' -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -and $_.Path.StartsWith($pastaApp, [StringComparison]::OrdinalIgnoreCase) } |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+  if (Test-Path $pastaApp) { Remove-Item -Recurse -Force $pastaApp }
+  New-Item -ItemType Directory -Path $pastaApp -Force | Out-Null
+  Copy-Item (Join-Path $env:TRACKEROAO_APP '*') $pastaApp -Force
+  $janela = Join-Path $pastaApp 'Trackeroao.exe'
+  Ok "janela em $janela"
+}
+
 # =============================================================== 4. atalho
 Passo '4/6  Atalho'
 Etapa 74 'Criando o atalho na área de trabalho'
@@ -436,14 +457,23 @@ if (-not (Test-Path $atalhoVbs)) {
     }
     if (-not $desktop) { $desktop = [Environment]::GetFolderPath('Desktop') }
 
-    $lnk = Join-Path $desktop 'trackeroao.lnk'
+    # Um atalho so: o de versoes anteriores e trocado por este, no mesmo lugar.
+    $lnk = Join-Path $desktop 'Trackeroao.lnk'
+    Get-ChildItem $desktop -Filter 'trackeroao.lnk' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     $ws = New-Object -ComObject WScript.Shell
     $atalho = $ws.CreateShortcut($lnk)
-    $atalho.TargetPath = Join-Path $env:WINDIR 'System32\wscript.exe'
-    $atalho.Arguments = "`"$atalhoVbs`""
-    $atalho.WorkingDirectory = $Destino
-    $atalho.IconLocation = "$(Join-Path $env:WINDIR 'System32\wscript.exe'),0"
-    $atalho.Description = 'Abre a pagina de progresso do trackeroao'
+    if ($janela) {
+      $atalho.TargetPath = $janela
+      $atalho.Arguments = ''
+      $atalho.WorkingDirectory = Split-Path $janela -Parent
+      $atalho.IconLocation = "$janela,0"
+    } else {
+      $atalho.TargetPath = Join-Path $env:WINDIR 'System32\wscript.exe'
+      $atalho.Arguments = "`"$atalhoVbs`""
+      $atalho.WorkingDirectory = $Destino
+      $atalho.IconLocation = "$(Join-Path $env:WINDIR 'System32\wscript.exe'),0"
+    }
+    $atalho.Description = 'Trackeroao'
     $atalho.Save()
     Ok "atalho em $lnk"
   } catch {
@@ -532,6 +562,7 @@ if ($pendencias) {
   foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow; Tela 'PENDENCIA' $p }
 }
 Detalhe 'Ele abre sozinho quando você começar a jogar.'
+if ($janela) { Tela 'APP' $janela }
 Tela 'PRONTO' 'Trackeroao instalado'
 
 # Rodando elevada, a janela e uma nova e fecha sozinha no fim, levando junto

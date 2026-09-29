@@ -53,7 +53,12 @@ embutido e fecha sozinho no fim, devolvendo 0 ou 1. E como a Action confere,
 num Windows de verdade, que a janela abre, le o protocolo e termina.
 #>
 
-param([string]$Saida = $PSScriptRoot, [string]$Versao = '')
+<#
+  -App: a pasta com a janela do Trackeroao (o que o construir-janela.ps1
+  gera). Cada arquivo dela vai dentro do .exe como recurso "app/<nome>", e o
+  instalador os entrega ao script, que os poe em <instalacao>\app.
+#>
+param([string]$Saida = $PSScriptRoot, [string]$Versao = '', [string]$App = '')
 
 $ErrorActionPreference = 'Stop'
 $raiz = $PSScriptRoot
@@ -349,6 +354,8 @@ class Janela : Form {
   string passo, detalhe = "";
   readonly List<string> pendencias = new List<string>();
   string erro, fraseFinal;
+  // Onde o script instalou a janela (@@APP), para o botao "Abrir".
+  string janelaInstalada;
   // A primeira linha que o PowerShell escreveu como erro: se o script parar
   // sem dizer o motivo, e ela que a janela mostra.
   string primeiroErro;
@@ -439,6 +446,15 @@ class Janela : Form {
     Directory.CreateDirectory(pastaTemp);
     string alvoPs = Path.Combine(pastaTemp, nome + ".ps1");
     File.WriteAllText(alvoPs, script, new UTF8Encoding(true));
+    // A janela do Trackeroao vai junto, dentro deste .exe; o script a copia.
+    string pastaApp = null;
+    Assembly eu = Assembly.GetExecutingAssembly();
+    foreach (string r in eu.GetManifestResourceNames()) {
+      if (!r.StartsWith("app/")) continue;
+      if (pastaApp == null) { pastaApp = Path.Combine(pastaTemp, "app"); Directory.CreateDirectory(pastaApp); }
+      using (Stream de = eu.GetManifestResourceStream(r))
+      using (FileStream para = File.Create(Path.Combine(pastaApp, r.Substring(4)))) de.CopyTo(para);
+    }
 
     ProcessStartInfo psi = new ProcessStartInfo("powershell.exe");
     psi.Arguments = "-NoProfile -NonInteractive -File \"" + alvoPs + "\"" + (desinstalando ? " -GuardarProgresso" : "") + resto;
@@ -453,6 +469,7 @@ class Janela : Form {
     psi.EnvironmentVariables["TRACKEROAO_GUI"] = "1";
     psi.EnvironmentVariables["TRACKEROAO_EXE"] = exe;
     psi.EnvironmentVariables["TRACKEROAO_USUARIO"] = usuario;
+    if (pastaApp != null) psi.EnvironmentVariables["TRACKEROAO_APP"] = pastaApp;
     if (destino != null) psi.EnvironmentVariables["TRACKEROAO_DESTINO"] = destino;
     if (semAdmin) psi.EnvironmentVariables["TRACKEROAO_SEM_ELEVAR"] = "1";
     psi.UseShellExecute = false;
@@ -528,6 +545,7 @@ class Janela : Form {
       else if (tipo == "PENDENCIA") pendencias.Add(resto);
       else if (tipo == "ERRO") erro = resto;
       else if (tipo == "PRONTO") fraseFinal = resto;
+      else if (tipo == "APP") janelaInstalada = resto;
     }
     BeginInvokeSeguro(new Action(Invalidate));
   }
@@ -719,7 +737,12 @@ class Janela : Form {
 
   void Primario() {
     if (modo == Modo.Pronto && !desinstalando) {
-      try { Process.Start(new ProcessStartInfo("http://localhost:8777/") { UseShellExecute = true }); } catch { }
+      try {
+        // Pelo explorer, a janela abre como a pessoa, e nao elevada como este
+        // instalador.
+        if (janelaInstalada != null && File.Exists(janelaInstalada)) Process.Start("explorer.exe", Programa.Aspas(janelaInstalada));
+        else Process.Start(new ProcessStartInfo("http://localhost:8777/") { UseShellExecute = true });
+      } catch { }
     }
     Close();
   }
@@ -734,12 +757,17 @@ class Janela : Form {
 }
 "@
 
+$recursos = @()
+if ($App) {
+  foreach ($f in Get-ChildItem $App -File) { $recursos += "/resource:$($f.FullName),app/$($f.Name)" }
+  if (-not $recursos) { throw "a pasta da janela esta vazia: $App" }
+}
 $tmpCs = Join-Path $tmp 'trackeroao.cs'
 Set-Content -Path $tmpCs -Value $cs -Encoding UTF8
 
 & $csc.FullName /nologo /target:winexe /platform:anycpu /optimize+ "/out:$exe" `
   "/win32icon:$icone" "/win32manifest:$manifesto" `
-  /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll $tmpCs
+  /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll @recursos $tmpCs
 $codigo = $LASTEXITCODE
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 

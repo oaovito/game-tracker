@@ -78,7 +78,9 @@ jobs:
 
       - name: Construir o executavel
         shell: powershell
-        run: .\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}"
+        run: |
+          .\instalador\construir-janela.ps1 -Saida dist\app
+          .\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}" -App dist\app
 
       # A janela do instalador, num Windows de verdade: abre, le o protocolo
       # @@ do script, termina com 0 quando ele termina bem e com 1 quando ele
@@ -174,6 +176,25 @@ jobs:
           if ($tarefas -ne 1 -or $regras -gt 1 -or $atalhos -ne 1 -or $chaves -ne 1) { throw 'a reinstalacao duplicou alguma coisa' }
           $destino = Join-Path $env:LOCALAPPDATA 'trackeroao'
           if (-not (Test-Path (Join-Path $destino 'sync\main.js'))) { throw "nada foi instalado em $destino" }
+
+          # A janela do Trackeroao: abre e fica de pe, uma segunda abertura nao
+          # cria outra, e o sinal do "Fechar" da bandeja a fecha.
+          $janela = Join-Path $destino 'app\Trackeroao.exe'
+          if (-not (Test-Path $janela)) { throw 'a janela nao foi instalada' }
+          $lnk = Get-ChildItem ([Environment]::GetFolderPath('Desktop')) -Filter 'trackeroao*.lnk' | Select-Object -First 1
+          $alvo = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk.FullName).TargetPath
+          if ($alvo -ne $janela) { throw "o atalho aponta para $alvo, e nao para a janela" }
+          $j = Start-Process $janela -PassThru
+          Start-Sleep -Seconds 12
+          if ($j.HasExited) { throw "a janela fechou sozinha (codigo $($j.ExitCode))" }
+          $segunda = Start-Process $janela -PassThru
+          if (-not $segunda.WaitForExit(15000)) { throw 'a segunda abertura criou outra janela' }
+          if (@(Get-Process -Name Trackeroao -ErrorAction SilentlyContinue).Count -ne 1) { throw 'mais de uma janela aberta' }
+          [System.Threading.EventWaitHandle]$sinal = $null
+          if (-not [System.Threading.EventWaitHandle]::TryOpenExisting('Local\TrackeroaoFechar', [ref]$sinal)) { throw 'a janela nao ouve o Fechar da bandeja' }
+          [void]$sinal.Set()
+          if (-not $j.WaitForExit(15000)) { throw 'o Fechar da bandeja nao fechou a janela' }
+          Write-Host 'a janela abriu, e unica e fecha pelo menu da bandeja'
           $logD = Join-Path $env:TEMP 'trackeroao-desinstalar.log'
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/desinstalar', "/ensaio=$PWD\instalador\desinstalar.ps1", "/destino=$destino", '/fechar' -Wait -PassThru
           Get-Content $logD -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
