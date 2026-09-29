@@ -757,32 +757,55 @@ async function rodar(log) {
 
   /*
    * A alma é o 鬼仏, o Ídolo do Escultor — e desenho, não gradiente.
+   * A alma é o Samurai Spirit — o fantasma do próprio jogo.
    *
-   * Três versões falharam antes, por motivos diferentes e instrutivos. A de
+   * Quatro versões falharam antes, por motivos diferentes e instrutivos. A de
    * bulbo com cauda lia como espermatozoide (cabeça redonda mais rabo afilado
    * é esse desenho em qualquer contexto). A seguinte tinha rosto, mas rosto de
    * ninguém. A terceira era um chibi de Shinobi morto: legível, e genérico —
-   * chibi com olho em × é vocabulário de qualquer jogo, não deste.
+   * chibi com olho em × é vocabulário de qualquer jogo, não deste. A quarta
+   * foi o 鬼仏, o Ídolo do Escultor: a referência estava certa, mas o Ídolo é
+   * pedra parada — ele marca onde se ressuscita, não é um fantasma, e não há
+   * o que animar numa estátua ajoelhada sem inventar movimento que ela não
+   * tem.
    *
-   * O Ídolo é deste. É a estátua que se toca para ressuscitar, o objeto da
-   * morte no Sekiro, e o nome dela é 鬼仏, "Buda demoníaco". O que se testa
-   * aqui são os sinais que a tornam reconhecível: os seis braços (que fazem
-   * dela um Shura e não um Buda), o 人魂 azul ardendo em cima, e as mãos em
-   * prece. Sem os braços, volta a ser figura ajoelhada qualquer.
+   * O Samurai Spirit resolve os dois lados. É literalmente o fantasma que o
+   * jogo põe em Mibu Village e no Fountainhead Palace, e é um guerreiro morto
+   * — que é exatamente o que 223 mortes são. O que se testa aqui são os sinais
+   * que o tornam reconhecível: contorno de luz em vez de massa, a katana, o
+   * hakama que ondula, e o rosto vazio.
    */
   const simbolo = /<symbol id="almaChibi"[\s\S]*?<\/symbol>/.exec(src);
   const svg = simbolo ? simbolo[0] : '';
   log(!!svg, 'a alma é um ícone desenhado, não um borrão de gradiente',
     svg ? svg.length + ' caracteres de caminho' : 'não achei o símbolo');
-  const bracos = (svg.match(/<path d="M(9|14)[.\d]* 1[46]/g) || []).length;
-  log(/seis braços/.test(svg) && bracos >= 4,
-    'tem os braços do Shura, que é o que faz dela um Ídolo',
-    bracos + ' traços de braço — sem eles é figura ajoelhada qualquer');
-  log(/人魂/.test(svg) && /fogoIdolo/.test(svg),
-    'e o 人魂 azul ardendo em cima', 'o fogo que arde no topo de todo Ídolo');
-  log(/em prece/.test(svg), 'e as mãos unidas em prece', 'o gesto que lê como luto');
-  log(!/abacaxi/.test(svg) && !/olhos em ×/.test(svg),
-    'e nada sobrou do chibi anterior', 'nem coque, nem olho cruzado');
+  const tracos = (svg.match(/<path /g) || []).length;
+  log(tracos >= 6, 'o vulto é feito de traço, não de mancha',
+    tracos + ' caminhos — no jogo o fantasma é contorno de luz, e o corpo quase vazio');
+  log(/katana/.test(svg), 'tem a katana na cintura',
+    'é o que separa samurai de monge num vulto sem rosto');
+  log(/hakama/.test(svg), 'e o hakama, que é a peça que ondula',
+    'a barra dele é a única coisa do desenho que se mexe sozinha');
+  /*
+   * O rosto vazio é o detalhe mais fácil de "consertar" por engano. No jogo
+   * não há traço nenhum dentro da cabeça, só luz. Olhos criariam uma pessoa;
+   * a ausência é o que faz ser um espírito.
+   */
+  log(/rosto vazio/.test(svg), 'e o rosto é vazio, como no jogo',
+    'olhos fariam uma pessoa; a falta deles faz um espírito');
+  /*
+   * O fantasma tem de se mexer sozinho, e não só subir. O movimento do bloco
+   * leva a peça de um lado para o outro; o que faz ela parecer viva (ou
+   * melhor, morta e presente) é o que acontece dentro dela parada.
+   */
+  log(/<animate /.test(svg), 'e a barra do hakama ondula por conta própria',
+    'SMIL dentro do símbolo, porque `use` clona numa árvore sombra e o CSS do documento não alcança lá');
+  const cssAlma = cssDe('.alma svg');
+  log(/bambolear/.test(cssAlma) && /esvair/.test(cssAlma),
+    'e o vulto balança e esvai ao mesmo tempo',
+    'o do jogo paira e some por instantes — opacidade constante entrega desenho parado');
+  log(!/abacaxi/.test(svg) && !/olhos em ×/.test(svg) && !/人魂/.test(svg),
+    'e nada sobrou das versões anteriores', 'nem coque, nem olho cruzado, nem o fogo do Ídolo');
   // Um símbolo usado cinco vezes, e não cinco cópias do mesmo caminho: cinco
   // cópias seriam cinco lugares para corrigir quando o desenho mudar.
   const usos = (src.match(/<use href="#almaChibi"\/>/g) || []).length;
@@ -842,6 +865,45 @@ async function rodar(log) {
     'o pedido é contemplar; uma cena que trava a página vira espera');
   log(/selo\.addEventListener\("click", tocarKaiden\)/.test(src),
     'e ela responde à interação com o selo', 'clicar recomeça a cena');
+
+  /*
+   * Toda animação da página declara de onde no jogo ela vem.
+   *
+   * A regra é do dono do projeto e é fácil de furar sem perceber: um
+   * movimento genérico — algo pulsando, algo deslizando — resolve o problema
+   * visual do dia e some no meio das outras. Depois de trinta e poucas
+   * animações ninguém lembra quais nasceram do jogo e quais nasceram de
+   * conveniência.
+   *
+   * Por isso cada `@keyframes` leva acima dele uma linha `no jogo: ...`
+   * nomeando o referente. Não é decoração de comentário: é o teste abaixo que
+   * a cobra, então animação nova sem origem declarada falha a suíte, e
+   * declarar obriga a procurar o referente antes de escrever o movimento.
+   */
+  const linhas = src.split(String.fromCharCode(10));
+  const semOrigem = [];
+  const nomes = [];
+  for (let i = 0; i < linhas.length; i++) {
+    const m = /@keyframes ([a-z-]+)/.exec(linhas[i]);
+    if (!m) continue;
+    nomes.push(m[1]);
+    if (!/no jogo:/.test(linhas[i - 1] || '')) semOrigem.push(m[1]);
+  }
+  log(nomes.length > 0 && semOrigem.length === 0,
+    'toda animação declara de onde no jogo ela vem',
+    semOrigem.length ? 'sem origem: ' + semOrigem.join(', ')
+      : nomes.length + ' animações, cada uma com o referente escrito acima dela');
+  /*
+   * E a origem tem de dizer alguma coisa. "no jogo: animação" passaria no
+   * teste de cima e não serviria para nada — o que se quer é a frase que
+   * permite conferir a escolha depois, e frase curta demais não é frase.
+   */
+  const origens = (src.match(/no jogo: ([^*]+)\*\//g) || [])
+    .map((t) => t.replace(/^no jogo: /, '').replace(/\s*\*\/$/, '').trim());
+  const curtas = origens.filter((t) => t.length < 25);
+  log(curtas.length === 0, 'e a origem é descrita, não só nomeada',
+    curtas.length ? 'curta demais: ' + curtas.join(' | ')
+      : 'a mais curta tem ' + Math.min.apply(null, origens.map((t) => t.length)) + ' caracteres');
 
   // O fio embaixo do cabeçalho saiu: a página já tem a pincelada do menu logo
   // abaixo, e duas horizontais a poucos pixels uma da outra são uma a mais.
