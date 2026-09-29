@@ -32,3 +32,5 @@ redirect/
 sync/cache/
 sync/.jogo-pasta.json
 /jogador.json
+# O idioma escolhido no globo da página.
+sync/idioma.json

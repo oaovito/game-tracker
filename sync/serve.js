@@ -127,6 +127,33 @@ function createServer(options) {
       return;
     }
 
+    /*
+     * O idioma escolhido no globo da página. Guardado aqui, e não só no
+     * navegador, para a bandeja e a janela do Windows falarem a mesma língua.
+     * Vazio (null) volta a seguir o idioma do sistema. GET vale de qualquer
+     * lugar; mudar, só da própria máquina.
+     */
+    if (urlPath === '/idioma') {
+      const idioma = require('./idioma');
+      if (req.method === 'GET') {
+        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ idioma: idioma.ler() }));
+        return;
+      }
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
+      let corpo = '';
+      req.on('data', (c) => { corpo += c; if (corpo.length > 256) req.destroy(); });
+      req.on('end', () => {
+        try {
+          const escolhido = idioma.gravar(JSON.parse(corpo).idioma);
+          res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ idioma: escolhido }));
+        } catch (e) {
+          res.writeHead(400, { 'content-type': 'application/json' }).end('{"erro":"pedido malformado"}');
+        }
+      });
+      return;
+    }
+
     // O nome do cabeçalho, escolhido na página: o caminho sem Steam.
     if (urlPath === '/jogador') {
       const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
