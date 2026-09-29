@@ -756,61 +756,56 @@ async function rodar(log) {
     'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
 
   /*
-   * A alma é o 鬼仏, o Ídolo do Escultor — e desenho, não gradiente.
-   * A alma é o Samurai Spirit — o fantasma do próprio jogo.
+   * A alma é o Samurai Spirit, recortado da captura do jogo.
    *
-   * Quatro versões falharam antes, por motivos diferentes e instrutivos. A de
-   * bulbo com cauda lia como espermatozoide (cabeça redonda mais rabo afilado
-   * é esse desenho em qualquer contexto). A seguinte tinha rosto, mas rosto de
-   * ninguém. A terceira era um chibi de Shinobi morto: legível, e genérico —
-   * chibi com olho em × é vocabulário de qualquer jogo, não deste. A quarta
-   * foi o 鬼仏, o Ídolo do Escultor: a referência estava certa, mas o Ídolo é
-   * pedra parada — ele marca onde se ressuscita, não é um fantasma, e não há
-   * o que animar numa estátua ajoelhada sem inventar movimento que ela não
-   * tem.
+   * Cinco desenhos à mão falharam antes deste, e vale guardar a sequência
+   * porque ela é sobre método e não sobre mão. Bulbo com cauda lia como
+   * espermatozoide. O seguinte tinha rosto, mas rosto de ninguém. O terceiro
+   * era um chibi de Shinobi morto: legível e genérico. O quarto era o 鬼仏, o
+   * Ídolo do Escultor — referência certa, mas pedra parada, sem nada que se
+   * possa animar. O quinto acertou a referência e ainda assim saiu cômico:
+   * cabeça redonda sobre corpo cônico, em traço claro, lê como boneco de
+   * neve.
    *
-   * O Samurai Spirit resolve os dois lados. É literalmente o fantasma que o
-   * jogo põe em Mibu Village e no Fountainhead Palace, e é um guerreiro morto
-   * — que é exatamente o que 223 mortes são. O que se testa aqui são os sinais
-   * que o tornam reconhecível: contorno de luz em vez de massa, a katana, o
-   * hakama que ondula, e o rosto vazio.
+   * A lição: proporção humana não sobrevive a ser simplificada em 21 por 50
+   * pixels. O que sobra de uma pessoa reduzida a poucas linhas é um
+   * brinquedo. Então o vulto deixou de ser desenhado e passou a ser extraído
+   * da própria captura, onde as proporções já são as certas porque são as do
+   * jogo.
+   *
+   * O que se testa aqui é justamente isso: que ninguém volte a desenhá-lo.
    */
-  const simbolo = /<symbol id="almaChibi"[\s\S]*?<\/symbol>/.exec(src);
-  const svg = simbolo ? simbolo[0] : '';
-  log(!!svg, 'a alma é um ícone desenhado, não um borrão de gradiente',
-    svg ? svg.length + ' caracteres de caminho' : 'não achei o símbolo');
-  const tracos = (svg.match(/<path /g) || []).length;
-  log(tracos >= 6, 'o vulto é feito de traço, não de mancha',
-    tracos + ' caminhos — no jogo o fantasma é contorno de luz, e o corpo quase vazio');
-  log(/katana/.test(svg), 'tem a katana na cintura',
-    'é o que separa samurai de monge num vulto sem rosto');
-  log(/hakama/.test(svg), 'e o hakama, que é a peça que ondula',
-    'a barra dele é a única coisa do desenho que se mexe sozinha');
+  log(!/<symbol id="almaChibi"/.test(src), 'a alma não é mais desenhada à mão',
+    'cinco tentativas provaram que neste tamanho a figura vira brinquedo');
+  const cssVulto = cssDe('.alma .vulto');
+  log(/icones\/alma\.png/.test(cssVulto), 'ela é o recorte da captura do jogo',
+    'o Samurai Spirit de Mibu Village, separado do cenário pelo brilho');
   /*
-   * O rosto vazio é o detalhe mais fácil de "consertar" por engano. No jogo
-   * não há traço nenhum dentro da cabeça, só luz. Olhos criariam uma pessoa;
-   * a ausência é o que faz ser um espírito.
+   * A imagem tem de ir junto no que se publica. O bloco inteiro depende dela:
+   * sem o arquivo não há vulto nenhum, e o link público é a aplicação.
    */
-  log(/rosto vazio/.test(svg), 'e o rosto é vazio, como no jogo',
-    'olhos fariam uma pessoa; a falta deles faz um espírito');
+  log(fs.existsSync(path.join(RAIZ, 'docs', 'icones', 'alma.png')),
+    'e ela vai junto para o ar', 'docs/icones/alma.png, versionado');
   /*
-   * O fantasma tem de se mexer sozinho, e não só subir. O movimento do bloco
-   * leva a peça de um lado para o outro; o que faz ela parecer viva (ou
-   * melhor, morta e presente) é o que acontece dentro dela parada.
+   * O vulto precisa se mexer sozinho, e não só subir. O movimento da peça
+   * leva a alma de baixo para cima; o que a faz parecer presente é o que
+   * acontece nela enquanto está parada.
    */
-  log(/<animate /.test(svg), 'e a barra do hakama ondula por conta própria',
-    'SMIL dentro do símbolo, porque `use` clona numa árvore sombra e o CSS do documento não alcança lá');
-  const cssAlma = cssDe('.alma svg');
-  log(/bambolear/.test(cssAlma) && /esvair/.test(cssAlma),
-    'e o vulto balança e esvai ao mesmo tempo',
-    'o do jogo paira e some por instantes — opacidade constante entrega desenho parado');
-  log(!/abacaxi/.test(svg) && !/olhos em ×/.test(svg) && !/人魂/.test(svg),
-    'e nada sobrou das versões anteriores', 'nem coque, nem olho cruzado, nem o fogo do Ídolo');
-  // Um símbolo usado cinco vezes, e não cinco cópias do mesmo caminho: cinco
-  // cópias seriam cinco lugares para corrigir quando o desenho mudar.
-  const usos = (src.match(/<use href="#almaChibi"\/>/g) || []).length;
-  log(usos === almas, 'desenhado uma vez e usado por todas',
-    usos + ' usos para ' + almas + ' almas');
+  log(/desfazer/.test(cssVulto) && /bambolear/.test(cssVulto) && /esvair/.test(cssVulto),
+    'e se desfaz, balança e esvai ao mesmo tempo',
+    'três ritmos que não são múltiplos, então o conjunto nunca repete o mesmo quadro');
+  log(/mask-image/.test(cssVulto),
+    'o desfazer é máscara, e de uma camada só',
+    'no jogo o espírito some antes de chegar ao chão; duas camadas com mask-composite já falharam aqui');
+  // A proporção do recorte é 84x200. Esticar acharia o vulto, que é a primeira
+  // coisa que o faria voltar a parecer boneco.
+  const cssAlma = cssDe('.alma');
+  const larg = parseFloat((/width:\s*([\d.]+)px/.exec(cssAlma) || [])[1] || 0);
+  const alt = parseFloat((/height:\s*([\d.]+)px/.exec(cssAlma) || [])[1] || 0);
+  const proporcao = alt ? larg / alt : 0;
+  log(Math.abs(proporcao - 84 / 200) < 0.06,
+    'e a proporção é a do recorte, não uma qualquer',
+    larg + 'x' + alt + ' — ' + proporcao.toFixed(2) + ' contra ' + (84 / 200).toFixed(2) + ' da imagem');
 
   /*
    * Os dois estados do bloco de mortes: sino e podridão.

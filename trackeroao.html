@@ -307,38 +307,56 @@
   .alma {
     position: absolute;
     bottom: 10px;
-    /* Maior que o desenho anterior porque este é contorno, e não massa: traço
-       fino num corpo pequeno some contra o fundo escuro. A proporção é a de
-       uma figura de pé, mais alta que larga. */
-    width: 30px; height: 50px;
+    /* A proporção é a do recorte (84x200): esticar acharia o vulto. */
+    width: 21px; height: 50px;
     opacity: 0;
     pointer-events: none;
-    /* O halo é do espírito, não do desenho: fica no contêiner para envolver a
-       silhueta inteira em vez de cada caminho. */
-    filter: drop-shadow(0 0 9px rgba(178, 216, 250, 0.7))
-            drop-shadow(0 0 20px rgba(120, 170, 220, 0.35));
   }
-  /*
-   * O balanço do ícone.
-   *
-   * A alma subia rígida, e ícone rígido subindo em linha lê como adesivo
-   * arrastado, não como coisa que flutua. O giro é pequeno — três graus — mas
-   * pega o eixo no alto da cabeça, então a cauda descreve um arco embaixo e o
-   * conjunto ganha peso.
-   *
-   * Cada alma recebe um atraso diferente para as cinco não balançarem em
-   * bloco. A cauda ondula em SMIL, no próprio desenho, e os dois ritmos não
-   * são múltiplos: é a soma deles que nunca fecha o mesmo quadro.
-   */
-  .alma svg {
-    width: 100%; height: 100%; display: block;
-    transform-origin: 50% 18%;
-    animation: bambolear 5.3s ease-in-out infinite, esvair 3.1s ease-in-out infinite;
+  .alma .vulto {
+    display: block;
+    width: 100%; height: 100%;
+    background-image: url("icones/alma.png");
+    background-size: contain;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    /* O halo é do espírito, não do desenho: envolve a silhueta inteira. */
+    filter: drop-shadow(0 0 7px rgba(178, 216, 250, 0.75))
+            drop-shadow(0 0 18px rgba(120, 170, 220, 0.4));
+    /*
+     * O desfazer-se, de baixo para cima.
+     *
+     * No jogo o espírito não tem pé: ele some antes de chegar ao chão. Uma
+     * máscara em gradiente corta a barra do hakama, e mover a posição dela faz
+     * a linha do desfazer subir e descer devagar — é o que substitui, agora
+     * que o vulto é imagem e não caminho, a ondulação que a barra tinha em SVG.
+     *
+     * A máscara é de UMA camada, sem composição. A versão com duas camadas e
+     * `mask-composite` já falhou neste projeto: a forma abreviada com prefixo
+     * `-webkit-` não pegou e o recorte saiu como uma fatia atravessando o
+     * elemento.
+     */
+    -webkit-mask-image: linear-gradient(to top,
+      transparent 0%, rgba(0,0,0,0.4) 10%, #000 28%, #000 100%);
+    mask-image: linear-gradient(to top,
+      transparent 0%, rgba(0,0,0,0.4) 10%, #000 28%, #000 100%);
+    -webkit-mask-size: 100% 128%;
+    mask-size: 100% 128%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    /* O eixo do giro fica no alto, onde estaria a cabeça, então a barra do
+       hakama descreve um arco embaixo em vez de o conjunto deslizar de lado. */
+    transform-origin: 50% 12%;
+    animation: desfazer 4.3s ease-in-out infinite,
+               bambolear 5.3s ease-in-out infinite,
+               esvair 3.1s ease-in-out infinite;
   }
-  .alma.a2 svg { animation-duration: 6.1s; animation-delay: -1.4s; }
-  .alma.a3 svg { animation-duration: 4.7s; animation-delay: -2.9s; }
-  .alma.a4 svg { animation-duration: 6.7s; animation-delay: -0.7s; }
-  .alma.a5 svg { animation-duration: 5.9s; animation-delay: -3.6s; }
+  /* Cada alma com o seu atraso, para as cinco não balançarem em bloco. Os
+     períodos não são múltiplos: é a soma deles que nunca fecha o mesmo quadro. */
+  .alma.a2 .vulto { animation-delay: -0.9s, -1.4s, -2.2s; }
+  .alma.a3 .vulto { animation-delay: -2.1s, -2.9s, -0.6s; }
+  .alma.a4 .vulto { animation-delay: -3.3s, -0.7s, -1.8s; }
+  .alma.a5 .vulto { animation-delay: -1.5s, -3.6s, -2.7s; }
+
   /*
    * O balanço do vulto.
    *
@@ -346,6 +364,11 @@
    * como se a corrente de ar o movesse. Rotação pequena e deslocamento menor
    * ainda — o que denuncia boneco animado é amplitude, não velocidade.
    */
+  /* no jogo: o espírito de Mibu se desfazendo de baixo para cima, sem pé que toque o chão */
+  @keyframes desfazer {
+    0%, 100% { -webkit-mask-position: 0 0;    mask-position: 0 0; }
+    50%      { -webkit-mask-position: 0 -13%; mask-position: 0 -13%; }
+  }
   /* no jogo: o Samurai Spirit pairando: ele não anda, oscila no lugar */
   @keyframes bambolear {
     0%, 100% { transform: rotate(-3deg) translateX(-0.5px); }
@@ -404,7 +427,7 @@
     100% { transform: translate(-3px, -146px) scale(calc(var(--corpo, 1) * 0.6));  opacity: 0; }
   }
   /* Com o ponteiro em cima elas ganham corpo, sem acelerar: luto não corre. */
-  .deaths-panel:hover .alma, .deaths-panel.animando .alma { filter: blur(0.3px) drop-shadow(0 0 12px rgba(190,230,255,0.95)); }
+  .deaths-panel:hover .alma .vulto, .deaths-panel.animando .alma .vulto { filter: blur(0.3px) drop-shadow(0 0 12px rgba(190,230,255,0.95)); }
 
   .deaths-head { display: flex; align-items: baseline; gap: 12px; }
   /* O rótulo voltou ao lado do número, em inglês como o resto da interface.
@@ -2622,105 +2645,36 @@
          próprio porque os dois pseudo-elementos do painel já são a cortina. -->
     <div class="manchas" aria-hidden="true"></div>
 
+    
     <!--
-      As almas que sobem são o Samurai Spirit — o fantasma do jogo.
+      As almas que sobem são o Samurai Spirit, recortado da captura do jogo.
 
-      Três desenhos falharam antes e cada um ensinou uma coisa. O bulbo com
-      cauda lia como espermatozoide, porque cabeça redonda mais rabo afilado é
-      esse desenho em qualquer contexto. O seguinte tinha rosto, mas rosto de
-      ninguém. O terceiro era um chibi de Shinobi morto: legível, e genérico —
-      chibi com olho em × é vocabulário de qualquer jogo, não deste.
+      Cinco desenhos à mão falharam antes deste, e o último falhou pelo motivo
+      mais difícil de prever: era correto e mesmo assim cômico. Cabeça redonda
+      sobre corpo cônico, em traço claro, lê como boneco de neve — a proporção
+      humana não sobrevive a ser simplificada neste tamanho, e o que resta é a
+      silhueta de um brinquedo.
 
-      O quarto foi o 鬼仏, o Ídolo do Escultor. Pela referência estava certo,
-      mas o Ídolo é pedra parada: ele marca o lugar onde se ressuscita, não é
-      um fantasma, e não há o que animar numa estátua ajoelhada sem inventar
-      movimento que ela não tem.
+      Então o vulto deixou de ser desenhado e passou a ser extraído. A fonte é
+      a captura do Samurai Spirit, o fantasma que o jogo põe em Mibu Village e
+      no Fountainhead Palace, e a separação é um problema de brilho, não de
+      cor: o jogo desenha o espírito como luz branca sobre cenário escuro. O
+      que sobra vira alfa proporcional ao brilho, o que deixa a borda macia em
+      vez de recortada — é isso que faz parecer fantasma e não adesivo.
 
-      O Samurai Spirit resolve os dois lados. É literalmente o fantasma que
-      Sekiro põe em Mibu Village e no Fountainhead Palace: um samurai de pé,
-      em hakama, com a katana ao lado, desenhado como contorno de luz branca
-      sobre o escuro, translúcido, flutuando. O wiki o descreve como parente
-      do White Phantom de Dark Souls, que é a mesma linguagem.
+      As proporções, portanto, são as do jogo: ombros de kataginu, hakama
+      comprido, katana ao lado, cabeça pequena. Não há como virar boneco de
+      neve, porque não passou por nenhuma mão que pudesse arredondá-lo.
 
-      E é um guerreiro morto, que é exatamente o que 223 mortes são.
-
-      O desenho é contorno e não massa: traço claro por cima de um corpo quase
-      transparente, como na captura do jogo. Um `symbol` desenhado uma vez e
-      usado cinco: cinco cópias do mesmo caminho seriam cinco lugares para
-      corrigir quando o desenho mudar.
+      O `span` de dentro existe para separar os dois movimentos: a subida é da
+      peça, o balanço e o desfazer são do vulto. Numa só, a animação de cima
+      sobrescreveria a de baixo.
     -->
-    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
-      <defs>
-        <!-- O corpo é quase nada: o que se vê é o contorno. O preenchimento
-             some para baixo, porque o espírito se desfaz do chão para cima. -->
-        <linearGradient id="mantoAlma" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stop-color="#dff0fb" stop-opacity="0.55"/>
-          <stop offset="55%"  stop-color="#b6d9f0" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#8fbcdd" stop-opacity="0"/>
-        </linearGradient>
-        <!-- A luz do contorno: mais viva em cima, sumindo na barra do hakama. -->
-        <linearGradient id="fogoIdolo" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stop-color="#f4fdff" stop-opacity="1"/>
-          <stop offset="62%"  stop-color="#cfeaff" stop-opacity="0.85"/>
-          <stop offset="100%" stop-color="#8fc4e8" stop-opacity="0.12"/>
-        </linearGradient>
-      </defs>
-      <symbol id="almaChibi" viewBox="0 0 24 40">
-        <g fill="none" stroke="url(#fogoIdolo)" stroke-width="1.35"
-           stroke-linecap="round" stroke-linejoin="round">
-
-          <!--
-            O hakama, embaixo de tudo. A barra é o que ondula.
-
-            A animação é SMIL e não CSS porque `use` clona o conteúdo numa
-            árvore sombra, e seletor do documento não alcança lá dentro. SMIL
-            viaja junto com o clone e anima nas cinco cópias.
-
-            O `d` alterna entre desenhos com o MESMO número de segmentos — é o
-            que permite interpolar entre eles. As cristas trocam de lugar de um
-            para o outro, e é isso que faz a barra ondular em vez de subir e
-            descer inteira.
-          -->
-          <path fill="url(#mantoAlma)"
-                d="M8.4 21.6c-1.5 4.4-2.4 8.6-2.6 12.9l2.3-1.4 2 1.6 2-1.7 2.1 1.7 2-1.6 2.3 1.4c-.2-4.3-1.1-8.5-2.6-12.9z">
-            <animate attributeName="d" dur="4.3s" repeatCount="indefinite"
-              values="M8.4 21.6c-1.5 4.4-2.4 8.6-2.6 12.9l2.3-1.4 2 1.6 2-1.7 2.1 1.7 2-1.6 2.3 1.4c-.2-4.3-1.1-8.5-2.6-12.9z;
-                      M8.4 21.6c-1.5 4.4-2.6 8.8-2.2 13.3l2.1-2 1.9 2.1 2.2-2.1 1.9 2 2.1-2.1 2.2 2c.4-4.5-.7-8.9-2.2-13.3z;
-                      M8.4 21.6c-1.5 4.4-2.2 8.4-3 12.6l2.5-1 1.9 1.2 2.1-1.3 2 1.3 1.9-1.2 2.5 1c-.8-4.2-1.5-8.2-3-12.6z;
-                      M8.4 21.6c-1.5 4.4-2.4 8.6-2.6 12.9l2.3-1.4 2 1.6 2-1.7 2.1 1.7 2-1.6 2.3 1.4c-.2-4.3-1.1-8.5-2.6-12.9z"/>
-          </path>
-
-          <!-- A katana ao lado, na cintura: é o que diz samurai e não monge. -->
-          <path d="M15.4 19.8 21.6 30.4" stroke-width="0.85" opacity="0.9"/>
-          <path d="M14.8 19.2 16.2 20.6" stroke-width="1.3"/>
-
-          <!-- O kimono sobre o peito, cruzado à esquerda como se usa em vida.
-               (À direita é como se veste um morto — mas aqui o desenho precisa
-               ser reconhecido antes de ser simbólico.) -->
-          <path fill="url(#mantoAlma)"
-                d="M12 9.6c-3 0-4.6 1.8-5 5.2-.2 2-.4 4.4-.6 6.8h11.2c-.2-2.4-.4-4.8-.6-6.8-.4-3.4-2-5.2-5-5.2z"/>
-          <path d="M12 10.4 9.4 14.2 12 21.6 14.6 14.2z"/>
-
-          <!-- Os ombros do kataginu, retos e abertos: a silhueta que faz um
-               vulto pálido ser lido como samurai a dez metros de distância. -->
-          <path d="M6.6 14.4 3.2 12.6M17.4 14.4 20.8 12.6"/>
-
-          <!-- A cabeça, pequena, e o rosto vazio: no jogo não há traço nenhum
-               dentro dele, só a luz. Desenhar olhos criaria uma pessoa; a
-               ausência é o que faz ser um espírito. -->
-          <ellipse cx="12" cy="6.4" rx="2.6" ry="3.1" fill="url(#mantoAlma)"/>
-          <!-- O rabo de cavalo alto, que no jogo é a marca do vulto. -->
-          <path d="M12 3.2c.2-1.6.8-2.6 1.9-3-.3 1.2-.3 2.2 0 3"/>
-        </g>
-      </symbol>
-    </svg>
-
-    <!-- As almas sobem devagar, desviando, e apagam antes do topo. -->
-    <span class="alma a1" aria-hidden="true"><svg viewBox="0 0 24 40"><use href="#almaChibi"/></svg></span>
-    <span class="alma a2" aria-hidden="true"><svg viewBox="0 0 24 40"><use href="#almaChibi"/></svg></span>
-    <span class="alma a3" aria-hidden="true"><svg viewBox="0 0 24 40"><use href="#almaChibi"/></svg></span>
-    <span class="alma a4" aria-hidden="true"><svg viewBox="0 0 24 40"><use href="#almaChibi"/></svg></span>
-    <span class="alma a5" aria-hidden="true"><svg viewBox="0 0 24 40"><use href="#almaChibi"/></svg></span>
+    <span class="alma a1" aria-hidden="true"><span class="vulto"></span></span>
+    <span class="alma a2" aria-hidden="true"><span class="vulto"></span></span>
+    <span class="alma a3" aria-hidden="true"><span class="vulto"></span></span>
+    <span class="alma a4" aria-hidden="true"><span class="vulto"></span></span>
+    <span class="alma a5" aria-hidden="true"><span class="vulto"></span></span>
 
     <div class="deaths-head" role="group" aria-label="Deaths">
       <span class="deaths-kanji">死</span>
