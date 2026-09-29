@@ -381,8 +381,9 @@ async function rodar(log) {
     'sem Steam identificado a linha some e o cabeçalho fecha');
   log(/game progress"/.test(fonte) || /\+ " game progress"/.test(fonte),
     'o sufixo continua sendo "game progress"', 'só o nome é que varia');
-  // A janela cresceu porque o ponto de sync passou a ficar entre os dois.
-  log(/class="topbar"[\s\S]{0,600}themeToggle/.test(fonte),
+  // A janela cresceu porque o ponto de sync e, depois, os botões de voltar,
+  // avançar e início passaram a ficar entre os dois.
+  log(/class="topbar"[\s\S]{0,2000}themeToggle/.test(fonte),
     'o botão de tema fica na faixa do topo', 'fora do cabeçalho, à direita');
 
   // --- estado do sync escondido dentro do ponto ---

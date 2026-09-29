@@ -466,6 +466,12 @@ o que está no computador e o que está na biblioteca da Steam. No computador qu
 roda o serviço, tocar no pino de vigia liga e desliga a vigia daquele jogo, e
 "Search again" pede uma nova varredura.
 
+No alto de todas as páginas há três botões de navegação: voltar, avançar e
+início. Voltar e avançar percorrem o histórico do próprio navegador, que
+registra cada troca de tela; início leva à tela de jogos, ou ao progresso
+quando não há lista de jogos. Nos navegadores que informam se há para onde ir,
+o botão sem destino aparece apagado.
+
 Essa tela tem identidade visual própria, deliberadamente distinta da página do
 Sekiro: por ser a porta de entrada para qualquer jogo, ela não herda o papel, o
 vermelho e o dourado daquela página. O modelo é a tela inicial de um console. O

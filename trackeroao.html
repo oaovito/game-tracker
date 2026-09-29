@@ -755,6 +755,23 @@
     gap: 12px;
     padding-bottom: 10px;
   }
+  /* Voltar, avançar e início: no meio da faixa do topo, em toda página. */
+  .navegar { display: flex; align-items: center; gap: 6px; }
+  .nav-bt {
+    appearance: none; cursor: pointer; display: grid; place-items: center;
+    width: 2rem; height: 2rem; padding: 0; border-radius: 50%;
+    background: none; border: 1px solid var(--line); color: var(--text-dim);
+    transition: color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  }
+  .nav-bt svg {
+    width: 0.95rem; height: 0.95rem; display: block;
+    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .nav-bt:hover:not(:disabled), .nav-bt:focus-visible { outline: 0; color: var(--text); border-color: var(--gold); }
+  .nav-bt:disabled { opacity: 0.3; cursor: default; }
+  .vista-hub .nav-bt, .vista-bibli .nav-bt {
+    background: var(--j-vidro); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
   .theme-toggle {
     background: none;
     border: 0;
@@ -2858,12 +2875,6 @@
     font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; color: var(--j-anel);
   }
   .bibli-abre:hover { text-decoration: underline; }
-  .volta-jogos {
-    appearance: none; background: none; border: 0; cursor: pointer;
-    color: var(--text-dim); font-family: inherit; font-size: 0.72rem;
-    letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; padding: 2px 4px;
-  }
-  .volta-jogos:hover { opacity: 1; color: var(--text); }
 
   @media (max-width: 640px) {
     .hub-titulo { font-size: 1.75rem; }
@@ -2901,7 +2912,12 @@
       <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
       <span id="syncText" hidden>looking for the save…</span>
     </div>
-    <button class="volta-jogos" id="voltaJogos" type="button" hidden>&larr; games</button>
+    <!-- Voltar, avançar e a tela inicial, em todas as páginas. -->
+    <nav class="navegar" aria-label="Navigation">
+      <button class="nav-bt" id="navVoltar" type="button" title="Back" aria-label="Back"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+      <button class="nav-bt" id="navAvancar" type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
+      <button class="nav-bt" id="navInicio" type="button" title="Home" aria-label="Home"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 7.5 8 3l5.5 4.5M4 6.5V13h3V9.5h2V13h3V6.5"/></svg></button>
+    </nav>
     <button class="theme-toggle" id="themeToggle" type="button" title="Switch theme" aria-label="Switch theme">◐</button>
   </div>
 
@@ -5021,10 +5037,9 @@ function aplicarVista() {
   }
   const hub = document.getElementById("hub");
   const bibli = document.getElementById("bibli");
-  const volta = document.getElementById("voltaJogos");
   if (hub) hub.hidden = v !== "hub";
   if (bibli) bibli.hidden = v !== "bibli";
-  if (volta) volta.hidden = v === "hub" || !listaDeJogos();
+  atualizarNavegacao(v);
   return v;
 }
 
@@ -5401,11 +5416,40 @@ function renderHub() {
   }
 }
 
+/*
+ * Voltar, avançar e início.
+ *
+ * Voltar e avançar são o histórico do próprio navegador, que já registra cada
+ * troca de tela (#sekiro, #all, a tela inicial). Início é a tela de jogos; sem
+ * lista de jogos, a página inicial é o próprio progresso. Onde o navegador
+ * sabe dizer se há para onde ir (a Navigation API), o botão sem destino fica
+ * apagado; onde não sabe, fica sempre aceso.
+ */
+function atualizarNavegacao(v) {
+  if (typeof document === "undefined") return;
+  const nav = typeof navigation !== "undefined" ? navigation : null;
+  const por = (id, desligado) => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = !!desligado;
+  };
+  por("navVoltar", nav && "canGoBack" in nav ? !nav.canGoBack : false);
+  por("navAvancar", nav && "canGoForward" in nav ? !nav.canGoForward : false);
+  por("navInicio", (v || vistaAtual()) === (listaDeJogos() ? "hub" : "jogo"));
+}
+
 (function ligarVistas() {
-  const volta = typeof document !== "undefined" && document.getElementById("voltaJogos");
-  if (volta && volta.addEventListener) volta.addEventListener("click", () => irPara(""));
+  if (typeof document === "undefined") return;
+  const liga = (id, fn) => {
+    const b = document.getElementById(id);
+    if (b && b.addEventListener) b.addEventListener("click", fn);
+  };
+  liga("navVoltar", () => { if (typeof history !== "undefined") history.back(); });
+  liga("navAvancar", () => { if (typeof history !== "undefined") history.forward(); });
+  liga("navInicio", () => irPara(""));
   if (typeof window !== "undefined" && window.addEventListener) {
-    window.addEventListener("hashchange", () => { aplicarVista(); renderHub(); });
+    const trocou = () => { aplicarVista(); renderHub(); };
+    window.addEventListener("hashchange", trocou);
+    window.addEventListener("popstate", trocou);
   }
 })();
 
