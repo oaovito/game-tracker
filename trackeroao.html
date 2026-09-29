@@ -2015,6 +2015,10 @@
   .topics {
     display: flex;
     flex-wrap: wrap;
+    /* Centrado sob o título, que também é centrado. No celular a regra de
+       tela estreita volta a alinhar à esquerda: lá cada tópico ocupa meia
+       fileira e a gaveta vai para a direita. */
+    justify-content: center;
     gap: 8px;
     margin-bottom: 26px;
   }
@@ -2497,6 +2501,7 @@
        de uma linha apertada continuam valendo se algum item for afixado. */
     .topics {
       flex-wrap: wrap;
+      justify-content: flex-start;
       row-gap: 6px;
     }
     /* Só os filhos diretos: o botão da gaveta também tem a classe `topic`, e
