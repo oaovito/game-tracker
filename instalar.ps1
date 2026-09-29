@@ -258,39 +258,36 @@ $instalador = Join-Path $Destino 'install-sync-service.ps1'
 
 # ================================================================== 4. rede
 Passo '4/5  Rede'
+<#
+  A porta 8777 na rede local.
+
+  O trabalho todo mora em liberar-porta.ps1, e nao aqui, por dois motivos. Ele
+  precisa existir sozinho para quem recusou o administrador resolver depois com
+  uma acao em vez de um roteiro pelo Firewall do Windows; e o perfil da rede
+  muda com o lugar, entao a mesma maquina volta a precisar disso sem
+  reinstalar nada.
+
+  O que aquele script corrige em relacao a versao que ficou para tras: ele cria
+  a regra para os perfis EM USO, e nao para um perfil escolhido no escuro. A
+  versao anterior criava so para Private, e numa maquina cuja rede esteja
+  classificada como Public a regra existia sem servir para nada -- que e o pior
+  resultado possivel, porque parece resolvido.
+#>
 if ($SemFirewall) {
   Nota 'pulado a pedido (-SemFirewall)'
   $pendencias += 'a porta 8777 nao foi liberada, a pedido: o celular nao vai achar a pagina'
-} elseif ($elevacaoNegada) {
-  Nota 'sem administrador: a porta 8777 continua fechada'
-  $pendencias += 'liberar a porta 8777 no Firewall do Windows para redes privadas, senao o celular nao acha a pagina'
 } else {
-  <#
-    A regra de firewall da porta 8777.
-
-    Sem ela a pagina responde no proprio PC e nao responde no celular, que e a
-    reclamacao numero um registrada no README. E o unico passo que precisa de
-    administrador, e por isso a instalacao ja subiu elevada la em cima -- aqui
-    e so criar a regra.
-
-    O escopo e o minimo que resolve: entrada, TCP, porta 8777, e so no perfil
-    Private. No perfil Public (cafe, aeroporto) a porta continua fechada.
-  #>
-  $nomeRegra = 'trackeroao (8777)'
-  $jaTem = $false
-  try { $jaTem = [bool](Get-NetFirewallRule -DisplayName $nomeRegra -ErrorAction SilentlyContinue) } catch { }
-
-  if ($jaTem) {
-    Ok 'a porta 8777 ja estava liberada para a rede local'
+  $liberar = Join-Path $Destino 'liberar-porta.ps1'
+  if (-not (Test-Path $liberar)) {
+    Nota 'liberar-porta.ps1 nao veio no download'
+    $pendencias += 'liberar a porta 8777 na rede local'
   } else {
-    try {
-      New-NetFirewallRule -DisplayName $nomeRegra -Direction Inbound -Protocol TCP `
-        -LocalPort 8777 -Action Allow -Profile Private `
-        -Description 'Pagina de progresso do trackeroao na rede local' | Out-Null
-      Ok 'porta 8777 liberada para a rede local (perfil Private)'
-    } catch {
-      Nota "nao liberei a porta: $($_.Exception.Message)"
-      $pendencias += 'liberar a porta 8777 no Firewall do Windows para redes privadas, senao o celular nao acha a pagina'
+    # Ja estando elevado, o script nao pede nada e so cria a regra. Se a
+    # elevacao foi negada la em cima, ele pede de novo -- e ai e a segunda
+    # chance de quem mudou de ideia, em vez de uma pendencia seca.
+    & $liberar
+    if ($LASTEXITCODE -ne 0) {
+      $pendencias += "liberar a porta 8777: rode $Destino\liberar-porta.ps1 e aceite o pedido de administrador"
     }
   }
 }

@@ -1145,6 +1145,82 @@ check('nada é resolvido para fora da pasta clonada', () => {
   return 'nenhum caminho sai da raiz do projeto';
 });
 
+check('a porta da rede local e liberada pelo perfil em uso, nao no escuro', () => {
+  /*
+   * A primeira versao criava a regra so para o perfil Private, escolhido por
+   * ser "o mais seguro". Numa maquina cuja rede esteja classificada como
+   * Public -- que e o caso desta, e de muita gente, porque o Windows pergunta
+   * uma vez e quase todo mundo responde que nao quer ser descoberto -- a regra
+   * existia e nao servia para nada. E o pior resultado possivel: parece
+   * resolvido, e o celular continua sem achar a pagina.
+   *
+   * O que se cobra: que os perfis venham do estado da maquina, e que a regra
+   * se limite ao LocalSubnet. A segunda parte e o que torna aceitavel valer
+   * tambem no perfil Public -- so alcanca quem esta no mesmo segmento de rede.
+   */
+  const arq = path.join(RAIZ_PROJETO, 'liberar-porta.ps1');
+  assert(fs.existsSync(arq), 'liberar-porta.ps1 nao esta na pasta');
+  const src = fs.readFileSync(arq, 'utf8');
+
+  assert(/Get-NetConnectionProfile/.test(src),
+    'os perfis nao vem do estado da maquina: a regra estaria sendo criada no escuro');
+  assert(/-Profile \(\$perfis/.test(src),
+    'a regra nao usa os perfis descobertos');
+  assert(/-RemoteAddress LocalSubnet/.test(src),
+    'sem limitar ao LocalSubnet, valer no perfil Public seria abrir para a rede inteira');
+  assert(/-LocalPort \$Porta/.test(src) && /-Protocol TCP/.test(src),
+    'o escopo tem de ser a porta e o protocolo, e nao o programa inteiro');
+
+  // Rodar duas vezes nao pode criar duas regras nem pedir elevacao de novo.
+  assert(/Regra-Existe/.test(src) && /ja estava liberada/.test(src),
+    'o script nao confere se a regra ja existe antes de pedir administrador');
+  /*
+   * E a conferencia tem de ser pelo nome da regra, que e nosso, e nao pela
+   * frase de erro do netsh, que o Windows traduz. Procurar a frase so funciona
+   * nos idiomas em que alguem lembrou de pensar, e nos outros a regra nunca
+   * seria criada.
+   */
+  assert(/regex\]::Escape\(\$nome\)/.test(src),
+    'a existencia da regra e conferida por texto traduzivel: quebra em Windows de outro idioma');
+
+  // E o instalador delega, em vez de manter uma segunda copia da logica.
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalar.ps1'), 'utf8');
+  assert(/liberar-porta\.ps1/.test(inst), 'o instalador nao chama o script da porta');
+  assert(!/New-NetFirewallRule/.test(inst),
+    'o instalador tem a sua propria copia da regra: duas copias divergem');
+  return 'perfis em uso, limitado ao LocalSubnet, TCP na porta do servidor';
+});
+
+check('e nesta maquina ela esta mesmo aberta', () => {
+  /*
+   * Conferir pelo netsh, e nao pelo Get-NetFirewallRule: o segundo exige
+   * administrador ate para LER, e a suite roda como usuario comum.
+   */
+  const { execFileSync } = require('child_process');
+  let saida = '';
+  try {
+    saida = execFileSync('netsh', ['advfirewall', 'firewall', 'show', 'rule', 'name=trackeroao (8777)'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (e) { saida = (e.stdout || '').toString(); }
+
+  if (!/trackeroao/.test(saida)) {
+    pular('a regra nao existe aqui; rode liberar-porta.ps1 e aceite o pedido de administrador');
+  }
+  /*
+   * A leitura e por VALOR e nao por rotulo. "Profiles:" e "RemoteIP:" sao
+   * traduzidos pelo Windows; "Private", "LocalSubnet" e o numero da porta nao
+   * sao. Procurar pelos rotulos faria este teste falhar num Windows em
+   * portugues sem haver defeito nenhum na regra.
+   */
+  assert(/\b8777\b/.test(saida), 'a regra existe mas nao menciona a porta 8777');
+  assert(/LocalSubnet/i.test(saida),
+    'a regra aceita qualquer origem: deveria ser so o LocalSubnet');
+  assert(/Private/i.test(saida), 'a regra nao cobre o perfil Private');
+  const publico = /Public/i.test(saida);
+  return 'porta 8777, origem LocalSubnet, Private'
+    + (publico ? ' e Public (a rede daqui esta classificada como Public)' : '');
+});
+
 check('a janela é escondida sem binário de terceiro', () => {
   const vbs = path.join(RAIZ_PROJETO, 'sync', 'oculto.vbs');
   assert(fs.existsSync(vbs), 'sem o lançador oculto');

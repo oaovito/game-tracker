@@ -69,8 +69,19 @@ npm run discover    # descoberta de offsets por diff (adiante)
 npm run auditoria   # relatório do que o link público entrega
 ```
 
-Se o celular não abrir a página, o motivo mais comum é o Firewall do Windows: é
-preciso liberar a porta 8777 para redes privadas.
+O instalador já libera a porta 8777 na rede local. Se o celular não abrir a
+página — porque a instalação foi feita à mão, ou porque o pedido de
+administrador foi recusado na hora —, o caminho é uma ação:
+
+```powershell
+.\liberar-porta.ps1
+```
+
+Ele pede administrador, cria a regra para os perfis de rede que a máquina está
+usando de fato, e limita a origem ao próprio segmento de rede. Essa última
+parte é o que torna aceitável a regra valer também no perfil Public: alcança o
+celular na mesma casa e não a rede inteira de um lugar público. Rodar duas
+vezes não faz nada na segunda.
 
 Vale lembrar que o link do celular usa o endereço da máquina na rede, e o
 roteador pode trocar esse endereço num reinício por causa do DHCP — quando isso
@@ -365,6 +376,7 @@ trackeroao/
   install-sync-service.ps1    registra a tarefa agendada (não precisa de admin)
   uninstall-sync-service.ps1  remove a tarefa e encerra o serviço
   reativar.ps1                volta do arquivamento, se o jogo for reinstalado
+  liberar-porta.ps1           abre a porta 8777 na rede local (pede administrador)
   instalar.ps1                instalação do zero em máquina nova
   construir-exe.ps1           compila o instalador num .exe
   package.json                scripts npm (sem dependências)
