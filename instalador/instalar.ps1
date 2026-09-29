@@ -532,10 +532,6 @@ Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.
 Nativo { & $node 'sync/parse.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota "$_" } }
-# E publicar logo depois, para o docs/ desta maquina refletir a leitura dela em
-# vez do retrato que veio no zip. Sem isto a pasta publicada fica com o
-# progresso de outra pessoa ate o servico completar o primeiro ciclo.
-Nativo { & $node 'sync/publish.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota "$_" } }
 Etapa 90 'Conferindo a instalação'
 Detalhe 'Rodando os testes do Trackeroao nesta máquina'
 Nativo { & $node 'sync/selftest.js' 2>&1 | ForEach-Object { Write-Host "$_" } }
@@ -549,11 +545,11 @@ else {
   if (-not $gui) { $pendencias += "a suite terminou com falha (codigo $testes) -- rode 'npm run selftest' em $Destino para ver quais" }
 }
 
-# Pela janela, a pagina abre no botao "Abrir o Trackeroao".
-if (-not $gui) { Start-Process 'http://localhost:8777/' }
+# Pela janela do instalador, o Trackeroao abre no botao "Abrir o Trackeroao";
+# pelo console, a janela dele abre aqui. Nunca num navegador.
+if (-not $gui -and $janela) { Start-Process $janela }
 Write-Host "`nPronto." -ForegroundColor Green
-Nota 'local  : http://localhost:8777/'
-Nota 'publico: https://oaovito.github.io/trackeroao/'
+Nota 'para abrir: o icone Trackeroao na area de trabalho, ou dois cliques na chama da bandeja'
 Nota 'atualizacoes: automaticas e silenciosas, a cada nova release'
 Nota 'para remover: Aplicativos instalados do Windows, ou trackeroao-desinstalador.exe na pasta'
 

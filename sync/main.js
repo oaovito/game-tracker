@@ -23,7 +23,6 @@ const sl2 = require('./sl2');
 const parse = require('./parse');
 const serve = require('./serve');
 const mdns = require('./mdns');
-const publish = require('./publish');
 const instalacao = require('./instalacao');
 const hibernar = require('./hibernar');
 const jogos = require('./jogos');
@@ -332,115 +331,11 @@ function hibernarAgora(e) {
   process.exit(0);
 }
 
-/* ------------------------------------------------------- GitHub Pages */
-
-const SITE = path.join(ROOT, 'docs');
-// Uma publicação a cada três minutos, no máximo. O save é gravado o tempo todo
-// enquanto se joga, e empurrar a cada gravação encheria o histórico de commits
-// e passaria o dia esperando o Pages reconstruir.
-const PUBLICAR_MS = 3 * 60 * 1000;
-let ultimaPublicacao = 0;
-let publicando = false;
-let pendente = false;
-let agendado = false;
-
-function temSite() {
-  try { return fs.existsSync(path.join(SITE, '.git')); } catch (e) { return false; }
-}
-
-/** Marca que há novidade para publicar. A hora de fato quem decide é a fila. */
-function publicar() {
-  if (!temSite()) return;
-  pendente = true;
-  escoar();
-}
-
-function escoar() {
-  if (publicando || !pendente) return;
-  const espera = PUBLICAR_MS - (Date.now() - ultimaPublicacao);
-  if (espera > 0) {
-    if (agendado) return;
-    agendado = true;
-    const t = setTimeout(() => { agendado = false; escoar(); }, espera + 200);
-    if (t.unref) t.unref();
-    return;
-  }
-  // Alguém pode estar mexendo no repositório à mão neste momento. Duas escritas
-  // simultâneas dão "index.lock: File exists" e a publicação sai pela metade —
-  // aconteceu. Se há lock, adia em vez de disputar.
-  try {
-    if (fs.existsSync(path.join(SITE, '.git', 'index.lock'))) {
-      console.log('  [pages] repositório ocupado; publico na próxima');
-      pendente = true;
-      publicando = false;
-      const t = setTimeout(escoar, 30000);
-      if (t.unref) t.unref();
-      return;
-    }
-  } catch (e) { /* se nem dá para olhar, segue e o git reclama */ }
-
-  publicando = true;
-  pendente = false;
-  ultimaPublicacao = Date.now();
-
-  let r;
-  try {
-    r = publish.montar(SITE);
-  } catch (err) {
-    console.log(`  [pages] não consegui montar: ${err.message}`);
-    publicando = false;
-    return;
-  }
-
-  // Porta de segurança: se o que identifica a máquina ou a conta passar pelo
-  // saneamento, não publica. Preferir não atualizar o site a vazar Steam ID.
-  for (const arquivo of ['index.html', 'progress.json']) {
-    let achados = [];
-    try { achados = publish.vazamentos(fs.readFileSync(path.join(SITE, arquivo), 'utf8')); } catch (e) { /* some depois */ }
-    if (achados.length) {
-      console.log(`  [pages] PUBLICAÇÃO CANCELADA - ${arquivo} traz ${achados.join(', ')}`);
-      publicando = false;
-      return;
-    }
-  }
-
-  const git = (args) => new Promise((resolve) => {
-    execFile('git', args, { cwd: SITE, windowsHide: true }, (err, out, errOut) =>
-      resolve({ err, out: String(out || ''), errOut: String(errOut || '') }));
-  });
-
-  (async () => {
-    try {
-      const st = await git(['status', '--porcelain']);
-      if (!st.out.trim()) { publicando = false; return; }   // nada mudou de fato
-      await git(['add', '-A']);
-      const msg = `Progress at ${new Date().toISOString()}`;
-      // Sem forçar identidade aqui: quem manda é o `git config` do próprio
-      // site/. Fixar um e-mail no código faria todo commit sair com ele,
-      // inclusive se a preferência mudar depois.
-      const c = await git(['commit', '-q', '-m', msg]);
-      if (c.err && !/nothing to commit/i.test(c.out + c.errOut)) {
-        console.log(`  [pages] commit falhou: ${(c.errOut || c.out).trim().split('\n')[0]}`);
-        publicando = false;
-        return;
-      }
-      const p = await git(['push', 'origin', 'main']);
-      if (p.err) {
-        // Sem rede, token vencido: o site fica com a versão anterior e tenta de
-        // novo na próxima mudança. Não é motivo para o serviço parar.
-        console.log(`  [pages] push falhou: ${(p.errOut || p.out).trim().split('\n').pop()}`);
-        pendente = true;
-      } else {
-        console.log(`  [pages] publicado (${(r.depois / 1024).toFixed(1)} KB)`);
-      }
-    } catch (err) {
-      console.log(`  [pages] erro ao publicar: ${err.message}`);
-    } finally {
-      publicando = false;
-      escoar();
-    }
-  })();
-}
+/*
+ * Não há mais site público: o progresso só se vê pela janela do Trackeroao,
+ * no próprio computador, e pelos aplicativos do celular na rede de casa.
+ * Nada daqui sai para a internet.
+ */
 
 function syncNow(reason) {
   let progress;
@@ -486,7 +381,6 @@ function syncNow(reason) {
   lastWrittenHash = hash;
 
   parse.writeProgress(OUT_FILE, progress);
-  publicar();
   const stamp = new Date().toLocaleTimeString();
   if (progress.ok) {
     const e = progress.essentials;
