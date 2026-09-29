@@ -2539,6 +2539,113 @@
     .deaths-count::after, .pingo { display: none; }
   }
 
+
+  /* ============================================================ tela de jogos
+   *
+   * A tela que vem antes da página de cada jogo. Mostra os jogos que importam
+   * aqui -- os que o tracker sabe ler, os vigiados e os instalados -- com dois
+   * pinos em cada um: instalado nesta máquina, e vigiado (acende a aplicação
+   * quando abre). "All games" leva à lista inteira: o que está no computador e
+   * o que está na biblioteca da Steam.
+   *
+   * Ela só existe quando a leitura trouxe a lista de jogos. Sem ela, a página
+   * abre direto no progresso, como sempre abriu.
+   */
+  .vista-hub .wrap > :not(.topbar):not(#hub),
+  .vista-bibli .wrap > :not(.topbar):not(#bibli) { display: none !important; }
+  .hub, .bibli { padding-top: 6px; }
+  .hub-cabeca { text-align: center; margin: 10px 0 26px; }
+  .hub-titulo {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 2.4rem; letter-spacing: 0.06em; line-height: 1.1;
+    text-transform: none;
+    color: var(--text); margin: 0;
+  }
+  .hub-titulo span { color: var(--blood-bright); }
+  .hub-sub {
+    margin-top: 8px; font-size: 0.72rem; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--gold);
+  }
+  .hub-grade {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+  .jogo-card {
+    position: relative; display: flex; flex-direction: column;
+    min-width: 0; text-align: left;
+    background: var(--bg-panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 0; padding: 0;
+    font: inherit; cursor: pointer; overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .jogo-card:hover, .jogo-card:focus-visible { border-color: var(--gold); outline: 0; transform: translateY(-2px); }
+  .jogo-capa {
+    position: relative; aspect-ratio: 460 / 215; max-width: 100%;
+    background: linear-gradient(135deg, #2a241c, #16130f);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .jogo-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .jogo-capa-letra {
+    font-family: var(--font-display); font-size: 2.6rem; font-weight: 800;
+    color: rgba(236, 228, 211, 0.35);
+  }
+  .jogo-corpo { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-width: 0; }
+  .jogo-card-nome {
+    font-family: var(--font-display); font-size: 0.98rem; line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .jogo-pinos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pino {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); opacity: 0.45;
+    background: none; border: 1px solid transparent; padding: 3px 6px 3px 4px; font-family: inherit;
+  }
+  .pino svg { width: 12px; height: 12px; display: block; }
+  .pino.on { opacity: 1; }
+  .pino-instalado.on { color: #9fd3a8; border-color: rgba(159, 211, 168, 0.35); }
+  .pino-vigiado.on { color: #7fd4f5; border-color: rgba(127, 212, 245, 0.4); }
+  button.pino { cursor: pointer; }
+  button.pino:hover { opacity: 1; }
+  .jogo-abre {
+    font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold);
+  }
+  .jogo-card.lido { border-color: rgba(168, 133, 61, 0.55); }
+  .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 8px; }
+  .hub-bt {
+    appearance: none; background: none; color: var(--text);
+    border: 1px solid var(--line); padding: 11px 18px; cursor: pointer;
+    font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .hub-bt:hover, .hub-bt:focus-visible { border-color: var(--gold); color: var(--paper); outline: 0; }
+  .hub-nota { text-align: center; font-size: 0.74rem; color: var(--text-dim); margin-top: 10px; }
+  .bibli-grupo { margin-bottom: 26px; }
+  .bibli-grupo h2 {
+    font-family: var(--font-display); font-size: 0.84rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold); font-weight: 700;
+    margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
+  }
+  .bibli-linha {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+  }
+  .bibli-linha:last-child { border-bottom: 0; }
+  .bibli-nome { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
+  .bibli-vazio { font-size: 0.82rem; color: var(--text-dim); }
+  .volta-jogos {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    color: var(--text-dim); font-family: inherit; font-size: 0.72rem;
+    letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; padding: 2px 4px;
+  }
+  .volta-jogos:hover { opacity: 1; color: var(--text); }
+  @media (max-width: 460px) {
+    .hub-titulo { font-size: 1.9rem; }
+    .hub-grade { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .jogo-corpo { padding: 10px 10px 12px; }
+    .jogo-card-nome { font-size: 0.85rem; }
+    .pino { font-size: 0.56rem; letter-spacing: 0.08em; }
+  }
+
   a, button, input { -webkit-tap-highlight-color: transparent; }
   ::selection { background: var(--blood); color: var(--paper); }
 </style>
@@ -2555,8 +2662,36 @@
       <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
       <span id="syncText" hidden>looking for the save…</span>
     </div>
+    <button class="volta-jogos" id="voltaJogos" type="button" hidden>&larr; games</button>
     <button class="theme-toggle" id="themeToggle" type="button" title="Switch theme" aria-label="Switch theme">◐</button>
   </div>
+
+
+  <!-- A tela de jogos, antes da página de cada um. Ver o CSS "tela de jogos". -->
+  <section class="hub" id="hub" hidden>
+    <div class="hub-cabeca">
+      <h1 class="hub-titulo">tracker<span>oao</span></h1>
+      <div class="hub-sub">your games</div>
+    </div>
+    <div class="hub-grade" id="hubGrade"></div>
+    <div class="hub-acoes">
+      <button class="hub-bt" id="hubTodos" type="button">All games</button>
+    </div>
+    <div class="hub-nota" id="hubNota"></div>
+  </section>
+
+  <!-- Todos os jogos: o que está no computador e o que está na Steam. -->
+  <section class="bibli" id="bibli" hidden>
+    <div class="hub-cabeca">
+      <h1 class="hub-titulo">all <span>games</span></h1>
+      <div class="hub-sub" id="bibliSub">on this computer and in the Steam library</div>
+    </div>
+    <div id="bibliGrupos"></div>
+    <div class="hub-acoes">
+      <button class="hub-bt" id="bibliVarrer" type="button" hidden>Search again</button>
+    </div>
+    <div class="hub-nota" id="bibliNota"></div>
+  </section>
 
   <header class="top">
     <div class="top-centro">
@@ -4541,6 +4676,256 @@ function renderEssentials() {
   registrarTopico("Essential Items", (temSync() ? prog.done : "—") + "/" + prog.total, section);
 }
 
+
+/* ------------------------------------------------------------ tela de jogos */
+
+/*
+ * Qual tela aparece: a de jogos, a lista inteira, ou o progresso de um jogo.
+ *
+ * Quem decide é o endereço (#sekiro, #all) e se a leitura trouxe a lista de
+ * jogos. Sem lista, o progresso abre direto, como sempre abriu -- e é o caso
+ * de uma leitura antiga, de antes desta tela existir.
+ */
+const CAPAS_STEAM = "https://cdn.cloudflare.steamstatic.com/steam/apps/";
+
+function listaDeJogos() {
+  return temSync() && sync.jogosVigiados && Array.isArray(sync.jogosVigiados.lista)
+    ? sync.jogosVigiados.lista : null;
+}
+
+function vistaAtual() {
+  const lista = listaDeJogos();
+  const h = (typeof location !== "undefined" && location.hash || "").replace(/^#/, "");
+  if (!lista) return "jogo";
+  if (h === "all") return "bibli";
+  if (h && lista.some((g) => g.chave === h && g.leitura === "completa")) return "jogo";
+  return "hub";
+}
+
+function aplicarVista() {
+  const v = vistaAtual();
+  const corpo = document.body;
+  if (corpo && corpo.classList) {
+    corpo.classList.toggle("vista-hub", v === "hub");
+    corpo.classList.toggle("vista-bibli", v === "bibli");
+  }
+  const hub = document.getElementById("hub");
+  const bibli = document.getElementById("bibli");
+  const volta = document.getElementById("voltaJogos");
+  if (hub) hub.hidden = v !== "hub";
+  if (bibli) bibli.hidden = v !== "bibli";
+  if (volta) volta.hidden = v === "hub" || !listaDeJogos();
+  return v;
+}
+
+function irPara(destino) {
+  if (typeof location === "undefined") return;
+  if (destino) location.hash = destino;
+  else if (typeof history !== "undefined" && history.pushState) history.pushState("", "", location.pathname + location.search);
+  else location.hash = "";
+  aplicarVista();
+  renderHub();
+  if (typeof window !== "undefined" && window.scrollTo) window.scrollTo(0, 0);
+}
+
+function daMaquinaLocal() {
+  return typeof location !== "undefined" && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+}
+
+/* Os dois pinos. Desenhados, como o alfinete das seções. */
+const SVG_PINO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M6 1.8h4l-.7 4.1 2.4 2.3H4.3l2.4-2.3z"/><path d="M8 8.2V14"/></svg>';
+const SVG_OLHO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z"/>' +
+  '<circle cx="8" cy="8" r="2"/></svg>';
+
+function fazerPinos(g) {
+  const caixa = document.createElement("div");
+  caixa.className = "jogo-pinos";
+
+  const inst = document.createElement("span");
+  inst.className = "pino pino-instalado" + (g.instalado ? " on" : "");
+  inst.innerHTML = SVG_PINO + "<span>" + (g.instalado ? "installed" : "not installed") + "</span>";
+  inst.title = g.instalado ? "Installed on this computer." : "Not found on this computer.";
+  caixa.appendChild(inst);
+
+  const local = daMaquinaLocal();
+  const vig = document.createElement(local ? "button" : "span");
+  if (local) vig.type = "button";
+  vig.className = "pino pino-vigiado" + (g.vigiado ? " on" : "");
+  vig.innerHTML = SVG_OLHO + "<span>" + (g.vigiado ? "watched" : "not watched") + "</span>";
+  vig.title = g.vigiado
+    ? "Watched: the app lights up in the tray when this game starts."
+    : "Not watched." + (local ? " Tap to watch it." : "");
+  if (local) {
+    vig.addEventListener("click", (ev) => {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      alternarVigia(g.chave);
+    });
+  }
+  caixa.appendChild(vig);
+  return caixa;
+}
+
+/** Liga ou desliga a vigia de um jogo, pelo mesmo caminho da janela de jogos. */
+function alternarVigia(chave) {
+  const lista = listaDeJogos();
+  if (!lista) return;
+  const marcados = lista.filter((g) => (g.chave === chave ? !g.vigiado : g.vigiado)).map((g) => g.chave);
+  fetch("/selecao", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jogos: marcados }),
+  }).then((r) => r.json()).then((novo) => {
+    sync.jogosVigiados = novo;
+    renderHub();
+    renderJogos();
+  }).catch(() => {
+    const n = document.getElementById("hubNota");
+    if (n) n.textContent = "Could not save the choice. Is the service running?";
+  });
+}
+
+function fazerCapa(g) {
+  const capa = document.createElement("div");
+  capa.className = "jogo-capa";
+  const letra = document.createElement("span");
+  letra.className = "jogo-capa-letra";
+  letra.textContent = (g.nome || "?").trim().charAt(0).toUpperCase();
+  const appId = /^steam-(\d+)$/.exec(g.chave || "") || (g.chave === "sekiro" ? [null, "814380"] : null);
+  // A capa é enfeite: sem rede, ou sem jogo na Steam, fica a inicial.
+  if (appId) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.src = CAPAS_STEAM + appId[1] + "/header.jpg";
+    img.onerror = () => { img.remove(); capa.appendChild(letra); };
+    capa.appendChild(img);
+  } else {
+    capa.appendChild(letra);
+  }
+  return capa;
+}
+
+function renderHub() {
+  const v = aplicarVista();
+  const lista = listaDeJogos();
+  if (!lista) return;
+
+  if (v === "hub") {
+    const grade = document.getElementById("hubGrade");
+    if (!grade) return;
+    grade.innerHTML = "";
+    const peso = (g) => (g.leitura === "completa" ? 0 : g.vigiado ? 1 : 2);
+    const mostrar = lista
+      .filter((g) => g.leitura === "completa" || g.vigiado || g.instalado)
+      .sort((a, b) => peso(a) - peso(b) || String(a.nome).localeCompare(String(b.nome)));
+    for (const g of mostrar) {
+      const card = document.createElement("div");
+      card.className = "jogo-card" + (g.leitura === "completa" ? " lido" : "");
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
+      card.appendChild(fazerCapa(g));
+      const corpo = document.createElement("div");
+      corpo.className = "jogo-corpo";
+      const nome = document.createElement("div");
+      nome.className = "jogo-card-nome";
+      nome.textContent = g.nome;
+      corpo.appendChild(nome);
+      corpo.appendChild(fazerPinos(g));
+      if (g.leitura === "completa") {
+        const abre = document.createElement("span");
+        abre.className = "jogo-abre";
+        abre.textContent = "Progress →";
+        corpo.appendChild(abre);
+        card.addEventListener("click", () => irPara(g.chave));
+        card.addEventListener("keydown", (ev) => { if (ev.key === "Enter") irPara(g.chave); });
+      } else {
+        card.title = "Only the launch is detected for this game.";
+      }
+      card.appendChild(corpo);
+      grade.appendChild(card);
+    }
+    const nota = document.getElementById("hubNota");
+    if (nota) {
+      const var_ = sync.jogosVigiados.varredura;
+      nota.textContent = mostrar.length ? "" : "No games found yet. The search runs a minute after the service starts.";
+      if (var_ && var_.comSteam === false) nota.textContent += (nota.textContent ? " " : "") + "Searched without Steam.";
+    }
+    const bt = document.getElementById("hubTodos");
+    if (bt && !bt.dataset.ligado) {
+      bt.dataset.ligado = "1";
+      bt.addEventListener("click", () => irPara("all"));
+    }
+    return;
+  }
+
+  if (v === "bibli") {
+    const caixa = document.getElementById("bibliGrupos");
+    if (!caixa) return;
+    caixa.innerHTML = "";
+    const grupos = [
+      ["On this computer", lista.filter((g) => g.instalado)],
+      ["In the Steam library", lista.filter((g) => g.naSteam && !g.instalado)],
+    ];
+    for (const [titulo, jogos] of grupos) {
+      const grupo = document.createElement("div");
+      grupo.className = "bibli-grupo";
+      const h = document.createElement("h2");
+      h.textContent = titulo + " · " + jogos.length;
+      grupo.appendChild(h);
+      if (!jogos.length) {
+        const p = document.createElement("p");
+        p.className = "bibli-vazio";
+        p.textContent = titulo === "On this computer" ? "Nothing found on the disks yet." : "No Steam library on this computer, or nothing beyond what is installed.";
+        grupo.appendChild(p);
+      }
+      for (const g of jogos.slice().sort((a, b) => String(a.nome).localeCompare(String(b.nome)))) {
+        const linha = document.createElement("div");
+        linha.className = "bibli-linha";
+        const nome = document.createElement("span");
+        nome.className = "bibli-nome";
+        nome.textContent = g.nome;
+        linha.appendChild(nome);
+        linha.appendChild(fazerPinos(g));
+        if (g.leitura === "completa") {
+          const abre = document.createElement("button");
+          abre.type = "button";
+          abre.className = "volta-jogos";
+          abre.textContent = "Progress →";
+          abre.addEventListener("click", () => irPara(g.chave));
+          linha.appendChild(abre);
+        }
+        grupo.appendChild(linha);
+      }
+      caixa.appendChild(grupo);
+    }
+    const varrer = document.getElementById("bibliVarrer");
+    if (varrer) {
+      varrer.hidden = !daMaquinaLocal();
+      if (!varrer.dataset.ligado) {
+        varrer.dataset.ligado = "1";
+        varrer.addEventListener("click", () => {
+          fetch("/varrer", { method: "POST" }).then(() => {
+            const n = document.getElementById("bibliNota");
+            if (n) n.textContent = "Searching between two reads; the list updates by itself.";
+          }).catch(() => {});
+        });
+      }
+    }
+  }
+}
+
+(function ligarVistas() {
+  const volta = typeof document !== "undefined" && document.getElementById("voltaJogos");
+  if (volta && volta.addEventListener) volta.addEventListener("click", () => irPara(""));
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("hashchange", () => { aplicarVista(); renderHub(); });
+  }
+})();
+
 /* ------------------------------------------------------------ checklists */
 
 function render() {
@@ -4548,6 +4933,7 @@ function render() {
   renderAssinatura();
   renderEstados();
   renderJogos();
+  renderHub();
   renderDeaths();
   renderTempo();
   renderBossKills();

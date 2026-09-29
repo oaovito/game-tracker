@@ -79,6 +79,7 @@ function createServer(options) {
   // como parametro para o serve.js continuar sendo so um servidor de
   // arquivos: quem sabe o que "abrir" significa e o processo residente.
   const aoAbrir = typeof options.aoAbrir === 'function' ? options.aoAbrir : null;
+  const aoVarrer = typeof options.aoVarrer === 'function' ? options.aoVarrer : null;
 
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
@@ -116,6 +117,16 @@ function createServer(options) {
       return;
     }
 
+    // "Procurar de novo" na tela de jogos: marca a varredura para a próxima
+    // folga entre rodadas, sem rodar nada aqui dentro. Só da própria máquina.
+    if (urlPath === '/varrer') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
+      if (aoVarrer) { try { aoVarrer(); } catch (e) { /* não derruba o servidor */ } }
+      res.writeHead(202).end();
+      return;
+    }
+
     if (urlPath === '/selecao') {
       const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
       if (!daMaquina) {
@@ -135,7 +146,7 @@ function createServer(options) {
           corpo += c;
           // Um corpo grande aqui só pode ser engano ou abuso: a lista tem o
           // tamanho do catálogo, que cabe em algumas centenas de bytes.
-          if (corpo.length > 4096) { req.destroy(); }
+          if (corpo.length > 65536) { req.destroy(); }
         });
         req.on('end', () => {
           try {
@@ -208,7 +219,7 @@ function createServer(options) {
  * problema nenhum, porque a porta principal continua valendo.
  */
 function listenExtra(options) {
-  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir });
+  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer });
   return new Promise((resolve) => {
     const desistir = (err) => resolve({ ok: false, port: options.port, error: err && err.message });
     server.once('error', desistir);
@@ -224,7 +235,7 @@ function start(options) {
   const root = options.root;
   const port = options.port || 8777;
   const indexFile = options.indexFile || 'trackeroao.html';
-  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir });
+  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer });
 
   // Rodando como serviço, o processo sobe antes do Wi-Fi associar: não existe
   // IP de LAN ainda, e anunciar isso como "sem rede" seria mentira. Nesse caso

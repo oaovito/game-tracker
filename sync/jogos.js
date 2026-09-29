@@ -26,13 +26,41 @@ const path = require('path');
 const CATALOGO = path.join(__dirname, 'jogos.json');
 const SELECAO = path.join(__dirname, '..', 'selecao.json');
 
-function catalogo() {
+/** Os jogos que o projeto sabe ler, versionados em jogos.json. */
+function suportados() {
   try {
     const j = JSON.parse(fs.readFileSync(CATALOGO, 'utf8'));
     return Array.isArray(j.lista) ? j.lista : [];
   } catch (e) {
     return [];
   }
+}
+
+/*
+ * O catálogo inteiro: os suportados mais o que a varredura achou nesta
+ * máquina e na conta (ver biblioteca.js).
+ *
+ * Um jogo achado pela varredura entra com leitura 'nenhuma': o tracker sabe
+ * que ele abriu e fechou, e é só. Ele pode ser vigiado para acender a
+ * aplicação, que é o que a escolha de jogos promete, e aparece na tela de
+ * jogos com os pinos de instalado e de vigiado.
+ */
+function catalogo() {
+  const base = suportados();
+  let achados = [];
+  try { achados = (require('./biblioteca').ultima() || {}).jogos || []; } catch (e) { achados = []; }
+  const lista = base.map((g) => {
+    const b = achados.find((a) => a.appId && g.appId && String(a.appId) === String(g.appId));
+    return { ...g, instalado: b ? !!b.instalado : null, fontes: b ? b.fontes : [], popular: b ? b.popular : null };
+  });
+  for (const a of achados) {
+    if (lista.some((g) => g.appId && a.appId && String(g.appId) === String(a.appId))) continue;
+    lista.push({
+      chave: a.chave, nome: a.nome, appId: a.appId || null, processos: a.processos || [],
+      leitura: 'nenhuma', instalado: !!a.instalado, fontes: a.fontes || [], popular: a.popular || null,
+    });
+  }
+  return lista;
 }
 
 /** As chaves escolhidas, ou null quando ninguem escolheu ainda. */
@@ -54,7 +82,10 @@ function escolhidas() {
 function vigiados() {
   const todos = catalogo();
   const esc = escolhidas();
-  if (!esc) return todos;
+  // Sem escolha, vigia os que o projeto sabe ler, e não tudo que a varredura
+  // achou: a bandeja acendendo a cada jogo instalado seria o contrário de
+  // aparecer em silêncio.
+  if (!esc) return todos.filter((g) => g.leitura === 'completa');
   return todos.filter((g) => esc.includes(g.chave));
 }
 
@@ -106,15 +137,25 @@ function paraProgresso() {
       chave: g.chave,
       nome: g.nome,
       leitura: g.leitura || 'nenhuma',
-      vigiado: esc ? esc.includes(g.chave) : true,
+      vigiado: esc ? esc.includes(g.chave) : (g.leitura === 'completa'),
+      instalado: g.instalado === undefined ? null : g.instalado,
+      naSteam: (g.fontes || []).some((f) => /^steam/.test(f)),
+      semSteam: (g.fontes || []).some((f) => !/^steam/.test(f)),
+      popular: g.popular || null,
     })),
     // Distingue "nunca escolheu" de "escolheu nenhum", que tem efeitos opostos.
     escolheu: esc !== null,
+    varredura: (() => {
+      try {
+        const b = require('./biblioteca').ultima();
+        return b ? { em: b.em, comSteam: b.comSteam } : null;
+      } catch (e) { return null; }
+    })(),
   };
 }
 
 module.exports = {
-  catalogo, escolhidas, vigiados, processos, porProcesso, selecionar, paraProgresso,
+  suportados, catalogo, escolhidas, vigiados, processos, porProcesso, selecionar, paraProgresso,
   CATALOGO, SELECAO,
 };
 

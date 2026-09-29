@@ -105,6 +105,18 @@ const PODAS = {
    */
   jogador: (j) => (j ? { nick: j.nick, fonte: j.fonte } : j),
   /*
+   * Dos jogos saem nome, pinos e escolha. A hora da varredura fica: ela diz
+   * quando o computador estava ligado, que é do mesmo tipo da hora de jogo.
+   */
+  jogosVigiados: (j) => (j && Array.isArray(j.lista) ? {
+    escolheu: !!j.escolheu,
+    lista: j.lista.map((g) => ({
+      chave: g.chave, nome: g.nome, leitura: g.leitura, vigiado: !!g.vigiado,
+      instalado: g.instalado === undefined ? null : g.instalado,
+      naSteam: !!g.naSteam, semSteam: !!g.semSteam, popular: g.popular || null,
+    })),
+  } : j),
+  /*
    * Da podridão saem os nomes, não os números de item.
    *
    * O id do EquipParamGoods não diz nada a quem lê a página e é detalhe de

@@ -667,6 +667,28 @@ async function passoDeAtualizacao() {
   proximaAtualizacao = Date.now() + (r.erro ? ATUALIZAR_ERRO_MS : ATUALIZAR_MS);
 }
 
+/*
+ * A varredura de jogos (biblioteca.js), pela mesma regra da atualização: entre
+ * duas rodadas, nunca com jogo aberto, e sem nada na tela. Ela lista pastas de
+ * vários discos e lê o registro, então roda na partida e depois uma vez por
+ * dia -- ou antes, quando a página pede uma nova.
+ */
+const VARRER_PRIMEIRA_MS = 45 * 1000;
+const VARRER_MS = 24 * 60 * 60 * 1000;
+let proximaVarredura = Date.now() + VARRER_PRIMEIRA_MS;
+function pedirVarredura() { proximaVarredura = 0; }
+
+async function passoDeVarredura() {
+  if (gameWasRunning || Date.now() < proximaVarredura) return;
+  proximaVarredura = Date.now() + VARRER_MS;
+  try {
+    const r = await require('./biblioteca').varrer();
+    console.log(`  [jogos] ${r.jogos.length} jogo(s) encontrados${r.comSteam ? '' : ', sem Steam'}`);
+  } catch (e) {
+    console.log('  [jogos] a varredura falhou: ' + e.message);
+  }
+}
+
 /**
  * Troca este processo por um novo, já com o código atualizado.
  *
@@ -722,6 +744,7 @@ async function run() {
         await serve.start({
           root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
           aoAbrir: () => abrirBandeja('atalho'),
+          aoVarrer: () => pedirVarredura(),
         });
         break;
       } catch (e) {
@@ -780,6 +803,7 @@ async function run() {
     try {
       await pollOnce();
       await passoDeAtualizacao();
+      await passoDeVarredura();
     } catch (e) {
       console.error('  [erro] no ciclo:', e && e.message ? e.message : e);
     }
