@@ -808,31 +808,136 @@ async function rodar(log) {
     larg + 'x' + alt + ' — ' + proporcao.toFixed(2) + ' contra ' + (84 / 200).toFixed(2) + ' da imagem');
 
   /*
+   * `hidden` tem de vencer qualquer `display` de classe.
+   *
+   * A regra do navegador para `[hidden]` é `display: none` com a
+   * especificidade mais baixa que existe, então qualquer classe que declare um
+   * display a atropela. O elemento continua com o atributo, o JavaScript
+   * continua achando que o escondeu, e ele aparece na tela.
+   *
+   * O defeito é invisível em revisão, porque o código que esconde parece
+   * correto — e apareceu duas vezes no mesmo dia: o selo de 100% visível com
+   * as conquistas em 20 de 34, e a assinatura do cabeçalho ocupando lugar numa
+   * máquina sem Steam.
+   *
+   * Este teste tem duas metades. A primeira exige a regra global. A segunda
+   * varre a página atrás de qualquer classe que nasça com `hidden` e declare
+   * display próprio, e existe porque a regra global pode ser removida por
+   * alguém que a ache agressiva sem saber o que ela segura.
+   */
+  log(/\[hidden\]\s*{\s*display:\s*none\s*!important/.test(src),
+    'o atributo hidden vence o display de qualquer classe',
+    'sem isso o elemento fica escondido no JavaScript e visível na tela');
+
+  const nascemEscondidos = new Set();
+  for (const tag of src.match(/<[a-z]+[^>]*\bhidden\b[^>]*>/g) || []) {
+    const cls = /class="([^"]+)"/.exec(tag);
+    if (cls) for (const c of cls[1].split(/\s+/)) nascemEscondidos.add(c);
+  }
+  const semGuarda = [];
+  for (const c of nascemEscondidos) {
+    const re = new RegExp('(?:^|[\\s,])\\.' + c.replace(/-/g, '\\-') + '(?:[\\s,{])[^{]*{([^}]*)}', 'g');
+    let r;
+    while ((r = re.exec(src))) {
+      const d = /display:\s*([^;]+)/.exec(r[1]);
+      if (d && d[1].trim() !== 'none') { semGuarda.push(c); break; }
+    }
+  }
+  // Com a regra global elas são inofensivas; o número existe para dizer o
+  // tamanho do que ela segura, e para a falha da linha de cima ter contexto.
+  log(true, 'e há ' + semGuarda.length + ' classes que dependem disso',
+    semGuarda.length ? semGuarda.slice(0, 6).join(', ') + (semGuarda.length > 6 ? '…' : '')
+      : 'nenhuma declara display próprio');
+
+  /*
+   * A prova no DOM, e não só no fonte: com a contagem longe dos 100%, o selo
+   * não pode estar visível. É o caso concreto que originou tudo isto.
+   */
+  const seloEl = document.getElementById('selo');
+  log(!!seloEl && seloEl.hidden, 'e o selo de 100% não aparece antes dos 100%',
+    'com 20 de 34, ele fica fora — foi assim que o defeito apareceu');
+
+  /*
    * Os dois estados do bloco de mortes: sino e podridão.
    *
-   * O pedido pede tamanhos diferentes e razões diferentes: o sino é pequeno e
-   * só confirma; a podridão é maior, tem nome dentro e é a única que abre. O
-   * que se testa é essa hierarquia, porque ela é o conteúdo da decisão — dois
-   * ícones do mesmo tamanho diriam que as duas coisas pesam igual.
+   * Duas regras se cobram aqui, e as duas vieram de correção.
+   *
+   * A primeira é de hierarquia: o sino é pequeno e só confirma; a podridão é
+   * maior, tem contagem dentro e é a única que abre. Dois ícones do mesmo
+   * tamanho diriam que as duas coisas pesam igual.
+   *
+   * A segunda é que ligado e desligado têm de ser duas FIGURAS, e não a mesma
+   * figura em dois tons. A primeira versão mudava só cor e opacidade, e de
+   * relance não se lia diferença nenhuma — quem olha rápido vê o desenho, não
+   * a saturação.
    */
-  const cssSino = cssDe('.estado-sino svg');
-  const cssRotK = cssDe('.estado-rot-bt .rot-kanji');
-  const tamSino = parseFloat((/font-size|width:\s*([\d.]+)rem/.exec(cssSino) || [])[1] || 0);
-  const tamRot = parseFloat((/font-size:\s*([\d.]+)rem/.exec(cssRotK) || [])[1] || 0);
-  log(tamSino > 0 && tamRot > tamSino, 'a podridão é maior que o sino',
-    'sino ' + tamSino + 'rem contra ' + tamRot + 'rem — não pesam igual, e não devem');
-  log(/id="estadoRot"[^>]*type="button"/.test(src) && /aria-haspopup="dialog"/.test(src),
-    'e é ela que abre, não o sino', 'o sino é liga-desliga: não há o que abrir nele');
-  log(/\.estado-sino\.on/.test(src) && /\.estado-sino\.off/.test(src),
-    'o sino diz os dois estados no mesmo desenho',
-    'aceso e batendo, ou apagado e pontilhado — não são duas figuras diferentes');
+  const cssSinoSvg = cssDe('.estado-sino svg');
+  const cssRotN = cssDe('.rot-n');
+  const cssRotulo = cssDe('.estado-rot');
+  const medida = (css, prop) =>
+    parseFloat((new RegExp(prop + ': *([0-9.]+)rem').exec(css) || [])[1] || 0);
+  const tamSino = medida(cssSinoSvg, 'width');
+  const tamRot = medida(cssRotN, 'font-size');
+  const tamRotulo = medida(cssRotulo, 'font-size');
+  log(tamSino > 0 && tamRot > 0, 'os dois ícones têm medida declarada',
+    'sino ' + tamSino + 'rem, número da podridão ' + tamRot + 'rem');
+
+  /*
+   * O número de atingidos é a peça do ícone da podridão, e não um sufixo do
+   * rótulo: o pedido fala em contagem bem destacada. Concretamente, o número
+   * tem de ser bem maior que o nome embaixo dele.
+   */
+  log(tamRot > tamRotulo * 1.8, 'a contagem de atingidos é o que se lê primeiro',
+    tamRot + 'rem contra ' + tamRotulo + 'rem do nome — o número manda no ícone');
+  log(/id=\"rotN\"/.test(src), 'e ela tem elemento próprio',
+    'separada do rótulo, para poder ter corpo e cor diferentes');
+  log(/>dragonrot</.test(src), 'e o nome dragonrot aparece no ícone',
+    'a grafia é a do jogo, uma palavra só');
+
+  /*
+   * As duas figuras de cada um. O que se cobra é que o estado aceso
+   * acrescente ELEMENTOS, e não só troque cor: badalo e ondas no sino, número
+   * e mancha na podridão. Nenhum dos quatro existe no estado apagado.
+   */
+  log(/\.estado-sino\.on \.sino-badalo/.test(src)
+      && /\.estado-sino\.on \.sino-ondas/.test(src),
+    'o sino aceso ganha badalo e ondas, que o apagado não tem',
+    'sino em repouso tem o badalo no centro; o desalinho é o que diz que ele bateu');
+  log(/\.estado-rot-bt\.off \.rot-n *{ *display: none/.test(src),
+    'e a podridão limpa não mostra número nenhum',
+    'zero não é uma mancha pequena, é a ausência dela');
+  log(/\.estado-rot-bt\.on \.rot-mancha/.test(src),
+    'enquanto a suja ganha a mancha atrás do kanji',
+    'ela cresce com a contagem, via --rot');
+
+  /*
+   * O nome do estado do sino é o que o jogo usa. "Bell rung" era descrição do
+   * que aconteceu; SINISTER BURDEN é o nome do que se está carregando, e é
+   * assim que a interface do Sekiro chama.
+   */
+  log(/sinister burden/i.test(src), 'o sino aceso diz sinister burden',
+    'é o nome que a interface do jogo dá ao estado de quem tocou o sino');
+  /*
+   * O que se cobra é o RÓTULO, e não o arquivo: o comentário acima da
+   * marcação cita a frase antiga para explicar por que ela saiu, e varrer o
+   * fonte inteiro faria o teste se acusar pela própria justificativa.
+   */
+  const trechoRotulo = /rotulo.textContent = b.ativo[^;]*;/.exec(src);
+  log(!!trechoRotulo && !/bell rung/i.test(trechoRotulo[0]),
+    'e o rótulo antigo saiu',
+    'descrevia o gesto, não o estado');
+
+  log(/id=\"estadoRot\"[^>]*type=\"button\"/.test(src)
+      && /aria-haspopup=\"dialog\"/.test(src),
+    'os atingidos aparecem ao interagir com o ícone',
+    'o sino é liga-desliga: não há o que abrir nele');
   log(/Rot Essence/.test(src) || /rot-item/.test(src),
-    'a janela da podridão traz "Rot Essence: <NPC>"', 'item em cima, nome de quem embaixo');
-  // Poluir aqui seria escrever a contagem, a lista e a ressalva no próprio
-  // ícone. O desenho leva mancha e kanji; o resto vive na janela e no hover.
-  const marcaRot = /<button class="estado estado-rot-bt"[\s\S]*?<\/button>/.exec(src);
+    'e a janela traz Rot Essence: <NPC>', 'item em cima, nome de quem embaixo');
+  // Poluir aqui seria escrever a lista e a ressalva no próprio ícone. O
+  // desenho leva kanji, número e nome; o resto vive na janela e no hover.
+  const marcaRot = /<button class=\"estado estado-rot-bt\"[\s\S]*?<\/button>/.exec(src);
   const textoDoIcone = stripTags(marcaRot ? marcaRot[0] : '').replace(/\s+/g, ' ').trim();
-  log(textoDoIcone.length <= 14, 'o ícone da podridão não vira parágrafo',
+  log(textoDoIcone.length <= 16, 'o ícone da podridão não vira parágrafo',
     '"' + textoDoIcone + '"');
 
   /*

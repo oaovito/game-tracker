@@ -74,7 +74,30 @@
   }
   /* Em rem, não em px: assim a largura do corpo cresce junto com a escala da
      raiz em vez de virar uma coluna estreita no meio de um monitor grande. */
-  .wrap { max-width: 45rem; margin: 0 auto; padding: 1.75rem 1.25rem 5rem; }
+  /*
+   * `hidden` vence qualquer `display` de classe.
+   *
+   * A regra do navegador para `[hidden]` é `display: none` com a
+   * especificidade mais baixa que existe, então QUALQUER classe que declare
+   * um display a atropela sem avisar. O elemento continua com o atributo, o
+   * JavaScript continua achando que o escondeu, e ele aparece na tela.
+   *
+   * Isso não é hipótese: aconteceu duas vezes no mesmo dia. O selo de 100%
+   * apareceu com as conquistas em 20 de 34, porque `.selo` declara
+   * `display: grid`; e a assinatura do cabeçalho continuava ocupando lugar
+   * numa máquina sem Steam, porque `.assinatura` declara `display: flex`.
+   * Nos dois casos o JavaScript estava certo e o CSS é que desfazia.
+   *
+   * Uma regra global resolve para sempre, inclusive para o que ainda vai ser
+   * escrito — que é o ponto, porque o defeito é invisível em revisão: o código
+   * que esconde parece correto.
+   *
+   * O `!important` é necessário e não é preguiça: sem ele qualquer classe com
+   * display continuaria ganhando por especificidade.
+   */
+  [hidden] { display: none !important; }
+
+    .wrap { max-width: 45rem; margin: 0 auto; padding: 1.75rem 1.25rem 5rem; }
 
   /* O cabeçalho encolheu sem o título encolher: o que saiu foi espaço — a
      folga interna, a margem abaixo e o vão entre título e assinatura. São
@@ -634,18 +657,20 @@
    * Os dois estados do bloco de mortes: sino e podridão.
    *
    * Ficam numa fileira própria embaixo do termômetro, alinhados à direita,
-   * porque a esquerda já é do número e a linha do meio é do termômetro. Como
-   * são estado e não contagem, entram com pouco peso: traço, sem preenchimento
-   * e sem moldura, na mesma língua do menu.
+   * porque a esquerda já é do número e a linha do meio é do termômetro.
+   *
+   * A regra que vale para os dois: ligado e desligado são duas FIGURAS, não a
+   * mesma figura em dois tons. Quem olha de relance lê o desenho, não a
+   * saturação — foi o que a primeira versão errou.
    */
   .estados {
     position: relative; z-index: 2;
     display: flex; align-items: flex-end; justify-content: flex-end;
-    gap: 1.15rem;
+    gap: 1.4rem;
     margin-top: 0.9rem;
   }
   .estado {
-    display: flex; flex-direction: column; align-items: center; gap: 0.28rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
     background: none; border: 0; padding: 0;
     color: var(--text-dim);
     transition: color 0.25s ease, opacity 0.25s ease;
@@ -656,10 +681,11 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     white-space: nowrap;
+    transition: color 0.25s ease, letter-spacing 0.25s ease;
   }
 
-  /* --- o sino: pequeno, dois estados no mesmo desenho --- */
-  .estado-sino svg { width: 1.45rem; height: 1.45rem; display: block; }
+  /* ---------------------------------------------------------- o Sino Demoníaco */
+  .estado-sino svg { width: 1.55rem; height: 1.55rem; display: block; overflow: visible; }
   .estado-sino .sino-corpo {
     fill: none; stroke: currentColor; stroke-width: 1.3;
     stroke-linejoin: round;
@@ -668,69 +694,143 @@
   .estado-sino .sino-frisos { stroke-width: 0.85; opacity: 0.6; }
   .estado-sino .sino-tronco {
     fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round;
-    opacity: 0.35;
+    opacity: 0.3;
   }
-  /* As ondas só existem quando o sino está tocando; sem efeito elas somem em
-     vez de ficarem pálidas, senão o desenho parado já parece meio aceso. */
   .estado-sino .sino-ondas {
     fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round;
     opacity: 0;
   }
-  /* Desligado: apagado e quieto. É o estado normal, então não chama. */
-  .estado-sino.off { opacity: 0.32; }
-  .estado-sino.off .sino-corpo { stroke-dasharray: 2.5 2; }
-  /* Ligado: vermelhão de selo, ondas visíveis e o sino batendo. O balanço sai
-     do topo, onde ele estaria pendurado. */
+  .estado-sino .sino-badalo {
+    stroke: currentColor; stroke-width: 1.2; stroke-linecap: round;
+    opacity: 0;
+  }
+  .estado-sino .sino-badalo-ponta { fill: currentColor; opacity: 0; }
+  .estado-sino .sino-casco { fill: none; transition: fill 0.3s ease; }
+
+  /*
+   * Desligado: pendurado e quieto.
+   *
+   * Contorno fino, boca vazia, sem badalo e sem onda. É o estado normal, então
+   * não chama — mas continua legível, porque "não estou carregando nada" é uma
+   * informação e não uma ausência.
+   */
+  .estado-sino.off { opacity: 0.4; }
+  .estado-sino.off .sino-corpo { stroke-width: 1.1; }
+
+  /*
+   * Ligado: o sino bateu e o que ficou é o peso.
+   *
+   * O corpo se preenche de vermelhão de selo, o badalo aparece fora do eixo (é
+   * o desalinho que denuncia um sino que acabou de tocar), as ondas saem dos
+   * dois lados em duas camadas, e o conjunto balança. Nenhuma dessas quatro
+   * coisas existe no estado desligado — é outra figura, não outra cor.
+   */
   .estado-sino.on { color: #d6402a; opacity: 1; }
-  .estado-sino.on .sino-ondas { opacity: 0.85; animation: sino-onda 1.9s ease-in-out infinite; }
+  .estado-sino.on .sino-casco { fill: rgba(214, 64, 42, 0.22); }
+  .estado-sino.on .sino-ondas { opacity: 0.9; animation: sino-onda 1.9s ease-in-out infinite; }
+  .estado-sino.on .sino-onda-larga { opacity: 0.45; }
+  .estado-sino.on .sino-badalo,
+  .estado-sino.on .sino-badalo-ponta { opacity: 1; }
   .estado-sino.on .sino-corpo { animation: sino-bate 1.9s ease-in-out infinite; }
-  .estado-sino.on .estado-rot { color: #d6402a; }
-  /* no jogo: 鬼仏の鐘: o Sino Demoníaco balançando depois de tocado */
+  .estado-sino.on .sino-tronco { opacity: 0.75; }
+  /* O nome que o jogo dá ao estado é mais longo que o do repouso, então a
+     entreletra aperta um pouco para ele não empurrar a fileira. */
+  .estado-sino.on .estado-rot {
+    color: #d6402a;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 12px rgba(214, 64, 42, 0.45);
+  }
+  /* no jogo: 鬼仏の鐘, o Sino Demoníaco balançando depois de tocado */
   @keyframes sino-bate {
-    0%, 100% { transform: rotate(-7deg); }
-    50%      { transform: rotate(7deg); }
+    0%, 100% { transform: rotate(-8deg); }
+    50%      { transform: rotate(8deg); }
   }
   /* no jogo: a onda de som saindo do sino, que é o que aflige quem o tocou */
   @keyframes sino-onda {
-    0%, 100% { opacity: 0.25; transform: scale(0.94); }
-    50%      { opacity: 0.9;  transform: scale(1.06); }
+    0%, 100% { opacity: 0.3; transform: scale(0.92); }
+    50%      { opacity: 1;   transform: scale(1.08); }
   }
 
-  /* --- a podridão: maior, e a única que abre --- */
-  .estado-rot-bt { cursor: pointer; position: relative; }
-  .estado-rot-bt .rot-kanji {
-    position: relative; z-index: 1;
+  /* ------------------------------------------------------------- a podridão */
+  .estado-rot-bt { cursor: pointer; }
+  .rot-peca {
+    position: relative;
+    display: grid; place-items: center;
+    width: 2.6rem; height: 2.1rem;
+  }
+  /*
+   * O 竜 é o fundo, e o número é a peça.
+   *
+   * A hierarquia é o conteúdo do pedido: a contagem tem de se ler primeiro.
+   * Então o kanji recua para trás dela, grande e apagado, funcionando como
+   * campo em vez de disputar leitura — e o número vem por cima, em corpo de
+   * contador.
+   */
+  .rot-kanji {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
     font-family: var(--font-display);
-    font-size: 1.85rem;
+    font-size: 2rem;
     line-height: 1;
+    transition: color 0.3s ease, opacity 0.3s ease;
+  }
+  .rot-n {
+    position: relative; z-index: 2;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.25rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
   /*
    * A mancha.
    *
-   * O estado se lê por ela e não por cor de texto: uma auréola irregular que
-   * cresce com o número de essências, via --rot (0 a 1). Zero essências, zero
-   * mancha — e aí o kanji sozinho já diz que o assunto existe sem afirmar que
-   * está acontecendo.
+   * Uma auréola irregular que cresce com o número de essências, via --rot
+   * (0 a 1). Ela não existe no estado limpo: zero não é uma mancha pequena, é
+   * a ausência dela.
    */
-  .estado-rot-bt .rot-mancha {
+  .rot-mancha {
     position: absolute;
-    left: 50%; top: 0.9rem;
+    left: 50%; top: 50%;
     width: 2.9rem; height: 2.9rem;
-    transform: translate(-50%, -50%) scale(calc(0.55 + 0.45 * var(--rot, 0)));
+    transform: translate(-50%, -50%) scale(calc(0.6 + 0.4 * var(--rot, 0)));
     border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%;
     background: radial-gradient(circle at 42% 38%,
-      rgba(150, 168, 96, calc(0.5 * var(--rot, 0))) 0%,
-      rgba(110, 132, 66, calc(0.28 * var(--rot, 0))) 48%,
+      rgba(150, 168, 96, calc(0.55 * var(--rot, 0))) 0%,
+      rgba(110, 132, 66, calc(0.3 * var(--rot, 0))) 48%,
       rgba(90, 110, 54, 0) 72%);
     filter: blur(2.5px);
     pointer-events: none;
     transition: transform 0.4s ease;
   }
-  .estado-rot-bt.on { color: #b6bf94; }
+
+  /*
+   * Limpo: só o kanji, vazado e quieto.
+   *
+   * Sem número (não há o que contar), sem mancha, sem brilho. O ícone segue
+   * dizendo de que assunto se trata, sem afirmar que ele está acontecendo.
+   */
+  .estado-rot-bt.off { opacity: 0.45; }
+  .estado-rot-bt.off .rot-kanji { font-size: 1.5rem; opacity: 0.85; }
+  .estado-rot-bt.off .rot-n { display: none; }
+
+  /*
+   * Com podridão: o número manda, o kanji vira campo e a mancha nasce.
+   */
+  .estado-rot-bt.on { color: #c3cf9a; }
+  .estado-rot-bt.on .rot-kanji { color: #6f7f4c; opacity: 0.55; }
+  .estado-rot-bt.on .rot-n {
+    color: #dbe6b4;
+    text-shadow: 0 0 14px rgba(150, 168, 96, 0.7), 0 1px 2px rgba(0,0,0,0.8);
+  }
   .estado-rot-bt.on .rot-mancha { animation: rot-pulsa 6.5s ease-in-out infinite; }
-  .estado-rot-bt.off { opacity: 0.4; }
+  .estado-rot-bt.on .estado-rot {
+    color: #c3cf9a;
+    text-shadow: 0 0 12px rgba(150, 168, 96, 0.4);
+  }
   .estado-rot-bt:hover, .estado-rot-bt:focus-visible { color: var(--paper); outline: 0; }
-  /* no jogo: 竜咳: a mancha da podridão, que muda de forma sem mudar de lugar */
+  .estado-rot-bt:hover .rot-n, .estado-rot-bt:focus-visible .rot-n { color: var(--paper); }
+  /* no jogo: 竜咳, a mancha da podridão, que muda de forma sem mudar de lugar */
   @keyframes rot-pulsa {
     0%, 100% { border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%; }
     50%      { border-radius: 54% 46% 44% 56% / 46% 56% 44% 54%; }
@@ -747,7 +847,7 @@
   .rot-item {
     font-family: var(--font-display);
     font-size: 0.95rem;
-    color: #b6bf94;
+    color: #c3cf9a;
   }
   .rot-npc { font-size: 0.78rem; color: var(--text-dim); }
   .rot-vazio { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
@@ -2709,40 +2809,75 @@
     -->
     <div class="estados" id="estados" hidden>
       <!--
-        O sino, pequeno. Dois estados no mesmo desenho, sem trocar de figura:
-        parado e apagado quando não há efeito; aceso, inclinado e com as ondas
-        batendo quando há. Trocar o desenho faria a pessoa ter de aprender dois
-        símbolos para uma informação só.
+        O Sino Demoníaco: duas figuras, não uma figura com duas cores.
+        =============================================================
+
+        A versão anterior era o mesmo sino em dois tons, e isso não bastava:
+        quem olha de relance vê o desenho, não a saturação. Agora as duas
+        leituras são diferentes de forma.
+
+        Sem o efeito, o sino está pendurado e quieto: contorno fino, boca
+        vazia, badalo recolhido, e nenhuma onda. Com o efeito, o corpo se
+        preenche, o badalo aparece fora do eixo (é o que denuncia um sino que
+        acabou de bater), as ondas saem dos dois lados e o conjunto inclina.
+
+        O rótulo também troca, e troca para o nome que o jogo usa: SINISTER
+        BURDEN é como a interface do Sekiro chama o estado de quem tocou o
+        sino. "Bell rung" era descrição minha do que aconteceu; o que interessa
+        é o nome do que se está carregando.
       -->
       <div class="estado estado-sino" id="estadoSino" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <g class="sino-ondas">
-            <path d="M4.6 9.4C4.9 7.2 5.9 5.4 7.4 4.1"/>
-            <path d="M19.4 9.4C19.1 7.2 18.1 5.4 16.6 4.1"/>
+            <path d="M3.4 10.2C3.8 7.4 5 5.1 6.9 3.4"/>
+            <path d="M20.6 10.2C20.2 7.4 19 5.1 17.1 3.4"/>
+            <path d="M1.2 11.6C1.6 8.2 3 5.4 5.3 3.2" class="sino-onda-larga"/>
+            <path d="M22.8 11.6C22.4 8.2 21 5.4 18.7 3.2" class="sino-onda-larga"/>
           </g>
           <g class="sino-corpo">
             <!-- 梵鐘: o sino de templo japonês é um cilindro de ombro reto e
                  boca larga, não a campânula ocidental de alça. -->
-            <path d="M12 3.1c-3.5 0-5.6 2.4-5.6 6v5.6h-1v2.1h13.2v-2.1h-1V9.1c0-3.6-2.1-6-5.6-6z"/>
+            <path class="sino-casco"
+                  d="M12 3.1c-3.5 0-5.6 2.4-5.6 6v5.6h-1v2.1h13.2v-2.1h-1V9.1c0-3.6-2.1-6-5.6-6z"/>
             <path d="M9.1 7.6h5.8M9.1 10.6h5.8" class="sino-frisos"/>
             <circle cx="12" cy="2.2" r="1.1"/>
+            <!-- O badalo. Só existe aceso, e fora do eixo: sino em repouso tem
+                 o badalo no centro, e é justamente o desalinho que diz que ele
+                 acabou de bater. -->
+            <path class="sino-badalo" d="M12 11.4v3.4"/>
+            <circle class="sino-badalo-ponta" cx="12" cy="15.4" r="1.15"/>
           </g>
           <path class="sino-tronco" d="M20.6 16.1h2.6"/>
         </svg>
-        <span class="estado-rot" id="sinoRot">bell</span>
+        <span class="estado-rot" id="sinoRot">demon bell</span>
       </div>
 
       <!--
-        A podridão, maior e clicável.
+        Dragonrot: o número é a peça.
+        =============================
 
-        Não é um ícone cheio: é o 竜 (dragão) em traço, com a mancha atrás
-        crescendo conforme o número de essências. Assim o estado se lê de
-        longe pela mancha e o detalhe fica na janela, em vez de tentar caber
-        tudo no desenho — que é como ele ficaria poluído.
+        O pedido é claro sobre a hierarquia — "dragon rot" e a contagem de
+        atingidos bem destacados —, então a contagem deixa de ser um sufixo do
+        rótulo e vira o elemento maior do ícone, com o 竜 atrás dela em vez de
+        ao lado. O nome fica embaixo, na mesma família do resto da página mas
+        sem apagar.
+
+        Como nos dois estados: sem podridão não há número, o 竜 fica em
+        contorno vazado e a mancha não existe. Com podridão o kanji se
+        preenche, a mancha nasce atrás e cresce com a contagem, e o número
+        aparece por cima. São duas figuras diferentes, e não a mesma em dois
+        tons.
+
+        Quem são os atingidos continua fora do desenho: eles abrem numa janela
+        ao tocar o ícone. É o que impede o ícone de virar parágrafo.
       -->
-      <button class="estado estado-rot-bt" id="estadoRot" type="button" aria-haspopup="dialog" aria-expanded="false" hidden>
-        <span class="rot-mancha" aria-hidden="true"></span>
-        <span class="rot-kanji" aria-hidden="true">竜</span>
+      <button class="estado estado-rot-bt" id="estadoRot" type="button"
+              aria-haspopup="dialog" aria-expanded="false" hidden>
+        <span class="rot-peca">
+          <span class="rot-mancha" aria-hidden="true"></span>
+          <span class="rot-kanji" aria-hidden="true">竜</span>
+          <span class="rot-n" id="rotN" aria-hidden="true"></span>
+        </span>
         <span class="estado-rot" id="rotRot">dragonrot</span>
       </button>
     </div>
@@ -3999,25 +4134,39 @@ function renderEstados() {
   if (b) {
     sino.classList.toggle("on", !!b.ativo);
     sino.classList.toggle("off", !b.ativo);
+    /*
+     * O rótulo aceso é o nome que a interface do jogo dá ao estado: SINISTER
+     * BURDEN. "Bell rung" descrevia o que aconteceu; o que interessa é o nome
+     * do que se está carregando, e quem jogou reconhece esse.
+     */
+    const rotulo = document.getElementById("sinoRot");
+    if (rotulo) rotulo.textContent = b.ativo ? "sinister burden" : "demon bell";
     // A ressalva vai para o hover, não para a página: o bloco é contador.
     sino.title = b.ativo
-      ? "Bell Demon carried: harder enemies, better drops. Return it at an idol to remove."
-      : "Demon Bell not rung, or the Bell Demon has been returned.";
-    const rotulo = document.getElementById("sinoRot");
-    if (rotulo) rotulo.textContent = b.ativo ? "bell rung" : "bell";
+      ? "Sinister Burden: the Bell Demon is being carried. Enemies are stronger and drop more. Return it at an idol to remove."
+      : "The Demon Bell has not been rung, or the Bell Demon has been returned.";
   }
 
   rot.hidden = !d;
   if (d) {
     rot.classList.toggle("on", !!d.ativo);
     rot.classList.toggle("off", !d.ativo);
-    // A mancha cresce com o número, mas satura: a partir de um terço dos NPCs
-    // a diferença entre seis e sete doentes não é o que a pessoa lê no ícone,
-    // e deixar crescer até o fim viraria borrão.
+    /*
+     * O número é a peça do ícone, então ele só existe quando há o que contar.
+     * Escrever "0" seria uma medição onde o que existe é a ausência dela, e é
+     * a mesma regra que rege o resto da página.
+     */
+    const n = document.getElementById("rotN");
+    if (n) n.textContent = d.ativo ? String(d.quantos) : "";
+    /*
+     * A mancha cresce com o número, mas satura: a partir de um terço dos NPCs
+     * a diferença entre seis e sete doentes não é o que a pessoa lê no ícone,
+     * e deixar crescer até o fim viraria borrão.
+     */
     const fracao = d.total ? Math.min(1, d.quantos / (d.total / 3)) : 0;
     rot.style.setProperty("--rot", d.ativo ? Math.max(0.35, fracao).toFixed(2) : "0");
     const rotulo = document.getElementById("rotRot");
-    if (rotulo) rotulo.textContent = d.ativo ? d.quantos + " afflicted" : "dragonrot";
+    if (rotulo) rotulo.textContent = "dragonrot";
     rot.title = d.ativo
       ? "Rot Essence held for " + d.quantos + " of " + d.total + " characters. Open for the names."
       : "No Rot Essence in the inventory.";
