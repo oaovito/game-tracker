@@ -8,6 +8,14 @@ escuta numa porta alta. Se voce rodar isto elevado, a tarefa ficaria registrada
 para o usuario errado.
 #>
 
+# O caminho do Node pode vir de fora porque o instalador sabe coisas que este
+# script nao sabe: quando nao ha winget na maquina, ele baixa o runtime
+# portatil para runtime\node dentro do projeto, e esse Node nao esta no PATH
+# nem em Program Files. Sem receber o caminho, este script nao acharia o Node
+# que acabou de ser instalado e falharia no fim de uma instalacao bem
+# sucedida.
+param([string]$NodePath)
+
 $ErrorActionPreference = 'Stop'
 
 # O nome antigo fica listado porque o projeto mudou de nome: numa maquina onde
@@ -22,10 +30,16 @@ $ocultoVbs  = Join-Path $PSScriptRoot 'sync\oculto.vbs'
 $wscript    = Join-Path $env:WINDIR 'System32\wscript.exe'
 
 # --- node ---
-$node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
+# Ordem: o que o instalador passou, o do PATH, o de Program Files, e o runtime
+# portatil que uma instalacao anterior possa ter deixado na propria pasta.
+$node = $null
+if ($NodePath -and (Test-Path $NodePath)) { $node = $NodePath }
+if (-not $node) { $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source }
 if (-not $node) {
-    $candidato = Join-Path $env:ProgramFiles 'nodejs\node.exe'
-    if (Test-Path $candidato) { $node = $candidato }
+    foreach ($c in @((Join-Path $env:ProgramFiles 'nodejs\node.exe'),
+                     (Join-Path $PSScriptRoot 'runtime\node\node.exe'))) {
+        if (Test-Path $c) { $node = $c; break }
+    }
 }
 if (-not $node) {
     Write-Host "node.exe nao encontrado. Instale em https://nodejs.org e rode de novo." -ForegroundColor Red
