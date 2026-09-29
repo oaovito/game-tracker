@@ -114,6 +114,15 @@ jobs:
           if (-not (Select-String -Path $log -SimpleMatch "@@PRONTO $fim" -Encoding UTF8)) { throw 'o registro nao tem a linha do fim, ou o acento chegou trocado' }
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$ruim", '/fechar' -Wait -PassThru
           if ($p.ExitCode -ne 1) { throw "o ensaio que falha saiu com $($p.ExitCode), e nao 1" }
+          # Um erro que o script nao tratou tambem tem de fechar com 1 e chegar ao registro.
+          $excecao = Join-Path $env:RUNNER_TEMP 'ensaio-excecao.ps1'
+          [IO.File]::WriteAllText($excecao, @(
+            '$ErrorActionPreference = ''Stop''',
+            'Get-Item ''C:\nao-existe-trackeroao'''
+          ) -join "`r`n", $bom)
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$excecao", '/fechar' -Wait -PassThru
+          if ($p.ExitCode -ne 1) { throw "o ensaio com excecao saiu com $($p.ExitCode), e nao 1" }
+          if (-not (Select-String -Path $log -SimpleMatch 'nao-existe-trackeroao')) { throw 'o erro do PowerShell nao chegou ao registro' }
           $v = (Get-Item dist\trackeroao-instalador.exe).VersionInfo
           Write-Host "produto: $($v.ProductName)  versao: $($v.FileVersion)  descricao: $($v.FileDescription)"
           if ($v.ProductName -ne 'Trackeroao') { throw 'o .exe saiu sem as propriedades do produto' }

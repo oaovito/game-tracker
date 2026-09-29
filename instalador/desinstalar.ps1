@@ -49,6 +49,17 @@ function Ruim($t)  { Write-Host "  $t" -ForegroundColor Red }
   resposta padrao da pergunta que o console faria.
 #>
 $gui = [bool]$env:TRACKEROAO_GUI
+# Um erro que ninguem tratou nao pode sumir: pela janela, ele vira a mensagem
+# de erro que a pessoa le, com a linha onde aconteceu. Pelo console, segue
+# como sempre (break devolve o erro ao PowerShell).
+trap {
+  if ($gui) {
+    [Console]::Out.WriteLine("@@ERRO Erro inesperado na linha $($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)")
+    [Console]::Out.Flush()
+    exit 1
+  }
+  break
+}
 if ($gui) {
   [Console]::OutputEncoding = [Text.Encoding]::UTF8
   $ProgressPreference = 'SilentlyContinue'

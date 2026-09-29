@@ -309,6 +309,9 @@ class Janela : Form {
   string passo, detalhe = "";
   readonly List<string> pendencias = new List<string>();
   string erro, fraseFinal;
+  // A primeira linha que o PowerShell escreveu como erro: se o script parar
+  // sem dizer o motivo, e ela que a janela mostra.
+  string primeiroErro;
   float alvo = 2f, atual = 0f, brilho = 0f;
   readonly Timer relogio = new Timer();
   float esc = 1f;
@@ -460,6 +463,9 @@ class Janela : Form {
 
   void Chegou(string linha, bool doErro) {
     Registrar((doErro ? "! " : "") + linha);
+    if (doErro && linha.Trim() != "") {
+      lock (trava) { if (primeiroErro == null) primeiroErro = linha.Trim(); }
+    }
     if (doErro || !linha.StartsWith("@@")) return;
     int espaco = linha.IndexOf(' ');
     string tipo = espaco < 0 ? linha.Substring(2) : linha.Substring(2, espaco - 2);
@@ -493,7 +499,8 @@ class Janela : Form {
     lock (trava) {
       if (codigo == 0 && erro == null && fraseFinal != null) Mudar(Modo.Pronto);
       else {
-        if (erro == null) erro = (desinstalando ? "A remo\u00e7\u00e3o" : "A instala\u00e7\u00e3o") + " parou antes do fim.";
+        if (erro == null) erro = (desinstalando ? "A remo\u00e7\u00e3o" : "A instala\u00e7\u00e3o") + " parou antes do fim."
+                               + (primeiroErro != null ? " " + primeiroErro : "");
         Mudar(Modo.Erro);
       }
     }
