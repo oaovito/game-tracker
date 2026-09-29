@@ -166,14 +166,15 @@
      acima para separar. Não usa opacidade baixa, que some no tema claro. */
   .made-by {
     margin-top: 44px;
-    padding-top: 16px;
-    border-top: 1px solid var(--line);
+    padding-top: 0;
     text-align: center;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--text-dim);
-    letter-spacing: 0.14em;
+    opacity: 0.62;
+    letter-spacing: 0.16em;
     text-transform: lowercase;
   }
+  .made-by span { color: inherit; }
 
   /* --- contador de mortes: campo próprio, abaixo do cabeçalho --- */
   /* Moldura de placa: fio externo, um segundo fio dourado por dentro e quatro
@@ -2647,8 +2648,21 @@
   body.vista-bibli::before, body.vista-bibli::after,
   .vista-hub .topbar::before, .vista-bibli .topbar::before,
   .vista-hub .kaiden-cena, .vista-bibli .kaiden-cena { display: none !important; }
-  .vista-hub .wrap > :not(.topbar):not(#hub),
-  .vista-bibli .wrap > :not(.topbar):not(#bibli) { display: none !important; }
+  .vista-hub .wrap > :not(.topbar):not(#hub):not(.made-by),
+  .vista-bibli .wrap > :not(.topbar):not(#bibli):not(.made-by) { display: none !important; }
+
+  /* O rodapé é o mesmo em todas as telas, e o texto nunca muda com o idioma.
+     Na inicial ele aparece; nas outras, quase some. */
+  .vista-hub .made-by {
+    margin-top: 64px; padding: 22px 0 8px; border-top: 1px solid var(--j-borda);
+    font-family: 'Unbounded', 'Sora', system-ui, sans-serif; font-weight: 600;
+    font-size: 0.78rem; letter-spacing: 0.24em; color: var(--j-texto); opacity: 0.82;
+  }
+  .vista-hub .made-by span { color: var(--j-sinal); }
+  .vista-bibli .made-by {
+    margin-top: 48px; padding-top: 0; border-top: 0;
+    font-family: 'Sora', system-ui, sans-serif; color: var(--j-apagado);
+  }
   .vista-hub .wrap, .vista-bibli .wrap { max-width: 76rem; position: relative; z-index: 1; }
   .vista-hub ::selection, .vista-bibli ::selection { background: var(--j-sinal); color: var(--j-sinal-tinta); }
 
@@ -3411,7 +3425,7 @@
   <div id="idols"></div>
   <div id="categories"></div>
 
-  <footer class="made-by">made by oaovito</footer>
+  <footer class="made-by" translate="no">made by <span>oaovito</span></footer>
 
 </div>
 

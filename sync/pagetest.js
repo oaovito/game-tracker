@@ -1276,7 +1276,7 @@ async function rodar(log) {
     'o alfinete é desenhado e segue o tema', 'sem emoji, herda currentColor');
 
   // O rodapé é discreto, mas tem de existir.
-  const rodape = /made by oaovito/i.test(fs.readFileSync(PAGINA, 'utf8'));
+  const rodape = /made by (<span>)?oaovito/i.test(fs.readFileSync(PAGINA, 'utf8'));
   log(rodape, 'rodapé de autoria presente', rodape ? 'made by oaovito' : 'ausente');
 
   await original();
