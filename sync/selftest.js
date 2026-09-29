@@ -1404,19 +1404,37 @@ function resumo() {
   console.log('\n  === 16. O link público é a mesma página ===');
   try {
     const cru = path.join(RAIZ_PROJETO, 'progress.json');
-    const publicado = path.join(RAIZ_PROJETO, 'docs', 'progress.json');
-    if (!fs.existsSync(cru) || !fs.existsSync(publicado)) {
-      console.log('   --    a página publicada desenha igual à local  -  sem as duas versões aqui');
+    if (!fs.existsSync(cru)) {
+      console.log('   --    a página publicada desenha igual à local  -  sem leitura crua nesta máquina');
     } else {
+      /*
+       * A comparação é entre a leitura crua e ELA MESMA depois da poda, e não
+       * contra o docs/progress.json do disco.
+       *
+       * A primeira versão comparava com o arquivo publicado, e isso deu falso
+       * positivo na primeira instalação nova em que rodou: num clone recém
+       * feito o docs/ traz a publicação de OUTRA máquina, tirada em outro
+       * momento, então as duas telas divergiam por dado e não por
+       * comportamento. O teste acusava defeito onde só havia um arquivo mais
+       * velho.
+       *
+       * Podar em memória compara como com como: mesma leitura, antes e depois
+       * do publicador. É a transformação que se quer vigiar -- se ela tira
+       * algo que a página desenha, as telas divergem, e aí é defeito de
+       * verdade em qualquer máquina.
+       */
       const pagetest = require('./pagetest');
-      const local = await pagetest.desenhar(JSON.parse(fs.readFileSync(cru, 'utf8')));
-      const site = await pagetest.desenhar(JSON.parse(fs.readFileSync(publicado, 'utf8')));
-      if (local === site) {
+      const local = JSON.parse(fs.readFileSync(cru, 'utf8'));
+      const limpo = publish.sanitizar(local);
+
+      const telaLocal = await pagetest.desenhar(local);
+      const telaSite = await pagetest.desenhar(limpo);
+      if (telaLocal === telaSite) {
         pass++;
         console.log('   ok    a página publicada desenha igual à local  -  as duas telas são idênticas, caractere a caractere');
       } else {
-        const a = local.split(String.fromCharCode(10));
-        const b = site.split(String.fromCharCode(10));
+        const a = telaLocal.split(String.fromCharCode(10));
+        const b = telaSite.split(String.fromCharCode(10));
         const difs = [];
         for (let i = 0; i < Math.max(a.length, b.length); i++) {
           if (a[i] === b[i]) continue;

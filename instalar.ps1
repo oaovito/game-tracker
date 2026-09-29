@@ -242,6 +242,10 @@ Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.
 & $node 'sync/parse.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota $_ }
+# E publicar logo depois, para o docs/ desta maquina refletir a leitura dela em
+# vez do retrato que veio no zip. Sem isto a pasta publicada fica com o
+# progresso de outra pessoa ate o servico completar o primeiro ciclo.
+& $node 'sync/publish.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota $_ }
 & $node 'sync/selftest.js'
 $testes = $LASTEXITCODE
 Pop-Location
