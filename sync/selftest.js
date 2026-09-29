@@ -1166,7 +1166,8 @@ check('a bandeja nao sobrevive ao servico', () => {
     'o icone nao vigia o processo que o abriu');
   assert(/NotifyIcon/.test(src), 'nao e um icone de bandeja');
   // Sem dependencia: o projeto nao ganha uma por causa de um icone.
-  assert(!/Install-Module|Import-Module|\.exe/.test(src.replace(/wscript\.exe|powershell\.exe/g, '')),
+  // A janela do Trackeroao e do proprio projeto (o instalador a poe em app\).
+  assert(!/Install-Module|Import-Module|\.exe/.test(src.replace(/wscript\.exe|powershell\.exe|Trackeroao\.exe/g, '')),
     'o icone depende de algo de fora do Windows');
   return 'NotifyIcon do proprio Windows, e morre junto com o servico';
 });
@@ -1526,7 +1527,9 @@ check('nada é resolvido para fora da pasta clonada', () => {
      * do projeto casava com ".exe" e o teste acusava meia dúzia de arquivos
      * que não chamam executável nenhum.
      */
-    const DA_MAQUINA = /^(node|csc|wscript|cscript|powershell|winget|explorer|schtasks|taskkill)$/i;
+    // Trackeroao.exe e a janela do proprio projeto, que o instalador poe em
+    // app\; num clone ela nao existe, e quem a chama cai na pagina local.
+    const DA_MAQUINA = /^(node|csc|wscript|cscript|powershell|winget|explorer|schtasks|taskkill|Trackeroao)$/i;
     const CAMINHO_EXE = /[\\/]([A-Za-z0-9_-]+)\.exe(?![A-Za-z])/g;
     for (const m of t.matchAll(CAMINHO_EXE)) {
       if (DA_MAQUINA.test(m[1])) continue;

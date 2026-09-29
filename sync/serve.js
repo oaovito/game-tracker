@@ -80,6 +80,7 @@ function createServer(options) {
   // arquivos: quem sabe o que "abrir" significa e o processo residente.
   const aoAbrir = typeof options.aoAbrir === 'function' ? options.aoAbrir : null;
   const aoVarrer = typeof options.aoVarrer === 'function' ? options.aoVarrer : null;
+  const aoAtualizar = typeof options.aoAtualizar === 'function' ? options.aoAtualizar : null;
 
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
@@ -151,6 +152,16 @@ function createServer(options) {
           res.writeHead(400, { 'content-type': 'application/json' }).end('{"erro":"pedido malformado"}');
         }
       });
+      return;
+    }
+
+    // "Forçar atualização", no menu da bandeja: confere a release agora, sem
+    // esperar a próxima rodada. Só da própria máquina.
+    if (urlPath === '/atualizar') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
+      if (aoAtualizar) { try { aoAtualizar(); } catch (e) { /* não derruba o servidor */ } }
+      res.writeHead(202).end();
       return;
     }
 
@@ -264,7 +275,7 @@ function createServer(options) {
  * problema nenhum, porque a porta principal continua valendo.
  */
 function listenExtra(options) {
-  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer });
+  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar });
   return new Promise((resolve) => {
     const desistir = (err) => resolve({ ok: false, port: options.port, error: err && err.message });
     server.once('error', desistir);
@@ -280,7 +291,7 @@ function start(options) {
   const root = options.root;
   const port = options.port || 8777;
   const indexFile = options.indexFile || 'trackeroao.html';
-  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer });
+  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar });
 
   // Rodando como serviço, o processo sobe antes do Wi-Fi associar: não existe
   // IP de LAN ainda, e anunciar isso como "sem rede" seria mentira. Nesse caso

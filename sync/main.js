@@ -639,6 +639,10 @@ const ATUALIZAR_PRIMEIRA_MS = 20 * 1000;
 const ATUALIZAR_MS = 6 * 60 * 60 * 1000;
 const ATUALIZAR_ERRO_MS = 10 * 60 * 1000;
 let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
+// Pedida à mão, pelo menu da bandeja: roda na próxima folga entre rodadas,
+// mesmo com o jogo aberto, porque foi a pessoa quem pediu.
+let atualizacaoForcada = false;
+function pedirAtualizacao() { atualizacaoForcada = true; proximaAtualizacao = 0; }
 
 /**
  * Mantém a instalação atual sem que isso chegue a quem usa.
@@ -655,7 +659,10 @@ let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
  * que se vê -- e a leitura daquela sessão passaria por dois processos.
  */
 async function passoDeAtualizacao() {
-  if (gameWasRunning || Date.now() < proximaAtualizacao) return;
+  if (gameWasRunning && !atualizacaoForcada) return;
+  if (Date.now() < proximaAtualizacao) return;
+  if (atualizacaoForcada) console.log('  [atualizacao] pedida pela bandeja');
+  atualizacaoForcada = false;
   const r = await atualizar.verificar();
   if (r.atualizou) {
     console.log(`  [atualizacao] ${r.de || 'versão anterior'} -> ${r.para}; reiniciando em silêncio`);
@@ -745,6 +752,7 @@ async function run() {
           root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
           aoAbrir: () => abrirBandeja('atalho'),
           aoVarrer: () => pedirVarredura(),
+          aoAtualizar: () => pedirAtualizacao(),
         });
         break;
       } catch (e) {
