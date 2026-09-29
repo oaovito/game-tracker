@@ -26,6 +26,7 @@ const mdns = require('./mdns');
 const publish = require('./publish');
 const instalacao = require('./instalacao');
 const hibernar = require('./hibernar');
+const jogos = require('./jogos');
 
 // --------------------------------------------------------------------- log
 // Instalado como tarefa agendada, o processo roda oculto e o stdout se perde.
@@ -73,7 +74,15 @@ function hookConsole() {
   }
 }
 
-const PROCESS_NAME = 'sekiro.exe';
+/*
+ * O nome do processo saiu daqui e foi para o catalogo.
+ *
+ * Escrito nesta linha, ele nao tinha como ser escolhido nem trocado sem mexer
+ * em codigo -- e o pedido e justamente que a pessoa escolha, dentro da
+ * aplicacao, qual jogo faz a bandeja acender. O que sobra aqui e a reserva
+ * para o caso de o catalogo nao poder ser lido.
+ */
+const PROCESS_FALLBACK = 'sekiro.exe';
 const POLL_MS = Number(process.env.SEKIRO_POLL_MS || 5000);
 const DEBOUNCE_MS = Number(process.env.SEKIRO_DEBOUNCE_MS || 900);
 const PORT = Number(process.env.PORT || 8777);
@@ -98,36 +107,114 @@ const ROOT = path.join(__dirname, '..');
 const OUT_FILE = path.join(ROOT, 'progress.json');
 
 // --------------------------------------------------------- process detection
-function isGameRunning() {
+/** Os nomes de imagem a procurar agora, relidos a cada volta do poll. */
+function alvos() {
+  const lista = jogos.processos();
+  return lista.length ? lista : [PROCESS_FALLBACK];
+}
+
+/**
+ * Qual jogo vigiado esta aberto, ou null.
+ *
+ * Devolve o nome do processo e nao um booleano porque quem chama precisa saber
+ * QUAL jogo abriu: e o nome dele que vai para a bandeja e para o log.
+ */
+function jogoAberto() {
+  const nomes = alvos();
+  if (!nomes.length) return Promise.resolve(null);
+
   if (process.platform === 'win32') {
     return new Promise((resolve) => {
-      execFile(
-        'tasklist',
-        ['/FI', `IMAGENAME eq ${PROCESS_NAME}`, '/NH', '/FO', 'CSV'],
-        { windowsHide: true, timeout: 8000 },
+      /*
+       * Sem filtro, e a filtragem e feita aqui.
+       *
+       * A versao anterior passava um `/FI IMAGENAME eq X` por jogo vigiado,
+       * achando que o tasklist juntaria os filtros com OU. Ele junta com E: com
+       * dois jogos no catalogo, a pergunta vira "qual processo se chama ao
+       * mesmo tempo sekiro.exe e outracoisa.exe", e a resposta e sempre
+       * nenhum. Com um jogo so funcionava por acidente, e teria quebrado
+       * exatamente quando o catalogo crescesse -- que e para onde esta parte
+       * do projeto existe para ir. Medido: "No tasks are running which match
+       * the specified criteria" para dois filtros de processos que ESTAO
+       * rodando.
+       *
+       * A lista inteira custa ~190 ms e ~9 KB uma vez a cada cinco segundos, e
+       * e uma chamada so independente de quantos jogos forem vigiados.
+       */
+      execFile('tasklist', ['/NH', '/FO', 'CSV'],
+        { windowsHide: true, timeout: 8000, maxBuffer: 4 * 1024 * 1024 },
         (err, stdout) => {
-          if (err) return resolve(false);
-          resolve(stdout.toLowerCase().includes(PROCESS_NAME));
-        }
-      );
+          if (err) return resolve(null);
+          const saida = String(stdout).toLowerCase();
+          // O nome vem entre aspas na primeira coluna do CSV. Comparar com as
+          // aspas evita que "sekiro.exe" case com "naosekiro.exe.bak".
+          resolve(nomes.find((n) => saida.includes('"' + n + '"')) || null);
+        });
     });
   }
-  // Linux / Steam Deck: read /proc directly rather than spawning anything.
+
+  // Linux / Steam Deck: le /proc direto em vez de abrir processo nenhum.
   return new Promise((resolve) => {
     fs.readdir('/proc', (err, entries) => {
-      if (err) return resolve(false);
+      if (err) return resolve(null);
       for (const e of entries) {
         if (!/^\d+$/.test(e)) continue;
         try {
-          const comm = fs.readFileSync(`/proc/${e}/comm`, 'utf8').trim().toLowerCase();
-          if (comm === PROCESS_NAME || comm.startsWith('sekiro')) return resolve(true);
+          const comm = fs.readFileSync('/proc/' + e + '/comm', 'utf8').trim().toLowerCase();
+          const achou = nomes.find((n) => comm === n || comm === n.replace(/\.exe$/, ''));
+          if (achou) return resolve(achou);
         } catch (err2) {
           /* process vanished between readdir and read; ignore */
         }
       }
-      resolve(false);
+      resolve(null);
     });
   });
+}
+
+/** A forma antiga da pergunta, que o resto do codigo e os testes usam. */
+function isGameRunning() {
+  return jogoAberto().then((n) => !!n);
+}
+
+// ------------------------------------------------------------ bandeja
+/*
+ * O icone na area de notificacao e o UNICO sinal de que a aplicacao esta
+ * aberta.
+ *
+ * A regra pedida: automaticamente, a aplicacao so abre quando um jogo
+ * escolhido comeca, e abre em silencio -- sem janela e sem navegador, que
+ * roubariam o foco de quem acabou de entrar no jogo. Pelo atalho da area de
+ * trabalho ela abre quando a pessoa quiser.
+ *
+ * O servico em si continua subindo no logon e servindo a pagina; isso nao e a
+ * aplicacao "aberta", e o que mantem o link do celular funcionando e o save
+ * sendo lido. O que aparece e some e a chama na bandeja.
+ */
+let bandeja = null;
+
+function abrirBandeja(motivo) {
+  if (bandeja && !bandeja.killed) return;
+  if (process.platform !== 'win32') return;
+  const script = path.join(__dirname, 'bandeja.ps1');
+  if (!fs.existsSync(script)) return;
+  try {
+    bandeja = require('child_process').spawn('powershell.exe', [
+      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
+      '-File', script, '-Porta', String(PORT), '-ProcessoPai', String(process.pid),
+    ], { windowsHide: true, detached: false, stdio: 'ignore' });
+    bandeja.on('exit', () => { bandeja = null; });
+    console.log('  [bandeja] icone aceso (' + motivo + ')');
+  } catch (e) {
+    console.log('  [bandeja] nao consegui acender: ' + e.message);
+  }
+}
+
+function fecharBandeja() {
+  if (!bandeja || bandeja.killed) return;
+  try { bandeja.kill(); } catch (e) { /* ja morreu */ }
+  bandeja = null;
+  console.log('  [bandeja] icone apagado');
 }
 
 // ------------------------------------------------------------- slot learning
@@ -511,22 +598,34 @@ function vigiarRede(obterUrl, intervalo, aoMudar) {
 let gameWasRunning = null;
 
 async function pollOnce() {
-  let running = false;
+  let qual = null;
   try {
-    running = await isGameRunning();
+    qual = await jogoAberto();
   } catch (e) {
-    running = false;
+    qual = null;
   }
+  const running = !!qual;
 
   if (running !== gameWasRunning) {
     gameWasRunning = running;
     if (running) {
-      console.log('\n  >> Sekiro aberto - sincronização ativa');
+      const g = jogos.porProcesso(qual);
+      const nome = g ? g.nome : qual;
+      console.log('\n  >> ' + nome + ' aberto - sincronização ativa');
+      // A aplicacao acende aqui, e so aqui: e o momento que o pedido descreve.
+      abrirBandeja(nome);
       startWatching();
       syncNow('jogo aberto');
     } else {
-      console.log('\n  >> Sekiro fechado - só o poll leve continua rodando');
+      console.log('\n  >> jogo fechado - só o poll leve continua rodando');
       stopWatching();
+      /*
+       * Uma ultima leitura antes de apagar, e o icone so sai depois dela: a
+       * sessao que acabou e justamente a que interessa ver, e apagar antes
+       * faria a aplicacao sumir no instante em que tem mais o que mostrar.
+       */
+      syncNow('jogo fechado');
+      fecharBandeja();
     }
   }
 }
@@ -558,7 +657,10 @@ async function run() {
   syncNow('leitura inicial');
 
   try {
-    await serve.start({ root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true });
+    await serve.start({
+      root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
+      aoAbrir: () => abrirBandeja('atalho'),
+    });
   } catch (err) {
     if (err && err.code === 'EADDRINUSE') {
       console.error(`\n  A porta ${PORT} já está ocupada.`);
@@ -620,4 +722,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isGameRunning, learnActiveSlot, syncNow, vigiarRede, vigiarInstalacao };
+module.exports = { isGameRunning, jogoAberto, alvos, learnActiveSlot, syncNow, vigiarRede, vigiarInstalacao };

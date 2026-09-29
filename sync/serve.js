@@ -74,11 +74,84 @@ function safeJoin(root, urlPath) {
 function createServer(options) {
   const root = options.root;
   const indexFile = options.indexFile || 'trackeroao.html';
+  // Chamado quando alguem desta maquina abre a aplicacao pelo atalho. Fica
+  // como parametro para o serve.js continuar sendo so um servidor de
+  // arquivos: quem sabe o que "abrir" significa e o processo residente.
+  const aoAbrir = typeof options.aoAbrir === 'function' ? options.aoAbrir : null;
 
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
     // com "/" falhava e a página virava 404.
     let urlPath = (req.url || '/').split('?')[0];
+
+    /*
+     * A escolha de quais jogos vigiar é a única coisa que a página escreve.
+     *
+     * O projeto inteiro é somente leitura, e esta é a exceção declarada: não é
+     * progresso, é preferência de quem instalou — e o pedido é que ela seja
+     * feita dentro da aplicação, não editando arquivo.
+     *
+     * Só aceita de quem está NESTA máquina. O servidor responde para a rede
+     * local inteira, e o celular na mesma casa não tem por que reconfigurar o
+     * PC de alguém. Ler a página, sim; mudar como ela se comporta, não. Quem
+     * chega pelo GitHub Pages nem alcança daqui, porque lá não há servidor.
+     */
+    /*
+     * O atalho da area de trabalho bate aqui antes de abrir o navegador.
+     *
+     * E o que faz a aplicacao "abrir" no sentido do pedido: a chama acende na
+     * bandeja. Sem esta rota o atalho abriria so uma aba, e a bandeja ficaria
+     * sendo sinal exclusivo do jogo -- mas o pedido diz que pelo atalho ela
+     * abre livremente tambem.
+     *
+     * So de quem esta nesta maquina, pela mesma razao da rota de selecao: o
+     * celular le a pagina, nao comanda o computador.
+     */
+    if (urlPath === '/abrir') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina) { res.writeHead(403).end('forbidden'); return; }
+      if (aoAbrir) { try { aoAbrir(); } catch (e) { /* abrir nao pode derrubar o servidor */ } }
+      res.writeHead(204).end();
+      return;
+    }
+
+    if (urlPath === '/selecao') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina) {
+        res.writeHead(403, { 'content-type': 'application/json' })
+           .end('{"erro":"a escolha só pode ser feita no próprio computador"}');
+        return;
+      }
+      const jogos = require('./jogos');
+      if (req.method === 'GET') {
+        res.writeHead(200, { 'content-type': 'application/json' })
+           .end(JSON.stringify(jogos.paraProgresso()));
+        return;
+      }
+      if (req.method === 'POST') {
+        let corpo = '';
+        req.on('data', (c) => {
+          corpo += c;
+          // Um corpo grande aqui só pode ser engano ou abuso: a lista tem o
+          // tamanho do catálogo, que cabe em algumas centenas de bytes.
+          if (corpo.length > 4096) { req.destroy(); }
+        });
+        req.on('end', () => {
+          try {
+            const pedido = JSON.parse(corpo);
+            jogos.selecionar(pedido.jogos);
+            res.writeHead(200, { 'content-type': 'application/json' })
+               .end(JSON.stringify(jogos.paraProgresso()));
+          } catch (e) {
+            res.writeHead(400, { 'content-type': 'application/json' })
+               .end('{"erro":"pedido malformado"}');
+          }
+        });
+        return;
+      }
+      res.writeHead(405).end('method not allowed');
+      return;
+    }
     if (urlPath === '/' || urlPath === '') urlPath = '/' + indexFile;
 
     let file = safeJoin(root, urlPath);
@@ -133,7 +206,7 @@ function createServer(options) {
  * problema nenhum, porque a porta principal continua valendo.
  */
 function listenExtra(options) {
-  const server = createServer({ root: options.root, indexFile: options.indexFile });
+  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir });
   return new Promise((resolve) => {
     const desistir = (err) => resolve({ ok: false, port: options.port, error: err && err.message });
     server.once('error', desistir);

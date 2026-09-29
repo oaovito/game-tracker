@@ -20,6 +20,7 @@ const tempo = require('./tempo');
 const bosskills = require('./bosskills');
 const achievements = require('./achievements');
 const jogador = require('./jogador');
+const jogosCat = require('./jogos');
 const conquistas = require('./conquistas');
 const efeitos = require('./efeitos');
 const memoria = require('./memoria');
@@ -646,6 +647,16 @@ function buildProgress(options) {
      * Sem Steam na máquina isto é null, e o cabeçalho perde a linha inteira em
      * vez de mostrar um nome genérico — ver o comentário em jogador.js.
      */
+    /*
+     * Quais jogos fazem a aplicacao acender sozinha.
+     *
+     * Vai para a pagina porque e la que se escolhe, e a escolha so vale na
+     * maquina que roda o servico -- pelo link publico a lista aparece como
+     * leitura, sem poder mudar nada, porque la nao ha servidor para escrever.
+     */
+    jogosVigiados: (() => {
+      try { return jogosCat.paraProgresso(); } catch (e) { return null; }
+    })(),
     jogador: (() => {
       try { return jogador.quem({ save: file }); } catch (e) { return null; }
     })(),

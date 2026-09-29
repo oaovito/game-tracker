@@ -39,7 +39,7 @@ const CAMPOS_PUBLICOS = [
   'prayerBeadList', 'gourdSeedList',
   'bosses', 'miniBosses', 'headless', 'idols', 'idolCalibration',
   'tools', 'arts', 'goodsUnlocks', 'history', 'notes', 'efeitos',
-  'jogador', 'demonBell', 'dragonrot',
+  'jogador', 'demonBell', 'dragonrot', 'jogosVigiados',
 ];
 
 /** O que sobra de `source` depois de tirar o que identifica a máquina. */

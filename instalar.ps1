@@ -130,7 +130,7 @@ Write-Host "trackeroao - instalacao" -ForegroundColor White
 Nota "destino: $Destino"
 
 # ================================================================== 1. Node
-Passo '1/5  Node.js'
+Passo '1/6  Node.js'
 
 function Node-Portatil($raiz) {
   <#
@@ -221,7 +221,7 @@ if (-not (Test-Path $node)) { Ruim "o Node apontado nao existe: $node"; return }
 Ok "node em $node  ($(& $node -v))"
 
 # =============================================================== 2. projeto
-Passo '2/5  Projeto'
+Passo '2/6  Projeto'
 $tmp = Join-Path $env:TEMP ("trackeroao-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 $zip = Join-Path $tmp 'fonte.zip'
@@ -252,12 +252,65 @@ $artes = @(Get-ChildItem (Join-Path $Destino 'docs\icones') -Recurse -File -Erro
 Ok "projeto em $Destino  ($artes imagens)"
 
 # =============================================================== 3. servico
-Passo '3/5  Servico'
+Passo '3/6  Servico'
 $instalador = Join-Path $Destino 'install-sync-service.ps1'
 & $instalador -NodePath $node -Usuario $UsuarioOriginal
 
+# =============================================================== 4. atalho
+Passo '4/6  Atalho'
+<#
+  O atalho na area de trabalho.
+
+  E o que cumpre a primeira metade do pedido: a aplicacao pode ser aberta
+  livremente, quando a pessoa quiser. A outra metade -- abrir sozinha, em
+  silencio, so quando o jogo escolhido comeca -- e da bandeja, e nao depende
+  deste atalho.
+
+  Ele aponta para o wscript com o abrir.vbs, e nao para a URL direto, por tres
+  motivos que um atalho de internet nao resolveria: o servico pode estar
+  parado e precisa subir antes; a chama precisa acender na bandeja; e a espera
+  pelo servidor evita abrir o navegador numa pagina de erro.
+
+  O icone e o do proprio wscript por enquanto; um .ico proprio seria mais um
+  arquivo para sumir no caminho, e o desenho ja vive na bandeja.
+#>
+$atalhoVbs = Join-Path $Destino 'sync\abrir.vbs'
+if (-not (Test-Path $atalhoVbs)) {
+  Nota 'abrir.vbs nao veio no download; sem atalho'
+  $pendencias += 'criar um atalho para o trackeroao: nao consegui'
+} else {
+  try {
+    <#
+      A area de trabalho e a de QUEM PEDIU a instalacao, e nao a do processo.
+      Elevado com outra conta, [Environment]::GetFolderPath('Desktop') devolve
+      a pasta do administrador -- e o atalho nasceria onde ninguem olha.
+    #>
+    $desktop = $null
+    if ($UsuarioOriginal -and $UsuarioOriginal -ne "$env:USERDOMAIN\$env:USERNAME") {
+      $apenasNome = ($UsuarioOriginal -split '\\')[-1]
+      $tentativa = Join-Path (Join-Path (Split-Path $env:PUBLIC -Parent) $apenasNome) 'Desktop'
+      if (Test-Path $tentativa) { $desktop = $tentativa }
+    }
+    if (-not $desktop) { $desktop = [Environment]::GetFolderPath('Desktop') }
+
+    $lnk = Join-Path $desktop 'trackeroao.lnk'
+    $ws = New-Object -ComObject WScript.Shell
+    $atalho = $ws.CreateShortcut($lnk)
+    $atalho.TargetPath = Join-Path $env:WINDIR 'System32\wscript.exe'
+    $atalho.Arguments = "`"$atalhoVbs`""
+    $atalho.WorkingDirectory = $Destino
+    $atalho.IconLocation = "$(Join-Path $env:WINDIR 'System32\wscript.exe'),0"
+    $atalho.Description = 'Abre a pagina de progresso do trackeroao'
+    $atalho.Save()
+    Ok "atalho em $lnk"
+  } catch {
+    Nota "nao criei o atalho: $($_.Exception.Message)"
+    $pendencias += 'criar um atalho para o trackeroao na area de trabalho'
+  }
+}
+
 # ================================================================== 4. rede
-Passo '4/5  Rede'
+Passo '5/6  Rede'
 <#
   A porta 8777 na rede local.
 
@@ -293,7 +346,7 @@ if ($SemFirewall) {
 }
 
 # ============================================================= 5. conferir
-Passo '5/5  Conferindo'
+Passo '6/6  Conferindo'
 Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.

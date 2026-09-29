@@ -1,0 +1,33 @@
+{
+  "_README": [
+    "Catalogo dos jogos que o tracker sabe vigiar, e o que identifica cada um.",
+    "",
+    "Isto e CONFIGURACAO, versionada e igual em toda maquina. A escolha de quais",
+    "vigiar e outra coisa: ela e estado desta maquina, mora em selecao.json na",
+    "raiz do projeto, e fica fora do git como os outros arquivos de estado.",
+    "",
+    "Por que um catalogo para um jogo so: porque a alternativa era 'sekiro.exe'",
+    "escrito dentro do main.js, e ali ele nao tem como ser escolhido nem",
+    "substituido sem mexer em codigo. Com a tabela, acrescentar um jogo e uma",
+    "entrada aqui mais o que ele precisar de leitura propria.",
+    "",
+    "'processos' aceita mais de um nome porque a mesma edicao de um jogo pode",
+    "trocar de executavel entre versoes, e porque ha jogos com launcher separado.",
+    "A comparacao e por nome de imagem, sem caminho, e sem diferenciar maiuscula.",
+    "",
+    "'leitura' diz ate onde o suporte vai:",
+    "  completa - le o save e a memoria, que e o caso do Sekiro",
+    "  nenhuma  - o tracker so percebe que o jogo abriu e fechou",
+    "Um jogo com 'nenhuma' ainda serve para acender a aplicacao na bandeja, que",
+    "e o que o item de menu promete: aparecer quando o jogo escolhido comecar."
+  ],
+  "lista": [
+    {
+      "chave": "sekiro",
+      "nome": "Sekiro: Shadows Die Twice",
+      "processos": ["sekiro.exe"],
+      "appId": "814380",
+      "leitura": "completa"
+    }
+  ]
+}

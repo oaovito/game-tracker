@@ -2102,6 +2102,60 @@
   .topic:hover .topic-n { opacity: 0.95; color: var(--gold); }
   .topic.on .topic-n { color: var(--paper); opacity: 0.7; }
 
+  /* --- a escolha de jogos --- */
+  .jogos-nota {
+    margin: 0 0 0.9rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+  .jogos-lista { display: flex; flex-direction: column; gap: 0.55rem; }
+  /*
+   * Cada jogo é uma linha inteira clicável, e não um quadradinho com rótulo ao
+   * lado: alvo grande é o que faz isto funcionar no celular, onde a janela
+   * também abre.
+   */
+  .jogo-linha {
+    display: flex; align-items: center; gap: 0.8rem;
+    width: 100%;
+    padding: 0.6rem 0.2rem;
+    background: none; border: 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+  }
+  .jogo-linha:last-child { border-bottom: 0; }
+  .jogo-linha[disabled] { cursor: default; opacity: 0.75; }
+  /* A marca de vigiado é a chama, a mesma do bloco de mortes: onde ela está
+     acesa, a aplicação acende. */
+  .jogo-marca {
+    flex: 0 0 auto;
+    width: 1.1rem; height: 1.5rem;
+    background-image: url("icones/chama.svg");
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.18;
+    filter: grayscale(1);
+    transition: opacity 0.25s ease, filter 0.25s ease;
+  }
+  .jogo-linha.vigiado .jogo-marca {
+    opacity: 1;
+    filter: none;
+    animation: vela 6.4s ease-in-out infinite;
+  }
+  .jogo-nome { font-family: var(--font-display); font-size: 0.95rem; }
+  .jogo-estado {
+    margin-left: auto;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .jogo-linha.vigiado .jogo-estado { color: #5ec8f0; }
+
   /* A gaveta: três risquinhos, e o que não tem vaga fixa no menu mora dentro. */
   .gaveta { position: relative; }
   .gaveta-bt {
@@ -2909,6 +2963,28 @@
     </section>
   </div>
 
+  <!--
+    A escolha de quais jogos acendem a aplicação.
+
+    Fica numa janela aberta pela gaveta, e não num bloco da página: é ajuste de
+    comportamento, não progresso, e o corpo da página é só medição.
+
+    Pelo link público ela aparece como leitura — a lista some do alcance do
+    clique, porque lá não há servidor para gravar nada. Mostrar assim mesmo é
+    honesto: diz o que a instalação está vigiando, que é informação, sem
+    prometer um botão que não funcionaria.
+  -->
+  <dialog class="janela" id="jogosJanela">
+    <div class="janela-topo">
+      <span class="janela-titulo">games watched</span>
+      <button class="janela-fecha" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="janela-corpo">
+      <p class="jogos-nota" id="jogosNota"></p>
+      <div class="jogos-lista" id="jogosLista"></div>
+    </div>
+  </dialog>
+
   <dialog class="janela" id="abaJanela">
     <div class="janela-topo">
       <span class="janela-titulo"></span>
@@ -3371,6 +3447,21 @@ function renderTopicos() {
       });
       menu.appendChild(it);
     }
+    /*
+     * A escolha de jogos entra na gaveta, e não na barra: ela não é uma seção
+     * do progresso, é um ajuste — e a barra é para o que se olha, não para o
+     * que se configura.
+     */
+    const bt2 = fazerBotao("Games watched", "gaveta-item");
+    bt2.addEventListener("click", () => {
+      gavetaAberta = false;
+      renderTopicos();
+      const j = document.getElementById("jogosJanela");
+      ligarJanela(j, null);
+      abrirJanela(j, null);
+    });
+    menu.appendChild(bt2);
+
     wrap.appendChild(menu);
     nav.appendChild(wrap);
   }
@@ -4034,6 +4125,90 @@ function renderContador(cfg) {
 }
 
 /**
+ * A lista de jogos vigiados.
+ *
+ * Quem decide se dá para mexer é a origem da página, e não uma configuração:
+ * servida de localhost, o servidor aceita gravar a escolha; servida pelo
+ * GitHub Pages, não há servidor nenhum do outro lado. Então a mesma lista
+ * aparece nos dois lugares e só um deles responde ao clique — e a janela diz
+ * qual dos dois é, em vez de deixar o clique falhar em silêncio.
+ */
+function renderJogos() {
+  const lista = document.getElementById("jogosLista");
+  const nota = document.getElementById("jogosNota");
+  if (!lista || !nota) return;
+
+  const j = temSync() && sync.jogosVigiados ? sync.jogosVigiados : null;
+  const daMaquina = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+
+  lista.innerHTML = "";
+  if (!j || !j.lista || !j.lista.length) {
+    nota.textContent = "Waiting for the save.";
+    return;
+  }
+
+  nota.textContent = daMaquina
+    ? "The app opens by itself — quietly, only in the tray — when one of these starts. The desktop shortcut opens it any time."
+    : "Read-only here: the choice is made on the computer that runs the service.";
+
+  for (const g of j.lista) {
+    const linha = document.createElement("button");
+    linha.type = "button";
+    linha.className = "jogo-linha" + (g.vigiado ? " vigiado" : "");
+    if (!daMaquina) linha.disabled = true;
+
+    const marca = document.createElement("span");
+    marca.className = "jogo-marca";
+    marca.setAttribute("aria-hidden", "true");
+
+    const nome = document.createElement("span");
+    nome.className = "jogo-nome";
+    nome.textContent = g.nome;
+
+    const estado = document.createElement("span");
+    estado.className = "jogo-estado";
+    estado.textContent = g.vigiado ? "watched" : "ignored";
+
+    linha.appendChild(marca);
+    linha.appendChild(nome);
+    linha.appendChild(estado);
+
+    // A ressalva vai para o hover: a lista é lista, não parágrafo.
+    linha.title = g.leitura === "completa"
+      ? "Save and memory are read for this game."
+      : "Only the launch is detected for this game; nothing is read from it.";
+
+    if (daMaquina) {
+      linha.addEventListener("click", () => {
+        /*
+         * A lista nova é montada a partir do que está na tela, e não de um
+         * estado paralelo em JavaScript: a página se redesenha a cada cinco
+         * segundos, e um estado próprio ficaria brigando com o que chega da
+         * leitura.
+         */
+        const marcados = [];
+        for (const g2 of j.lista) {
+          const ligado = g2.chave === g.chave ? !g2.vigiado : g2.vigiado;
+          if (ligado) marcados.push(g2.chave);
+        }
+        fetch("/selecao", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ jogos: marcados }),
+        }).then((r) => r.json()).then((novo) => {
+          sync.jogosVigiados = novo;
+          renderJogos();
+        }).catch(() => {
+          nota.textContent = "Could not save the choice. Is the service running?";
+        });
+      });
+    }
+
+    lista.appendChild(linha);
+  }
+}
+
+/**
  * Os dois estados do bloco de mortes.
  *
  * Nenhum dos dois inventa um valor quando a leitura não veio: o elemento
@@ -4374,6 +4549,7 @@ function render() {
   renderSyncLine();
   renderAssinatura();
   renderEstados();
+  renderJogos();
   renderDeaths();
   renderTempo();
   renderBossKills();

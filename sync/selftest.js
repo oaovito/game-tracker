@@ -971,6 +971,162 @@ check('o executavel do instalador esta versionado e atual', () => {
   return (fs.statSync(exe).size / 1024).toFixed(1) + ' KB, mais novo que o script que ele carrega';
 });
 
+/*
+ * 18. Quando a aplicacao aparece, e como se escolhe o que a faz aparecer.
+ *
+ * A regra pedida tem duas metades, e elas sao opostas de proposito: pelo
+ * atalho a aplicacao abre livremente, quando a pessoa quiser; sozinha, ela so
+ * abre quando um jogo ESCOLHIDO comeca, e abre em silencio -- so o icone na
+ * bandeja, sem janela e sem navegador roubando o foco de quem acabou de entrar
+ * no jogo.
+ *
+ * O que se testa aqui e o que sustenta as duas metades: que exista o atalho,
+ * que exista a bandeja, que a bandeja acenda no lugar certo do ciclo, e que a
+ * escolha seja escolha -- catalogo separado do estado, e gravavel so de quem
+ * esta na propria maquina.
+ */
+check('o jogo vigiado vem de um catalogo, e nao de um nome no codigo', () => {
+  const jogos = require('./jogos');
+  const cat = jogos.catalogo();
+  assert(cat.length > 0, 'o catalogo esta vazio');
+  const semProcesso = cat.filter((g) => !Array.isArray(g.processos) || !g.processos.length);
+  assert(semProcesso.length === 0,
+    'jogo sem processo para procurar: ' + semProcesso.map((g) => g.chave).join(', '));
+  const chaves = new Set(cat.map((g) => g.chave));
+  assert(chaves.size === cat.length, 'chave repetida no catalogo');
+
+  /*
+   * O nome do executavel nao pode ter voltado para dentro do main.js como
+   * decisao. Ele continua la como RESERVA, para o caso de o catalogo nao poder
+   * ser lido -- e a diferenca entre as duas coisas e o que este teste guarda.
+   */
+  const main = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+  assert(/PROCESS_FALLBACK/.test(main) && !/const PROCESS_NAME =/.test(main),
+    'o nome do processo voltou a ser fixo no codigo: nao daria para escolher');
+  assert(/jogos\.processos\(\)/.test(main),
+    'o main nao pergunta ao catalogo quais processos procurar');
+  /*
+   * O filtro multiplo do tasklist e E, e nao OU.
+   *
+   * A primeira versao passava um /FI IMAGENAME por jogo vigiado. Com um jogo
+   * so funcionava por acidente; com dois, a pergunta virava "qual processo se
+   * chama ao mesmo tempo A e B" e a resposta era sempre nenhum -- ou seja,
+   * teria quebrado exatamente quando o catalogo crescesse, que e para onde
+   * esta parte do projeto existe para ir.
+   */
+  /*
+   * Sem os comentarios: o de cima explica POR QUE nao filtrar, citando o
+   * proprio /FI -- e o teste se acusaria pelo texto que o justifica.
+   */
+  const mainSemComentario = main
+    .replace(/\/\\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  assert(!/IMAGENAME eq/.test(mainSemComentario),
+    'a busca voltou a filtrar pelo tasklist: com dois jogos no catalogo ela nao acha nenhum');
+  return cat.length + ' no catalogo: ' + cat.map((g) => g.chave).join(', ');
+});
+
+check('a escolha e estado desta maquina, e nao configuracao versionada', () => {
+  /*
+   * Se a escolha morasse no jogos.json, atualizar o projeto sobrescreveria o
+   * que a pessoa escolheu -- e a escolha de quem desenvolve entraria no commit.
+   * Sao arquivos separados pelo mesmo motivo que progress.json nao e
+   * versionado.
+   */
+  const jogos = require('./jogos');
+  assert(jogos.CATALOGO !== jogos.SELECAO, 'catalogo e escolha no mesmo arquivo');
+
+  /*
+   * Nunca ter escolhido e diferente de ter escolhido nenhum, e a diferenca tem
+   * efeito oposto: sem escolha, vigia tudo (que e o que nao surpreende quem
+   * acabou de instalar); com escolha vazia, nao vigia nada (que e uma decisao).
+   */
+  assert(typeof jogos.paraProgresso().escolheu === 'boolean',
+    'a pagina nao consegue distinguir "nao escolheu" de "escolheu nenhum"');
+  return 'catalogo versionado, escolha fora do git';
+});
+
+check('a escolha so pode ser gravada de quem esta nesta maquina', () => {
+  /*
+   * O servidor responde para a rede local inteira. O celular na mesma casa le
+   * a pagina, e isso e o proposito; reconfigurar o PC de alguem, nao. E pelo
+   * link publico nem ha servidor do outro lado.
+   */
+  const src = fs.readFileSync(path.join(__dirname, 'serve.js'), 'utf8');
+  const bloco = /if \(urlPath === '\/selecao'\)[\s\S]*?\n    \}/.exec(src);
+  assert(bloco, 'nao achei a rota de selecao');
+  assert(/remoteAddress/.test(bloco[0]) && /403/.test(bloco[0]),
+    'a rota de selecao aceita de qualquer origem');
+  const abrir = /if \(urlPath === '\/abrir'\)[\s\S]*?\n    \}/.exec(src);
+  assert(abrir && /remoteAddress/.test(abrir[0]),
+    'a rota que acende a bandeja aceita de qualquer origem');
+  return 'as duas rotas que mudam algo sao so de localhost';
+});
+
+check('a bandeja acende com o jogo e apaga quando ele fecha', () => {
+  const main = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+  const poll = /async function pollOnce\(\)[\s\S]*?\n\}/.exec(main);
+  assert(poll, 'nao achei o poll');
+
+  const corpo = poll[0];
+  const iAcende = corpo.indexOf('abrirBandeja');
+  const iApaga = corpo.indexOf('fecharBandeja');
+  assert(iAcende > 0, 'a bandeja nao acende quando o jogo abre');
+  assert(iApaga > iAcende, 'a bandeja nao apaga quando o jogo fecha');
+
+  /*
+   * A ultima leitura vem ANTES de apagar. A sessao que acabou e justamente a
+   * que interessa ver, e apagar antes faria a aplicacao sumir no instante em
+   * que ela tem mais o que mostrar.
+   */
+  const trechoFecha = corpo.slice(corpo.indexOf('stopWatching()'));
+  assert(trechoFecha.indexOf("syncNow('jogo fechado')") < trechoFecha.indexOf('fecharBandeja'),
+    'o icone apaga antes da leitura final: some justo quando tem o que mostrar');
+
+  // E abrir nao pode significar abrir janela: o pedido diz em silencio.
+  assert(!/start.*http:\/\/localhost/i.test(corpo),
+    'o poll abre o navegador sozinho, e o pedido e que a abertura automatica seja silenciosa');
+  return 'acende no jogo, apaga depois da leitura final, sem abrir janela';
+});
+
+check('a bandeja nao sobrevive ao servico', () => {
+  /*
+   * Icone orfao e pior que icone nenhum: ele promete uma aplicacao que nao
+   * esta mais la, e clicar nele nao levaria a lugar nenhum.
+   */
+  const bandeja = path.join(__dirname, 'bandeja.ps1');
+  assert(fs.existsSync(bandeja), 'bandeja.ps1 nao esta na pasta');
+  const src = fs.readFileSync(bandeja, 'utf8');
+  assert(/ProcessoPai/.test(src) && /Get-Process -Id \$ProcessoPai/.test(src),
+    'o icone nao vigia o processo que o abriu');
+  assert(/NotifyIcon/.test(src), 'nao e um icone de bandeja');
+  // Sem dependencia: o projeto nao ganha uma por causa de um icone.
+  assert(!/Install-Module|Import-Module|\.exe/.test(src.replace(/wscript\.exe|powershell\.exe/g, '')),
+    'o icone depende de algo de fora do Windows');
+  return 'NotifyIcon do proprio Windows, e morre junto com o servico';
+});
+
+check('existe o atalho, e ele nao e um link de internet', () => {
+  /*
+   * Um atalho para a URL abriria uma aba de erro com o servico parado, e nao
+   * acenderia a bandeja. O abrir.vbs sobe o servico, espera ele responder,
+   * acende a chama e so entao abre a pagina.
+   */
+  const vbs = path.join(__dirname, 'abrir.vbs');
+  assert(fs.existsSync(vbs), 'abrir.vbs nao esta na pasta');
+  const src = fs.readFileSync(vbs, 'utf8');
+  assert(/schtasks \/run/.test(src), 'o atalho nao sobe o servico quando ele esta parado');
+  assert(/url & "abrir"/.test(src), 'o atalho nao acende a bandeja');
+  assert(/shell\.Run url/.test(src), 'o atalho nao abre a pagina');
+
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalar.ps1'), 'utf8');
+  assert(/CreateShortcut/.test(inst), 'o instalador nao cria atalho nenhum');
+  assert(/abrir\.vbs/.test(inst), 'o atalho do instalador nao aponta para o abrir.vbs');
+  assert(/UsuarioOriginal/.test(inst.slice(inst.indexOf('4/6  Atalho'), inst.indexOf('5/6  Rede'))),
+    'o atalho nasce na area de trabalho de quem elevou, e nao de quem joga');
+  return 'wscript + abrir.vbs, na area de trabalho de quem pediu a instalacao';
+});
+
 check('nenhum modulo do sync esta quebrado', () => {
   /*
    * Parece obvio demais para ser teste, e nao e: o icones.js passou um tempo
@@ -1101,6 +1257,23 @@ check('o projeto inteiro está versionado, não só a página', () => {
   assert(rastreados.includes('trackeroao.html'), 'sem a página');
   return rastreados.length + ' arquivos: ' + Object.entries(porExt)
     .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([e, n]) => n + e).join(', ');
+});
+
+check("o catalogo de jogos vem no clone, e a escolha nao", () => {
+  /*
+   * Se a escolha morasse junto do catalogo, atualizar o projeto sobrescreveria
+   * o que a pessoa escolheu -- e a escolha de quem desenvolve entraria no
+   * commit. Sao arquivos separados pelo mesmo motivo que o progress.json nao e
+   * versionado.
+   */
+  exigeGit();
+  const jogos = require('./jogos');
+  const rel = (f) => path.relative(RAIZ_PROJETO, f).split('\\').join('/');
+  assert(rastreados.includes(rel(jogos.CATALOGO)),
+    rel(jogos.CATALOGO) + ' nao esta versionado: quem clonar nao recebe o catalogo');
+  assert(!rastreados.includes(rel(jogos.SELECAO)),
+    rel(jogos.SELECAO) + ' esta versionado: a escolha de quem instalou viraria commit');
+  return 'jogos.json no clone, selecao.json fora dele';
 });
 
 check('quem clonar recebe as artes junto', () => {
