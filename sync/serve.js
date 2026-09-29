@@ -222,7 +222,7 @@ function start(options) {
   const root = options.root;
   const port = options.port || 8777;
   const indexFile = options.indexFile || 'trackeroao.html';
-  const server = createServer({ root, indexFile });
+  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir });
 
   // Rodando como serviço, o processo sobe antes do Wi-Fi associar: não existe
   // IP de LAN ainda, e anunciar isso como "sem rede" seria mentira. Nesse caso

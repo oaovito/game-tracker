@@ -1789,5 +1789,44 @@ function resumo() {
     console.log('   --    a release carrega o executável de agora  -  ' + err.message);
   }
 
+  /*
+   * O atalho acende a bandeja de verdade, e nao so responde.
+   *
+   * A checagem do grupo 18 le o fonte: ve que a rota existe e que o abrir.vbs
+   * bate nela. Isso deixou passar um start() que montava o servidor sem
+   * repassar o aoAbrir -- a rota respondia 204 e nao acendia nada, e o atalho
+   * abria so a aba. Aqui a rota e exercitada pelo mesmo start() que o servico
+   * usa, com um GET de localhost igual ao do abrir.vbs.
+   */
+  console.log('\n  === 19. O atalho acende a bandeja ===');
+  try {
+    const serve = require('./serve');
+    let chamadas = 0;
+    const { server } = await serve.start({
+      root: RAIZ_PROJETO, port: 47000 + Math.floor(Math.random() * 1000), quiet: true, aoAbrir: () => { chamadas++; },
+    });
+    const porta = server.address().port;
+    const status = await new Promise((resolve, reject) => {
+      require('http').get({ host: '127.0.0.1', port: porta, path: '/abrir' }, (res) => {
+        res.resume();
+        res.on('end', () => resolve(res.statusCode));
+      }).on('error', reject);
+    });
+    server.close();
+    if (status === 204 && chamadas === 1) {
+      pass++;
+      console.log('   ok    o GET /abrir do atalho chega ao processo residente  -  204 e uma chamada');
+    } else {
+      fail++;
+      failures.push('o GET /abrir do atalho chega ao processo residente');
+      console.log('   FALHA o GET /abrir do atalho chega ao processo residente\n            '
+        + 'status ' + status + ', ' + chamadas + ' chamada(s): a rota responde e a chama nao acende');
+    }
+  } catch (err) {
+    fail++;
+    failures.push('o GET /abrir do atalho chega ao processo residente');
+    console.log('   FALHA o GET /abrir do atalho chega ao processo residente\n            ' + err.message);
+  }
+
   resumo();
 })();
