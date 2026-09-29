@@ -44,6 +44,33 @@ scripts do PowerShell, compila o `.exe` num runner Windows a partir dos
 scripts daquela mesma versão e publica a release `vX.Y.Z` com ele anexado. A
 primeira linha do arquivo é o título, e o resto é o corpo.
 
+### A janela do instalador
+
+Com dois cliques no `.exe`, a pessoa vê uma única caixa pequena, escura e sem
+bordas do sistema, com o nome do Trackeroao, o passo em andamento ("Baixando o
+Trackeroao", "Criando o atalho na área de trabalho"), uma barra de progresso
+com a porcentagem e uma linha de detalhe sobre o passo. Nenhum console aparece.
+O PowerShell roda oculto e informa o andamento por linhas iniciadas em `@@` na
+saída padrão, que a janela converte em texto e progresso; o restante da saída
+vai para o registro em `%TEMP%\trackeroao-instalar.log`. O pedido de
+administrador é feito uma única vez pelo próprio executável, antes de o script
+começar. Se for recusado, a instalação prossegue e a liberação da porta 8777
+passa a constar como pendência no fim. Ao terminar, a caixa oferece "Abrir o
+Trackeroao" e "Fechar"; em caso de erro, mostra o motivo e oferece o registro.
+
+O desinstalador usa a mesma caixa, com o mesmo desenho, e também não abre
+nenhuma outra janela. Como ele reside na pasta que precisa apagar, copia a si
+mesmo para a pasta temporária e entrega a execução à cópia.
+
+Para que o Windows Defender reconheça o arquivo como um instalador comum, o
+executável leva um manifesto (execução como o usuário, versões do Windows
+suportadas e escala de tela), propriedades preenchidas (produto, descrição,
+autor e versão da release) e o ícone do aplicativo, e o script é gravado em
+disco e chamado por `-File`, nunca por comando codificado. O aviso azul do
+SmartScreen ("O Windows protegeu o computador") é de outra natureza: aplica-se
+a todo executável baixado sem assinatura digital de código e só desaparece com
+um certificado de assinatura, o que não se resolve no código.
+
 Em qualquer dos dois caminhos, o que se registra é uma tarefa agendada que sobe
 oculta no login. Depois disso não é preciso abrir mais nada: a página fica no ar
 o tempo todo e a leitura do save liga sozinha quando o jogo abre. Não é preciso
@@ -74,7 +101,8 @@ O instalador deixa uma cópia de si mesmo na pasta da instalação, com o nome
 instalados" do Windows. Remover por lá, ou rodar esse executável, desfaz na
 ordem inversa tudo o que o instalador fez: a tarefa agendada, os processos e o
 ícone da bandeja, o atalho, a regra de firewall e a pasta. Antes de apagar, ele
-pergunta se deve guardar uma cópia do progresso nos Documentos. O Node.js e o
+guarda uma cópia do progresso nos Documentos; pela linha de comando, o script
+pergunta antes. O Node.js e o
 save do jogo ficam como estão. Num clone, `.\windows\uninstall-sync-service.ps1`
 remove só a tarefa agendada.
 

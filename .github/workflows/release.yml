@@ -108,8 +108,6 @@ jobs:
             'exit 1'
           ) -join "`r`n", $bom)
           $log = Join-Path $env:TEMP 'trackeroao-instalar.log'
-          $env:TRACKEROAO_FOTO = Join-Path $env:RUNNER_TEMP 'fotos'
-          New-Item -ItemType Directory -Path $env:TRACKEROAO_FOTO -Force | Out-Null
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$ok", '/fechar' -Wait -PassThru
           Get-Content $log -Encoding UTF8 | ForEach-Object { Write-Host "  | $_" }
           if ($p.ExitCode -ne 0) { throw "o ensaio que termina bem saiu com $($p.ExitCode)" }
@@ -120,10 +118,6 @@ jobs:
           Write-Host "produto: $($v.ProductName)  versao: $($v.FileVersion)  descricao: $($v.FileDescription)"
           if ($v.ProductName -ne 'Trackeroao') { throw 'o .exe saiu sem as propriedades do produto' }
           Write-Host 'a janela abriu, leu o protocolo e fechou com o codigo certo'
-          # As fotos da janela vao para o registro da Action, em base64.
-          Get-ChildItem $env:TRACKEROAO_FOTO -Filter *.png | ForEach-Object {
-            Write-Host "FOTO $($_.BaseName) $([Convert]::ToBase64String([IO.File]::ReadAllBytes($_.FullName)))"
-          }
 
       - name: Publicar
         if: steps.versao.outputs.tag != ''
