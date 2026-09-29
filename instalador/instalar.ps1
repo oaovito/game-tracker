@@ -106,6 +106,18 @@ function Falhar($texto, $janela) {
   Tela 'ERRO' $(if ($janela) { $janela } else { $texto })
   exit 1
 }
+<#
+  Programas de fora (node, winget) escrevem avisos na saida de erro. No
+  Windows PowerShell 5.1, com $ErrorActionPreference = 'Stop', cada linha
+  dessas vira um erro fatal quando essa saida e redirecionada, e pela janela
+  ela sempre e: foi assim que a instalacao parava em 84%, quando o parse.js
+  avisava que nao achou o save. Dentro desta funcao a preferencia volta a
+  Continue, so para eles; quem diz se deu certo e o codigo de saida.
+#>
+function Nativo([scriptblock]$bloco) {
+  $ErrorActionPreference = 'Continue'
+  & $bloco
+}
 Etapa 2 'Preparando a instalação'
 
 # O que ficou por fazer, para o relatorio do fim. Instalacao que termina com
@@ -263,7 +275,7 @@ if (-not $node -and (Get-Command winget -ErrorAction SilentlyContinue)) {
   Nota 'nao encontrado; instalando via winget'
   Etapa 10 'Instalando o Node.js'
   Detalhe 'Pelo winget, o instalador de programas do Windows'
-  winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
+  Nativo { winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent 2>&1 | Out-Null }
   $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
   $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
 }
@@ -276,7 +288,7 @@ if (-not $node) {
   }
 }
 if (-not (Test-Path $node)) { Falhar "o Node apontado nao existe: $node" 'O Node.js encontrado nesta máquina não está funcionando.' }
-Ok "node em $node  ($(& $node -v))"
+Ok "node em $node  ($(Nativo { & $node -v 2>&1 }))"
 
 # =============================================================== 2. projeto
 Passo '2/6  Projeto'
@@ -324,8 +336,8 @@ New-Item -ItemType Directory -Path $Destino -Force | Out-Null
   raiz o que versoes antigas deixavam la e grava em versao.json o que foi
   instalado. Duas rotinas para a mesma copia acabariam discordando.
 #>
-& $node (Join-Path $raizBaixada 'sync\atualizar.js') --aplicar $raizBaixada $tag $Destino |
-  ForEach-Object { Nota $_ }
+Nativo { & $node (Join-Path $raizBaixada 'sync\atualizar.js') --aplicar $raizBaixada $tag $Destino 2>&1 |
+  ForEach-Object { Nota "$_" } }
 $copiou = $LASTEXITCODE
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 if ($copiou -ne 0) { Falhar 'a copia do projeto falhou; nada foi instalado' 'A cópia dos arquivos falhou, e nada foi instalado.' }
@@ -483,14 +495,14 @@ Etapa 84 'Lendo o seu progresso'
 Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.
-& $node 'sync/parse.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota $_ }
+Nativo { & $node 'sync/parse.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota "$_" } }
 # E publicar logo depois, para o docs/ desta maquina refletir a leitura dela em
 # vez do retrato que veio no zip. Sem isto a pasta publicada fica com o
 # progresso de outra pessoa ate o servico completar o primeiro ciclo.
-& $node 'sync/publish.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota $_ }
+Nativo { & $node 'sync/publish.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota "$_" } }
 Etapa 90 'Conferindo a instalação'
 Detalhe 'Rodando os testes do Trackeroao nesta máquina'
-& $node 'sync/selftest.js'
+Nativo { & $node 'sync/selftest.js' 2>&1 | ForEach-Object { Write-Host "$_" } }
 $testes = $LASTEXITCODE
 Pop-Location
 if ($testes -eq 0) { Ok 'a suite passou inteira nesta maquina' }
@@ -523,3 +535,7 @@ if ($JaElevado -and -not $gui) {
   Write-Host "`nTecle algo para fechar." -ForegroundColor DarkGray
   [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }
+
+# O codigo de saida e o que a janela confere: o do ultimo programa de fora
+# (a suite, que pode falhar sem o jogo instalado) nao pode vazar para ca.
+if ($gui) { exit 0 }

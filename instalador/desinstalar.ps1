@@ -247,3 +247,5 @@ if (-not $gui -and ($JaElevado -or $env:TRACKEROAO_EXE)) {
   Write-Host "`nTecle algo para fechar." -ForegroundColor DarkGray
   [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }
+
+if ($gui) { exit 0 }

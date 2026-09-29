@@ -123,6 +123,28 @@ jobs:
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$excecao", '/fechar' -Wait -PassThru
           if ($p.ExitCode -ne 1) { throw "o ensaio com excecao saiu com $($p.ExitCode), e nao 1" }
           if (-not (Select-String -Path $log -SimpleMatch 'nao-existe-trackeroao')) { throw 'o erro do PowerShell nao chegou ao registro' }
+          # node escrevendo em stderr, com 'Stop', pela janela: sem Nativo a
+          # instalacao morre (era o que parava em 84%); com Nativo ela segue.
+          $nativo = [regex]::Match((Get-Content instalador\instalar.ps1 -Raw -Encoding UTF8), '(?s)function Nativo.*?\n\}').Value
+          if (-not $nativo) { throw 'nao achei a funcao Nativo no instalar.ps1' }
+          $semNativo = Join-Path $env:RUNNER_TEMP 'ensaio-sem-nativo.ps1'
+          $comNativo = Join-Path $env:RUNNER_TEMP 'ensaio-com-nativo.ps1'
+          $aviso = '& node -e "console.error(''aviso em stderr'')" 2>&1 | ForEach-Object { Write-Host "$_" }'
+          [IO.File]::WriteAllText($semNativo, @(
+            '$ErrorActionPreference = ''Stop''', $aviso,
+            ('[Console]::Out.WriteLine("@@PRONTO {0}")' -f $fim), 'exit 0'
+          ) -join "`r`n", $bom)
+          [IO.File]::WriteAllText($comNativo, @(
+            '$ErrorActionPreference = ''Stop''', $nativo, "Nativo { $aviso }",
+            'Nativo { & node -e "console.error(''outro aviso''); process.exit(3)" }',
+            'if ($LASTEXITCODE -ne 3) { exit 4 }',
+            ('[Console]::Out.WriteLine("@@PRONTO {0}")' -f $fim), 'exit 0'
+          ) -join "`r`n", $bom)
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$semNativo", '/fechar' -Wait -PassThru
+          Write-Host "sem Nativo: saiu com $($p.ExitCode)"
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$comNativo", '/fechar' -Wait -PassThru
+          Get-Content $log -Encoding UTF8 | ForEach-Object { Write-Host "  | $_" }
+          if ($p.ExitCode -ne 0) { throw "com Nativo, o aviso em stderr ainda derruba o script (saiu com $($p.ExitCode))" }
           $v = (Get-Item dist\trackeroao-instalador.exe).VersionInfo
           Write-Host "produto: $($v.ProductName)  versao: $($v.FileVersion)  descricao: $($v.FileDescription)"
           if ($v.ProductName -ne 'Trackeroao') { throw 'o .exe saiu sem as propriedades do produto' }

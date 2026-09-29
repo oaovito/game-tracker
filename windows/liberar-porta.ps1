@@ -59,6 +59,8 @@ function Regra-Existe($nome) {
     O nome da regra e nosso e nao e traduzido por ninguem. Procurar por ele
     funciona em qualquer idioma do sistema.
   #>
+  # netsh pode escrever em stderr; com 'Stop', o PowerShell 5.1 trataria isso como erro fatal.
+  $ErrorActionPreference = 'Continue'
   $saida = & netsh advfirewall firewall show rule name="$nome" 2>&1 | Out-String
   return ($saida -match [regex]::Escape($nome))
 }

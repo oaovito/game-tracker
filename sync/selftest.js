@@ -1012,6 +1012,9 @@ check('pela janela, os scripts nao perguntam nem abrem outra janela', () => {
     if (!src.split('\n').some((l) => /-not \$gui/.test(l) && /JaElevado/.test(l))) problemas.push(nome + ' espera uma tecla na janela');
     if (!/Tela 'PRONTO'/.test(src)) problemas.push(nome + ' nao avisa a janela do fim');
     if (!leTecla.length) problemas.push(nome + ' perdeu a pausa do console');
+    // node e winget escrevem em stderr; com 'Stop' no PowerShell 5.1 isso mata a instalacao.
+    const soltos = src.split('\n').filter((l) => /^\s*(&\s*\$node|winget )/.test(l));
+    if (soltos.length) problemas.push(nome + ' chama programa de fora sem Nativo: ' + soltos[0].trim());
   }
   assert(problemas.length === 0, problemas.join('; '));
   const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
