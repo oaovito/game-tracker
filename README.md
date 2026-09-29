@@ -52,7 +52,11 @@ Trackeroao", "Criando o atalho na área de trabalho"), uma barra de progresso
 com a porcentagem e uma linha de detalhe sobre o passo. Nenhum console aparece.
 O PowerShell roda oculto e informa o andamento por linhas iniciadas em `@@` na
 saída padrão, que a janela converte em texto e progresso; o restante da saída
-vai para o registro em `%TEMP%\trackeroao-instalar.log`. O pedido de
+vai para o registro em `%TEMP%\trackeroao-instalar.log`, que só permanece
+quando a instalação falha. Reinstalar ou atualizar substitui no lugar o que já
+existe (arquivos, tarefa agendada, atalho, regra de firewall e registro em
+"Aplicativos instalados"), sem criar cópias, e as pastas temporárias de uma
+execução interrompida são removidas na execução seguinte. O pedido de
 administrador é feito uma única vez pelo próprio executável, antes de o script
 começar. Se for recusado, a instalação prossegue e a liberação da porta 8777
 passa a constar como pendência no fim. Ao terminar, a caixa oferece "Abrir o
