@@ -51,13 +51,15 @@ function catalogo() {
   try { achados = (require('./biblioteca').ultima() || {}).jogos || []; } catch (e) { achados = []; }
   const lista = base.map((g) => {
     const b = achados.find((a) => a.appId && g.appId && String(a.appId) === String(g.appId));
-    return { ...g, instalado: b ? !!b.instalado : null, fontes: b ? b.fontes : [], popular: b ? b.popular : null };
+    return { ...g, instalado: b ? !!b.instalado : null, fontes: b ? b.fontes : [], popular: b ? b.popular : null,
+      arte: (b && b.arte) || require('./arte').daSteam(g.appId) };
   });
   for (const a of achados) {
     if (lista.some((g) => g.appId && a.appId && String(g.appId) === String(a.appId))) continue;
     lista.push({
       chave: a.chave, nome: a.nome, appId: a.appId || null, processos: a.processos || [],
       leitura: 'nenhuma', instalado: !!a.instalado, fontes: a.fontes || [], popular: a.popular || null,
+      arte: a.arte || null,
     });
   }
   return lista;
@@ -142,6 +144,7 @@ function paraProgresso() {
       naSteam: (g.fontes || []).some((f) => /^steam/.test(f)),
       semSteam: (g.fontes || []).some((f) => !/^steam/.test(f)),
       popular: g.popular || null,
+      arte: g.arte || null,
     })),
     // Distingue "nunca escolheu" de "escolheu nenhum", que tem efeitos opostos.
     escolheu: esc !== null,

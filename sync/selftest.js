@@ -2022,6 +2022,29 @@ function resumo() {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   }
+  {
+    const nome = 'cada jogo ganha banner, da maior resolução para a menor, com ou sem Steam';
+    try {
+      const a = require('./arte');
+      const s = a.daSteam('814380');
+      if (!/library_hero_2x\.jpg$/.test(s.heroi[0]) || !/library_600x900_2x\.jpg$/.test(s.capa[0])) throw new Error('a Steam não começa pela maior: ' + s.heroi[0]);
+      const jogos = [{ nome: 'VALORANT', arteFonte: { site: 'https://playvalorant.com/' } }, { nome: 'Jogo Sem Nada' }];
+      await a.resolver(jogos, {
+        cache: {},
+        pedir: async (u) => (u.includes('playvalorant') ? '<meta property="og:image" content="/media/key-art.jpg">' : '{"items":[]}'),
+      });
+      if (jogos[0].arte.heroi[0] !== 'https://playvalorant.com/media/key-art.jpg') throw new Error('não leu a og:image do site oficial');
+      if (jogos[1].arte !== null) throw new Error('inventou arte para um jogo sem nenhuma');
+      const semRede = [{ nome: 'VALORANT' }];
+      await a.resolver(semRede, { cache: {}, semRede: true, pedir: async () => { throw new Error('usou a rede'); } });
+      pass++;
+      console.log('   ok    ' + nome + '  -  Steam 3840x1240 primeiro, site oficial para quem não está nela, nada inventado');
+    } catch (err) {
+      fail++;
+      failures.push(nome);
+      console.log('   FALHA ' + nome + '\n            ' + err.message);
+    }
+  }
 
   resumo();
 })();

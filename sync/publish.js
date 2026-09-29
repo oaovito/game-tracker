@@ -115,6 +115,7 @@ const PODAS = {
       chave: g.chave, nome: g.nome, leitura: g.leitura, vigiado: !!g.vigiado,
       instalado: g.instalado === undefined ? null : g.instalado,
       naSteam: !!g.naSteam, semSteam: !!g.semSteam, popular: g.popular || null,
+      arte: g.arte || null,
     })),
   } : j),
   /*

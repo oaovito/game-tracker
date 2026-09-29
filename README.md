@@ -468,12 +468,30 @@ roda o serviço, tocar no pino de vigia liga e desliga a vigia daquele jogo, e
 
 Essa tela tem identidade visual própria, deliberadamente distinta da página do
 Sekiro: por ser a porta de entrada para qualquer jogo, ela não herda o papel, o
-vermelho e o dourado daquela página. O tema é o dos jogos em geral, com fundo
-noturno de painel, uma grade fina ao fundo, destaques em violeta e ciano e
-tipografia técnica (Chakra Petch nos títulos, Inter no texto). Abre sempre no
-modo escuro, e o botão de tema no canto alterna para o claro; a escolha é
-guardada à parte, de modo que o tema escolhido para a página do Sekiro não
-interfere no desta tela, e vice-versa.
+vermelho e o dourado daquela página. O modelo é a tela inicial de um console. O
+jogo em foco ocupa um palco no alto, com a arte larga do título, o logotipo
+recortado e o que se sabe dele; o fundo da tela inteira é essa mesma arte,
+desfocada, de modo que a cor ambiente muda conforme o jogo escolhido; e os
+jogos ficam logo abaixo, num trilho de pôsteres. A interface em si é neutra,
+com vidro escuro, texto claro e um único verde-limão para foco e ação, para
+que a cor venha dos jogos e não da página. A tipografia é a Unbounded nos
+títulos e a Sora no texto. A tela abre sempre no modo escuro, e o botão de
+tema no canto alterna para o claro; a escolha é guardada à parte da página do
+Sekiro.
+
+Cada jogo aparece pela própria arte, na maior resolução disponível. Para os
+títulos da Steam, `sync/arte.js` monta, para cada peça, uma lista de endereços
+em ordem decrescente de tamanho: a arte do topo da biblioteca em 3840×1240,
+depois em 1920×620; o pôster em 1200×1800, depois em 600×900; o logotipo em
+dobro de resolução, depois o normal. A página tenta o primeiro endereço e só
+desce na lista quando ele não existe, de modo que nenhuma imagem pequena é
+esticada quando há uma grande. Para os jogos que não estão na Steam
+(Valorant, Fortnite, Minecraft e outros), `sync/populares.json` registra o site
+oficial, e a arte usada é a imagem de divulgação que o próprio site declara
+(`og:image`); um jogo achado no disco sem identificador passa ainda por uma
+busca exata de nome na loja da Steam. O que é resolvido fica guardado por
+trinta dias em `sync/cache/arte.json`. Sem rede, ou sem arte conhecida, o jogo
+ganha um pôster tipográfico com o próprio nome, numa cor derivada dele.
 
 A lista vem de `sync/biblioteca.js`, que consulta três fontes de nomes: a
 biblioteca da Steam da pessoa, quando existe (os `appmanifest` de cada
@@ -602,6 +620,7 @@ trackeroao/
     tempo.js                  tempo de jogo: Steam, e o save quando não há Steam
     jogador.js                de quem é o progresso (nome escolhido ou da Steam)
     biblioteca.js             varre os jogos da máquina e da conta
+    arte.js                   banner, pôster e logotipo de cada jogo, do maior ao menor
     populares.json            populares reconhecidos sem rede e sem Steam
     jogos.js / jogos.json     jogos vigiados e o que cada um sabe ler
     efeitos.js                efeitos temporários acionados pela sessão

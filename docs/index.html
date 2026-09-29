@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="trackeroao">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Unbounded:wght@500;600;700;800&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #16130f;
@@ -2565,58 +2565,64 @@
    * Identidade própria, sem nada do Sekiro.
    *
    * Esta tela é a porta de entrada para qualquer jogo, então não herda o
-   * papel, o sangue e o dourado da página do Sekiro. O tema é "jogos": fundo
-   * noturno de painel de console, grade fina de tela, dois brilhos (violeta e
-   * ciano) e tipografia técnica (Chakra Petch nos títulos, Inter no texto).
-   * Tudo sai dos tokens --j-*, definidos só quando o corpo está numa das duas
-   * vistas, de modo que nada disso vaza para a página de um jogo.
+   * papel, o sangue e o dourado da página do Sekiro. A ideia é a tela inicial
+   * de um console: a arte do jogo em foco ocupa o palco, o fundo inteiro
+   * assume as cores dela (a mesma arte, desfocada), e os jogos ficam num
+   * trilho de pôsteres logo abaixo. A interface em si é neutra -- vidro
+   * escuro, texto claro, um único sinal verde-limão para foco e ação -- para
+   * que a cor venha dos jogos, não da página.
    *
-   * O escuro é o padrão desta tela, com chave de tema própria ("theme-jogos"):
-   * quem deixou o Sekiro no claro continua abrindo a tela de jogos no escuro.
+   * Tipografia: Unbounded, larga e geométrica, no nome e nos rótulos; Sora
+   * no texto. Tudo sai dos tokens --j-*, definidos só quando o corpo está numa
+   * das duas vistas, de modo que nada vaza para a página de um jogo.
+   *
+   * O escuro é o padrão desta tela, com chave de tema própria ("theme-jogos").
+   * O palco fica escuro nos dois temas de propósito: o texto dele está em cima
+   * da arte do jogo, e a arte não muda com o tema.
    */
   body.vista-hub, body.vista-bibli {
-    --j-bg: #090b12;
-    --j-painel: #11141f;
-    --j-painel-2: #171b2a;
-    --j-texto: #e9ecf6;
-    --j-apagado: #8c93ab;
-    --j-linha: rgba(140, 147, 171, 0.18);
-    --j-roxo: #8b6cff;
-    --j-ciano: #33e1ed;
-    --j-verde: #3fdc9a;
-    --j-grade: rgba(140, 147, 171, 0.06);
-    --j-sombra: rgba(0, 0, 0, 0.45);
+    --j-bg: #06070a;
+    --j-vidro: rgba(20, 22, 29, 0.58);
+    --j-vidro-forte: rgba(12, 13, 18, 0.8);
+    --j-borda: rgba(255, 255, 255, 0.1);
+    --j-texto: #f5f6f8;
+    --j-apagado: rgba(245, 246, 248, 0.6);
+    --j-sinal: #d8ff3c;
+    --j-sinal-tinta: #0c0f02;
+    --j-anel: #d8ff3c;
+    --j-verde: #5ee6a8;
+    --j-ciano: #62d6ff;
+    --j-amb: 0.6;
+    --j-veu-topo: rgba(6, 7, 10, 0.35);
+    --j-veu-pe: rgba(6, 7, 10, 0.94);
+    --j-sombra: rgba(0, 0, 0, 0.5);
     --text: var(--j-texto);
     --text-dim: var(--j-apagado);
-    --line: var(--j-linha);
-    --gold: var(--j-roxo);
-    --font-display: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
-    --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
-    background-color: var(--j-bg);
-    background-image:
-      radial-gradient(ellipse 70% 45% at 12% -8%, rgba(139, 108, 255, 0.22), rgba(139, 108, 255, 0) 70%),
-      radial-gradient(ellipse 60% 40% at 100% 108%, rgba(51, 225, 237, 0.14), rgba(51, 225, 237, 0) 70%),
-      linear-gradient(var(--j-grade) 1px, transparent 1px),
-      linear-gradient(90deg, var(--j-grade) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-    background-repeat: no-repeat, no-repeat, repeat, repeat;
-    background-attachment: fixed;
+    --line: var(--j-borda);
+    --gold: var(--j-sinal);
+    --font-display: 'Unbounded', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Sora', 'Segoe UI', system-ui, sans-serif;
+    background: var(--j-bg);
     color: var(--j-texto);
     font-family: var(--font-body);
     color-scheme: dark;
   }
   :root[data-theme="light"] body.vista-hub, :root[data-theme="light"] body.vista-bibli {
-    --j-bg: #f2f3f9;
-    --j-painel: #ffffff;
-    --j-painel-2: #eceef7;
-    --j-texto: #151827;
-    --j-apagado: #5b6179;
-    --j-linha: rgba(21, 24, 39, 0.12);
-    --j-roxo: #5b3df0;
-    --j-ciano: #0a93a8;
-    --j-verde: #11875a;
-    --j-grade: rgba(21, 24, 39, 0.05);
-    --j-sombra: rgba(40, 44, 80, 0.14);
+    --j-bg: #eceef2;
+    --j-vidro: rgba(255, 255, 255, 0.6);
+    --j-vidro-forte: rgba(255, 255, 255, 0.85);
+    --j-borda: rgba(10, 12, 18, 0.1);
+    --j-texto: #0b0d12;
+    --j-apagado: rgba(11, 13, 18, 0.6);
+    --j-sinal: #cff533;
+    --j-sinal-tinta: #0c0f02;
+    --j-anel: #6c8c00;
+    --j-verde: #0d8a58;
+    --j-ciano: #0a7cab;
+    --j-amb: 0.45;
+    --j-veu-topo: rgba(236, 238, 242, 0.3);
+    --j-veu-pe: rgba(236, 238, 242, 0.93);
+    --j-sombra: rgba(30, 34, 50, 0.18);
     color-scheme: light;
   }
   /* Os efeitos de borda e as cenas da página do Sekiro não entram aqui. */
@@ -2626,124 +2632,255 @@
   .vista-hub .kaiden-cena, .vista-bibli .kaiden-cena { display: none !important; }
   .vista-hub .wrap > :not(.topbar):not(#hub),
   .vista-bibli .wrap > :not(.topbar):not(#bibli) { display: none !important; }
-  .vista-hub .wrap, .vista-bibli .wrap { max-width: 64rem; }
-  .vista-hub ::selection, .vista-bibli ::selection { background: var(--j-roxo); color: #fff; }
+  .vista-hub .wrap, .vista-bibli .wrap { max-width: 76rem; position: relative; z-index: 1; }
+  .vista-hub ::selection, .vista-bibli ::selection { background: var(--j-sinal); color: var(--j-sinal-tinta); }
 
-  .hub, .bibli { padding-top: 6px; }
-  .hub-cabeca { text-align: center; margin: 14px 0 30px; }
+  /* O ambiente: a arte em foco, desfocada, cobrindo a tela inteira. */
+  .ambiente { display: none; }
+  .vista-hub .ambiente, .vista-bibli .ambiente {
+    display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .ambiente img {
+    position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover;
+    filter: blur(64px) saturate(1.5); opacity: 0; transition: opacity 0.9s ease;
+  }
+  .ambiente img.pronta { opacity: var(--j-amb); }
+  .ambiente::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, var(--j-veu-topo), var(--j-veu-pe) 70%);
+  }
+
+  .hub, .bibli { padding-top: 2px; }
+  .hub-topo {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+    margin: 6px 0 22px;
+  }
   .hub-titulo {
-    font-family: var(--font-display); font-weight: 700;
-    font-size: 2.6rem; letter-spacing: 0.02em; line-height: 1.1;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 2.3rem; letter-spacing: -0.02em; line-height: 1;
     text-transform: none; color: var(--j-texto); margin: 0;
   }
-  .hub-titulo span {
-    background: linear-gradient(90deg, var(--j-roxo), var(--j-ciano));
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: var(--j-roxo);
+  .hub-titulo span { color: var(--j-anel); }
+  .hub-relogio {
+    font-family: var(--font-display); font-weight: 500; font-size: 1.5rem;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--j-apagado);
   }
-  .hub-sub {
-    display: inline-block; margin-top: 12px;
-    font-family: var(--font-display); font-weight: 600;
-    font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase;
-    color: var(--j-apagado);
-    border: 1px solid var(--j-linha); border-radius: 999px; padding: 5px 14px;
-    background: var(--j-painel);
+  .hub-sub { margin: -10px 0 22px; font-size: 0.82rem; color: var(--j-apagado); }
+
+  /* O palco. */
+  .palco {
+    position: relative; overflow: hidden; isolation: isolate;
+    min-height: clamp(17rem, 34vw, 29rem);
+    border-radius: 26px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #0b0c10; color: #fff;
+    box-shadow: 0 30px 70px var(--j-sombra);
+    display: flex; align-items: flex-end;
   }
-  .hub-grade {
-    display: grid; gap: 16px;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  .palco-arte { position: absolute; inset: 0; z-index: -1; }
+  .palco-arte img {
+    width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; display: block;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+  .palco-arte img.pronta { opacity: 1; }
+  .palco-arte::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(5, 6, 9, 0.88) 0%, rgba(5, 6, 9, 0.55) 38%, rgba(5, 6, 9, 0) 70%),
+      linear-gradient(0deg, rgba(5, 6, 9, 0.75) 0%, rgba(5, 6, 9, 0) 55%);
+  }
+  .palco-info {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+    padding: clamp(20px, 3vw, 36px); max-width: min(34rem, 100%); min-width: 0;
+  }
+  .palco-marca { min-height: 3rem; display: flex; align-items: flex-end; max-width: 100%; }
+  .palco-logo {
+    display: block; max-width: min(24rem, 100%); max-height: 7.5rem; width: auto; height: auto;
+    object-fit: contain; object-position: left bottom;
+    filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.6));
+    opacity: 0; transition: opacity 0.4s ease;
+  }
+  .palco-logo.pronta { opacity: 1; }
+  .palco-nome {
+    margin: 0; font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.6rem, 3.4vw, 2.6rem); line-height: 1.05; letter-spacing: -0.02em;
+    text-wrap: balance; overflow-wrap: anywhere; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  }
+  .palco-meta { display: flex; flex-direction: column; gap: 10px; }
+  .palco .pino {
+    background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .palco .pino-instalado.on { color: #7ff0bd; }
+  .palco .pino-vigiado.on { color: #8fe0ff; }
+  .palco-extra { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.72); }
+  .palco-extra span + span::before { content: "·"; margin-right: 14px; color: rgba(255, 255, 255, 0.4); }
+  .palco-abre {
+    appearance: none; cursor: pointer; border: 0; border-radius: 999px;
+    background: #d8ff3c; color: #0c0f02; padding: 12px 22px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.02em;
+    box-shadow: 0 8px 28px rgba(216, 255, 60, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .palco-abre:hover, .palco-abre:focus-visible { outline: 0; transform: translateY(-1px); box-shadow: 0 10px 34px rgba(216, 255, 60, 0.42); }
+
+  /* O trilho de pôsteres. */
+  .trilho-cabeca { display: flex; align-items: center; gap: 10px; margin: 30px 0 4px; flex-wrap: wrap; }
+  .trilho-rotulo {
+    font-family: var(--font-display); font-weight: 600; font-size: 0.76rem;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--j-texto);
+  }
+  .trilho-conta {
+    font-family: var(--font-display); font-size: 0.7rem; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--j-apagado); border: 1px solid var(--j-borda); border-radius: 999px; padding: 2px 9px;
+  }
+  .trilho-cabeca .hub-bt { margin-left: auto; }
+  .trilho {
+    display: grid; grid-auto-flow: column;
+    grid-auto-columns: clamp(8.5rem, 13vw, 11.5rem);
+    gap: 18px; overflow-x: auto; overscroll-behavior-x: contain;
+    padding: 16px 12px 20px; margin: 0 -12px;
+    scroll-snap-type: x proximity; scrollbar-width: thin;
+    scrollbar-color: var(--j-borda) transparent;
   }
   .jogo-card {
-    position: relative; display: flex; flex-direction: column;
-    min-width: 0; text-align: left;
-    background: var(--j-painel); color: var(--j-texto);
-    border: 1px solid var(--j-linha); border-radius: 14px; padding: 0;
-    font: inherit; cursor: default; overflow: hidden;
-    box-shadow: 0 6px 18px var(--j-sombra);
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .jogo-card.lido { cursor: pointer; }
-  .jogo-card.lido:hover, .jogo-card.lido:focus-visible {
-    border-color: var(--j-roxo); outline: 0; transform: translateY(-3px);
-    box-shadow: 0 10px 28px var(--j-sombra), 0 0 0 1px var(--j-roxo), 0 0 24px rgba(139, 108, 255, 0.28);
+    position: relative; min-width: 0; cursor: pointer; outline: 0;
+    scroll-snap-align: start; color: var(--j-apagado);
   }
   .jogo-capa {
-    position: relative; aspect-ratio: 460 / 215; max-width: 100%;
-    background: linear-gradient(135deg, rgba(139, 108, 255, 0.35), rgba(51, 225, 237, 0.25)), var(--j-painel-2);
-    display: grid; place-items: center; overflow: hidden;
+    position: relative; aspect-ratio: 2 / 3; max-width: 100%;
+    border-radius: 14px; overflow: hidden;
+    background: var(--j-vidro); border: 1px solid var(--j-borda);
+    box-shadow: 0 12px 28px var(--j-sombra);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
-  .jogo-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .jogo-capa-letra {
-    font-family: var(--font-display); font-size: 2.6rem; font-weight: 700;
-    color: var(--j-texto); opacity: 0.6;
+  .jogo-capa img, .jogo-faixa img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    opacity: 0; transition: opacity 0.4s ease;
   }
-  .jogo-corpo { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-width: 0; flex: 1; }
+  .jogo-capa img.pronta, .jogo-faixa img.pronta { opacity: 1; }
+  .jogo-card:hover .jogo-capa { transform: translateY(-3px); }
+  .jogo-card.ativo .jogo-capa, .jogo-card:focus-visible .jogo-capa {
+    transform: translateY(-5px) scale(1.035);
+    box-shadow: 0 0 0 3px var(--j-bg), 0 0 0 5px var(--j-anel), 0 18px 40px var(--j-sombra);
+  }
+  .jogo-selos { position: absolute; top: 8px; right: 8px; display: flex; gap: 5px; }
+  .jogo-selos span {
+    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(8, 9, 12, 0.72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .jogo-selos svg { width: 13px; height: 13px; display: block; }
+  .jogo-selos .selo-inst { color: #7ff0bd; }
+  .jogo-selos .selo-vig { color: #8fe0ff; }
   .jogo-card-nome {
-    font-family: var(--font-display); font-weight: 600; font-size: 1rem; line-height: 1.3;
-    overflow-wrap: anywhere;
+    margin-top: 11px; font-size: 0.8rem; font-weight: 600; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere; transition: color 0.2s ease;
   }
+  .jogo-card.ativo .jogo-card-nome { color: var(--j-texto); }
+
+  /* A arte de reserva: o nome sobre uma cor tirada do nome. */
+  .arte-vazia {
+    position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 12px;
+    background:
+      radial-gradient(circle at 80% 15%, hsl(calc(var(--h) + 40) 85% 60% / 0.55), transparent 55%),
+      linear-gradient(160deg, hsl(var(--h) 60% 34%), hsl(calc(var(--h) + 30) 55% 12%));
+    color: #fff;
+  }
+  .arte-vazia span {
+    font-family: 'Unbounded', 'Segoe UI', system-ui, sans-serif; font-weight: 800;
+    font-size: 1.05rem; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase;
+    overflow-wrap: anywhere; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+  .arte-vazia.grande { align-items: center; justify-content: flex-end; padding: 6% 7%; }
+  .arte-vazia.grande span { font-size: clamp(2.4rem, 7vw, 5.5rem); opacity: 0.22; text-align: right; }
+  .jogo-faixa .arte-vazia { padding: 6px; }
+  .jogo-faixa .arte-vazia span { font-size: 0.55rem; }
+
+  /* Pinos, fora do palco. */
   .jogo-pinos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pino {
     display: inline-flex; align-items: center; gap: 5px;
     font-family: var(--font-body); font-weight: 600;
-    font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--j-apagado); opacity: 0.55;
-    background: var(--j-painel-2); border: 1px solid transparent; border-radius: 999px;
-    padding: 4px 9px 4px 7px;
+    font-size: 0.64rem; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--j-apagado); opacity: 0.6;
+    background: var(--j-vidro); border: 1px solid transparent; border-radius: 999px;
+    padding: 4px 10px 4px 8px;
   }
   .pino svg { width: 12px; height: 12px; display: block; }
   .pino.on { opacity: 1; }
-  .pino-instalado.on { color: var(--j-verde); border-color: currentColor; }
-  .pino-vigiado.on { color: var(--j-ciano); border-color: currentColor; }
+  .pino-instalado.on { color: var(--j-verde); }
+  .pino-vigiado.on { color: var(--j-ciano); }
   button.pino { cursor: pointer; }
-  button.pino:hover { opacity: 1; }
-  .jogo-abre {
-    margin-top: auto; align-self: flex-start;
-    font-family: var(--font-display); font-weight: 600;
-    font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--j-roxo);
-  }
-  .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 30px 0 8px; }
+  button.pino:hover { opacity: 1; border-color: currentColor; }
+
   .hub-bt {
-    appearance: none; cursor: pointer; color: #fff;
-    background: linear-gradient(90deg, var(--j-roxo), var(--j-ciano));
-    border: 0; border-radius: 999px; padding: 12px 24px;
-    font-family: var(--font-display); font-weight: 600;
-    font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase;
-    box-shadow: 0 6px 20px rgba(139, 108, 255, 0.3);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    appearance: none; cursor: pointer;
+    background: var(--j-vidro); color: var(--j-texto);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--j-borda); border-radius: 999px; padding: 9px 18px;
+    font-family: var(--font-display); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.08em;
+    text-transform: uppercase; transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .hub-bt:hover, .hub-bt:focus-visible { outline: 0; transform: translateY(-1px); box-shadow: 0 8px 26px rgba(139, 108, 255, 0.45); }
+  .hub-bt:hover, .hub-bt:focus-visible { outline: 0; border-color: var(--j-anel); color: var(--j-anel); }
+  .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 8px; }
   .hub-nota { text-align: center; font-size: 0.78rem; color: var(--j-apagado); margin-top: 12px; }
+
+  /* Todos os jogos. */
   .bibli-grupo {
-    margin-bottom: 22px; padding: 16px 18px;
-    background: var(--j-painel); border: 1px solid var(--j-linha); border-radius: 14px;
+    margin-bottom: 20px; padding: 8px 20px 10px;
+    background: var(--j-vidro); border: 1px solid var(--j-borda); border-radius: 20px;
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   }
   .bibli-grupo h2 {
-    font-family: var(--font-display); font-size: 0.86rem; letter-spacing: 0.14em;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-family: var(--font-display); font-size: 0.76rem; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--j-texto); font-weight: 600;
-    margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--j-linha);
+    margin: 0; padding: 12px 0; border-bottom: 1px solid var(--j-borda);
+  }
+  .bibli-grupo h2 b {
+    font-weight: 700; letter-spacing: 0; font-variant-numeric: tabular-nums;
+    background: var(--j-sinal); color: var(--j-sinal-tinta); border-radius: 999px; padding: 2px 9px; font-size: 0.7rem;
   }
   .bibli-linha {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 10px 0; border-bottom: 1px solid var(--j-linha);
+    display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) auto 6.5rem; align-items: center; gap: 16px;
+    padding: 12px 0; border-bottom: 1px solid var(--j-borda);
   }
-  .bibli-linha:last-child { border-bottom: 0; padding-bottom: 2px; }
-  .bibli-nome { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; font-weight: 500; }
-  .bibli-vazio { font-size: 0.82rem; color: var(--j-apagado); margin: 8px 0 0; }
+  .bibli-linha:last-child { border-bottom: 0; }
+  .jogo-faixa {
+    position: relative; aspect-ratio: 616 / 353; max-width: 100%;
+    border-radius: 9px; overflow: hidden; background: var(--j-vidro-forte);
+  }
+  .bibli-nome { min-width: 0; overflow-wrap: anywhere; font-size: 0.92rem; font-weight: 600; }
+  .bibli-vazio { font-size: 0.82rem; color: var(--j-apagado); margin: 12px 0; }
+  .bibli-abre {
+    justify-self: end; appearance: none; background: none; border: 0; cursor: pointer; padding: 4px 2px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; color: var(--j-anel);
+  }
+  .bibli-abre:hover { text-decoration: underline; }
   .volta-jogos {
     appearance: none; background: none; border: 0; cursor: pointer;
     color: var(--text-dim); font-family: inherit; font-size: 0.72rem;
     letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; padding: 2px 4px;
   }
   .volta-jogos:hover { opacity: 1; color: var(--text); }
-  .bibli .volta-jogos { color: var(--j-roxo); font-family: var(--font-display); font-weight: 600; opacity: 1; }
-  @media (max-width: 460px) {
-    .hub-titulo { font-size: 2rem; }
-    .hub-grade { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .jogo-corpo { padding: 10px 10px 12px; }
-    .jogo-card-nome { font-size: 0.86rem; }
-    .pino { font-size: 0.56rem; letter-spacing: 0.04em; padding: 3px 7px 3px 5px; }
-    .bibli-grupo { padding: 12px 14px; }
+
+  @media (max-width: 640px) {
+    .hub-titulo { font-size: 1.75rem; }
+    .hub-relogio { font-size: 1.15rem; }
+    .palco { min-height: 0; aspect-ratio: auto; flex-direction: column; align-items: stretch; }
+    .palco-arte { position: relative; inset: auto; z-index: 0; aspect-ratio: 16 / 9; }
+    .palco-arte::after { background: linear-gradient(0deg, rgba(11, 12, 16, 1) 0%, rgba(11, 12, 16, 0) 60%); }
+    .palco-info { margin-top: -3.2rem; position: relative; padding: 0 18px 20px; }
+    .palco-logo { max-height: 5rem; max-width: 80%; }
+    .trilho { grid-auto-columns: 38vw; gap: 12px; }
+    .bibli-grupo { padding: 6px 14px 8px; }
+    .bibli-linha { grid-template-columns: 5.5rem minmax(0, 1fr); gap: 8px 12px; }
+    .bibli-linha .jogo-pinos, .bibli-linha .bibli-abre { grid-column: 2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ambiente img, .palco-arte img, .palco-logo, .jogo-capa, .jogo-capa img, .jogo-faixa img { transition: none; }
+    .jogo-card.ativo .jogo-capa, .jogo-card:hover .jogo-capa { transform: none; }
   }
 
   a, button, input { -webkit-tap-highlight-color: transparent; }
@@ -2751,6 +2888,8 @@
 </style>
 </head>
 <body>
+<!-- O fundo da tela de jogos: a arte do jogo em foco, desfocada. -->
+<div class="ambiente" aria-hidden="true"><img id="ambienteImg" alt=""></div>
 <div class="wrap">
 
   <!-- Faixa só para o botão de tema, no extremo topo à direita: fora do
@@ -2769,23 +2908,33 @@
 
   <!-- A tela de jogos, antes da página de cada um. Ver o CSS "tela de jogos". -->
   <section class="hub" id="hub" hidden>
-    <div class="hub-cabeca">
+    <div class="hub-topo">
       <h1 class="hub-titulo">Tracker<span>oao</span></h1>
-      <div class="hub-sub">your games</div>
+      <div class="hub-relogio" id="hubRelogio" aria-hidden="true"></div>
     </div>
-    <div class="hub-grade" id="hubGrade"></div>
-    <div class="hub-acoes">
+    <div class="palco" id="hubPalco" hidden>
+      <div class="palco-arte" id="palcoArte"></div>
+      <div class="palco-info">
+        <div class="palco-marca" id="palcoMarca"></div>
+        <div class="palco-meta" id="palcoMeta"></div>
+        <button class="palco-abre" id="palcoAbre" type="button" hidden>Open progress <span aria-hidden="true">→</span></button>
+      </div>
+    </div>
+    <div class="trilho-cabeca">
+      <span class="trilho-rotulo">Your games</span>
+      <span class="trilho-conta" id="hubConta"></span>
       <button class="hub-bt" id="hubTodos" type="button">All games</button>
     </div>
+    <div class="trilho" id="hubGrade"></div>
     <div class="hub-nota" id="hubNota"></div>
   </section>
 
   <!-- Todos os jogos: o que está no computador e o que está na Steam. -->
   <section class="bibli" id="bibli" hidden>
-    <div class="hub-cabeca">
+    <div class="hub-topo">
       <h1 class="hub-titulo">All <span>games</span></h1>
-      <div class="hub-sub" id="bibliSub">on this computer and in the Steam library</div>
     </div>
+    <div class="hub-sub" id="bibliSub">on this computer and in the Steam library</div>
     <div id="bibliGrupos"></div>
     <div class="hub-acoes">
       <button class="hub-bt" id="bibliVarrer" type="button" hidden>Search again</button>
@@ -4833,7 +4982,6 @@ function renderEssentials() {
  * jogos. Sem lista, o progresso abre direto, como sempre abriu -- e é o caso
  * de uma leitura antiga, de antes desta tela existir.
  */
-const CAPAS_STEAM = "https://cdn.cloudflare.steamstatic.com/steam/apps/";
 
 function listaDeJogos() {
   return temSync() && sync.jogosVigiados && Array.isArray(sync.jogosVigiados.lista)
@@ -4950,31 +5098,179 @@ function alternarVigia(chave) {
   });
 }
 
-function fazerCapa(g) {
+/*
+ * A arte de cada jogo, da maior resolução para a menor.
+ *
+ * O serviço manda `arte` pronta (ver sync/arte.js), inclusive para quem não
+ * está na Steam. Sem ela -- página antiga, leitura antiga -- a arte da Steam
+ * sai do appId que a chave carrega. Cada peça é uma lista: a imagem tenta o
+ * primeiro endereço e desce para o próximo quando ele não existe.
+ */
+const CDN_STEAM = [
+  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/",
+  "https://cdn.cloudflare.steamstatic.com/steam/apps/",
+];
+function arteDaSteam(id) {
+  if (!id) return null;
+  const em = (arquivos) => {
+    const r = [];
+    for (const a of arquivos) for (const c of CDN_STEAM) r.push(c + id + "/" + a);
+    return r;
+  };
+  return {
+    heroi: em(["library_hero_2x.jpg", "library_hero.jpg"]),
+    capa: em(["library_600x900_2x.jpg", "library_600x900.jpg"]),
+    logo: em(["logo_2x.png", "logo.png"]),
+    faixa: em(["capsule_616x353.jpg", "header.jpg"]),
+  };
+}
+function arteDe(g) {
+  if (g.arte) return g.arte;
+  const m = /^steam-(\d+)$/.exec(g.chave || "");
+  return arteDaSteam(m ? m[1] : g.chave === "sekiro" ? "814380" : null) || { heroi: [], capa: [], logo: [], faixa: [] };
+}
+/* A peça pedida, e depois as outras como reserva, sem repetir endereço. */
+function enderecos(g, ordem) {
+  const a = arteDe(g);
+  const r = [];
+  for (const k of ordem) for (const u of a[k] || []) if (!r.includes(u)) r.push(u);
+  return r;
+}
+
+/* Carrega a primeira que existir; `falhou` roda quando nenhuma existe. */
+function carregarImg(img, urls, falhou) {
+  let i = 0;
+  img.decoding = "async";
+  img.onload = () => img.classList.add("pronta");
+  img.onerror = () => {
+    i++;
+    if (i < urls.length) img.src = urls[i];
+    else { img.onerror = null; if (falhou) falhou(); }
+  };
+  if (urls.length) img.src = urls[0];
+  else if (falhou) falhou();
+}
+
+/* O pôster de reserva: o nome do jogo em cima de uma cor tirada do próprio nome. */
+function matizDe(nome) {
+  let h = 0;
+  for (const c of String(nome || "")) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
+function arteVazia(g, grande) {
+  const d = document.createElement("div");
+  d.className = "arte-vazia" + (grande ? " grande" : "");
+  d.style.setProperty("--h", matizDe(g.nome));
+  const t = document.createElement("span");
+  t.textContent = g.nome || "?";
+  d.appendChild(t);
+  return d;
+}
+
+/* Capa em pé (trilho) ou faixa deitada (lista), sempre com reserva. */
+function fazerCapa(g, tipo) {
   const capa = document.createElement("div");
-  capa.className = "jogo-capa";
-  const letra = document.createElement("span");
-  letra.className = "jogo-capa-letra";
-  letra.textContent = (g.nome || "?").trim().charAt(0).toUpperCase();
-  const appId = /^steam-(\d+)$/.exec(g.chave || "") || (g.chave === "sekiro" ? [null, "814380"] : null);
-  // A capa é enfeite: sem rede, ou sem jogo na Steam, fica a inicial.
-  if (appId) {
-    const img = document.createElement("img");
-    img.alt = "";
-    img.loading = "lazy";
-    img.src = CAPAS_STEAM + appId[1] + "/header.jpg";
-    img.onerror = () => { img.remove(); capa.appendChild(letra); };
-    capa.appendChild(img);
-  } else {
-    capa.appendChild(letra);
-  }
+  capa.className = tipo === "faixa" ? "jogo-faixa" : "jogo-capa";
+  const img = document.createElement("img");
+  img.alt = "";
+  img.loading = "lazy";
+  capa.appendChild(img);
+  const ordem = tipo === "faixa" ? ["faixa", "heroi", "capa"] : ["capa", "faixa", "heroi"];
+  carregarImg(img, enderecos(g, ordem), () => { img.remove(); capa.appendChild(arteVazia(g)); });
   return capa;
+}
+
+/* O relógio do canto, como na tela inicial de um console. */
+function ligarRelogio() {
+  const el = document.getElementById("hubRelogio");
+  if (!el || el.dataset.ligado) return;
+  el.dataset.ligado = "1";
+  // setTimeout encadeado, e não setInterval: o único intervalo da página é o
+  // da leitura, que tem ritmo próprio e testado.
+  const tic = () => {
+    const d = new Date();
+    el.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    setTimeout(tic, (60 - d.getSeconds()) * 1000);
+  };
+  tic();
+}
+
+/* O fundo da tela é a arte do jogo em foco, desfocada: o ambiente muda com ele. */
+function ambienteCom(src) {
+  const amb = document.getElementById("ambienteImg");
+  if (!amb) return;
+  if (!src) { amb.classList.remove("pronta"); return; }
+  if (amb.getAttribute("src") === src) return;
+  amb.classList.remove("pronta");
+  amb.onload = () => amb.classList.add("pronta");
+  amb.src = src;
+}
+
+let jogoEmFoco = null;
+
+/* O palco: a arte larga do jogo em foco, o logotipo e o que se sabe dele. */
+function mostrarNoPalco(g) {
+  jogoEmFoco = g.chave;
+  const palco = document.getElementById("hubPalco");
+  if (!palco) return;
+  document.querySelectorAll("#hubGrade .jogo-card").forEach((c) => {
+    c.classList.toggle("ativo", c.dataset.chave === g.chave);
+  });
+
+  const arte = document.getElementById("palcoArte");
+  arte.innerHTML = "";
+  const img = document.createElement("img");
+  img.alt = "";
+  arte.appendChild(img);
+  carregarImg(img, enderecos(g, ["heroi", "faixa", "capa"]), () => {
+    img.remove();
+    arte.appendChild(arteVazia(g, true));
+    ambienteCom(null);
+  });
+  img.addEventListener("load", () => ambienteCom(img.currentSrc || img.src));
+
+  const marca = document.getElementById("palcoMarca");
+  marca.innerHTML = "";
+  const nome = document.createElement("h2");
+  nome.className = "palco-nome";
+  nome.textContent = g.nome;
+  const logos = (arteDe(g).logo || []).slice();
+  if (logos.length) {
+    const logo = document.createElement("img");
+    logo.className = "palco-logo";
+    logo.alt = g.nome;
+    marca.appendChild(logo);
+    carregarImg(logo, logos, () => { logo.remove(); marca.appendChild(nome); });
+  } else {
+    marca.appendChild(nome);
+  }
+
+  const meta = document.getElementById("palcoMeta");
+  meta.innerHTML = "";
+  meta.appendChild(fazerPinos(g));
+  const extra = document.createElement("div");
+  extra.className = "palco-extra";
+  const selo = (txt) => { const s = document.createElement("span"); s.textContent = txt; extra.appendChild(s); };
+  selo(g.leitura === "completa" ? "full progress tracking" : "launch detection");
+  if (g.popular) selo("#" + g.popular + " most played");
+  if (g.naSteam) selo("in the Steam library");
+  meta.appendChild(extra);
+
+  const abre = document.getElementById("palcoAbre");
+  abre.hidden = g.leitura !== "completa";
+  abre.onclick = () => irPara(g.chave);
 }
 
 function renderHub() {
   const v = aplicarVista();
   const lista = listaDeJogos();
   if (!lista) return;
+  ligarRelogio();
+  // A leitura chega a cada poucos segundos; só redesenha quando algo mudou,
+  // para não recarregar as artes nem perder a rolagem do trilho.
+  const assinatura = v + "|" + JSON.stringify(lista) + "|" + daMaquinaLocal();
+  if (renderHub.ultima === assinatura) return;
+  renderHub.ultima = assinatura;
 
   if (v === "hub") {
     const grade = document.getElementById("hubGrade");
@@ -4984,32 +5280,45 @@ function renderHub() {
     const mostrar = lista
       .filter((g) => g.leitura === "completa" || g.vigiado || g.instalado)
       .sort((a, b) => peso(a) - peso(b) || String(a.nome).localeCompare(String(b.nome)));
+    const conta = document.getElementById("hubConta");
+    if (conta) conta.textContent = String(mostrar.length);
     for (const g of mostrar) {
       const card = document.createElement("div");
       card.className = "jogo-card" + (g.leitura === "completa" ? " lido" : "");
+      card.dataset.chave = g.chave;
       card.setAttribute("role", "button");
+      card.setAttribute("aria-label", g.nome);
       card.tabIndex = 0;
-      card.appendChild(fazerCapa(g));
-      const corpo = document.createElement("div");
-      corpo.className = "jogo-corpo";
+      card.appendChild(fazerCapa(g, "capa"));
+      const selos = document.createElement("div");
+      selos.className = "jogo-selos";
+      const selo = (classe, titulo, svg) => {
+        const s = document.createElement("span");
+        s.className = classe;
+        s.title = titulo;
+        s.innerHTML = svg;
+        selos.appendChild(s);
+      };
+      if (g.instalado) selo("selo-inst", "Installed", SVG_PINO);
+      if (g.vigiado) selo("selo-vig", "Watched", SVG_OLHO);
+      card.appendChild(selos);
       const nome = document.createElement("div");
       nome.className = "jogo-card-nome";
       nome.textContent = g.nome;
-      corpo.appendChild(nome);
-      corpo.appendChild(fazerPinos(g));
-      if (g.leitura === "completa") {
-        const abre = document.createElement("span");
-        abre.className = "jogo-abre";
-        abre.textContent = "Progress →";
-        corpo.appendChild(abre);
-        card.addEventListener("click", () => irPara(g.chave));
-        card.addEventListener("keydown", (ev) => { if (ev.key === "Enter") irPara(g.chave); });
-      } else {
-        card.title = "Only the launch is detected for this game.";
-      }
-      card.appendChild(corpo);
+      card.appendChild(nome);
+      const abrir = () => {
+        if (jogoEmFoco === g.chave && g.leitura === "completa") irPara(g.chave);
+        else mostrarNoPalco(g);
+      };
+      card.addEventListener("click", abrir);
+      card.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrir(); } });
+      card.addEventListener("focus", () => mostrarNoPalco(g));
+      card.addEventListener("mouseenter", () => { if (typeof matchMedia === "function" && matchMedia("(hover: hover)").matches) mostrarNoPalco(g); });
       grade.appendChild(card);
     }
+    const palco = document.getElementById("hubPalco");
+    if (palco) palco.hidden = !mostrar.length;
+    if (mostrar.length) mostrarNoPalco(mostrar.find((g) => g.chave === jogoEmFoco) || mostrar[0]);
     const nota = document.getElementById("hubNota");
     if (nota) {
       const var_ = sync.jogosVigiados.varredura;
@@ -5028,6 +5337,12 @@ function renderHub() {
     const caixa = document.getElementById("bibliGrupos");
     if (!caixa) return;
     caixa.innerHTML = "";
+    const lido = lista.find((g) => g.leitura === "completa") || lista[0];
+    if (lido) {
+      const probe = document.createElement("img");
+      carregarImg(probe, enderecos(lido, ["heroi", "faixa"]), () => ambienteCom(null));
+      probe.addEventListener("load", () => ambienteCom(probe.currentSrc || probe.src));
+    }
     const grupos = [
       ["On this computer", lista.filter((g) => g.instalado)],
       ["In the Steam library", lista.filter((g) => g.naSteam && !g.instalado)],
@@ -5036,7 +5351,12 @@ function renderHub() {
       const grupo = document.createElement("div");
       grupo.className = "bibli-grupo";
       const h = document.createElement("h2");
-      h.textContent = titulo + " · " + jogos.length;
+      const rot = document.createElement("span");
+      rot.textContent = titulo;
+      const num = document.createElement("b");
+      num.textContent = String(jogos.length);
+      h.appendChild(rot);
+      h.appendChild(num);
       grupo.appendChild(h);
       if (!jogos.length) {
         const p = document.createElement("p");
@@ -5047,6 +5367,7 @@ function renderHub() {
       for (const g of jogos.slice().sort((a, b) => String(a.nome).localeCompare(String(b.nome)))) {
         const linha = document.createElement("div");
         linha.className = "bibli-linha";
+        linha.appendChild(fazerCapa(g, "faixa"));
         const nome = document.createElement("span");
         nome.className = "bibli-nome";
         nome.textContent = g.nome;
@@ -5055,7 +5376,7 @@ function renderHub() {
         if (g.leitura === "completa") {
           const abre = document.createElement("button");
           abre.type = "button";
-          abre.className = "volta-jogos";
+          abre.className = "bibli-abre";
           abre.textContent = "Progress →";
           abre.addEventListener("click", () => irPara(g.chave));
           linha.appendChild(abre);

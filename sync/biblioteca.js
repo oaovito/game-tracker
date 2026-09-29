@@ -457,7 +457,14 @@ async function varrer(opts) {
     if (j.instalado && j.pasta && !j.processos.length) j.processos = executaveis(j.pasta);
     const pop = pops.find((p) => (p.appId && p.appId === j.appId) || normalizar(p.nome) === normalizar(j.nome));
     j.popular = pop && pop.posicao ? pop.posicao : null;
+    if (pop && pop.arte) j.arteFonte = pop.arte;
   }
+
+  // O banner de cada um, na maior resolução que houver (ver arte.js).
+  try {
+    await require('./arte').resolver([...jogos.values()], { semRede: o.semRede, normalizar, pedir: o.pedirArte });
+  } catch (e) { /* arte é enfeite: a varredura não cai por ela */ }
+  for (const j of jogos.values()) delete j.arteFonte;
 
   const lista = [...jogos.values()].sort((a, b) => a.nome.localeCompare(b.nome));
   const resultado = {
