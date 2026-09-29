@@ -528,6 +528,10 @@
        caveira dele, e no iPhone sai a da Apple. */
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
   }
+  /* O bebê só existe no estado "esperando a primeira morte". */
+  .therm-bebe { display: none; width: 100%; height: 100%; }
+  .deaths-panel.esperando .therm-skull { display: none; }
+  .deaths-panel.esperando .therm-bebe { display: block; }
   /* Haste ligando o rosto ao tubo, para a leitura ser exata e não aproximada. */
   .therm-pin::after {
     content: "";
@@ -755,6 +759,9 @@
   .deaths-panel.unknown .deaths-chama { filter: grayscale(1) opacity(0.4); }
   .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
   .deaths-panel.unknown .therm-pin::after { background: var(--line); }
+  /* Esperando a primeira morte não é leitura faltando: é zero ainda por
+     acontecer, e o bebê aparece inteiro, sem o cinza do "não sei". */
+  .deaths-panel.unknown.esperando .therm-pin { opacity: 1; filter: none; }
   /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". Branco e
      não vermelho, porque aqui o excesso é de luto, não de sangue. */
   .deaths-panel.over .therm-scale span:last-child { color: #e8e4da; }
@@ -2759,8 +2766,19 @@
     <div class="therm" id="therm">
      <div class="therm-rail">
       <!-- A caveira é o emoji do sistema, não um desenho nosso: assim cada
-           aparelho renderiza a dele, e no iPhone sai a caveira da Apple. -->
-      <div class="therm-pin" id="thermPin"><span class="therm-skull" role="img" aria-label="deaths">💀</span></div>
+           aparelho renderiza a dele, e no iPhone sai a caveira da Apple.
+           O bebê é nosso, porque é ele que precisa falar a língua do jogo:
+           traço de sumi, papel e o carmesim do pano. Só um dos dois aparece. -->
+      <div class="therm-pin" id="thermPin"><span class="therm-skull" role="img" aria-label="deaths">💀</span><svg class="therm-bebe" viewBox="0 0 40 40" role="img" aria-label="no deaths yet">
+          <circle cx="20" cy="17" r="10.5" fill="#efe6d6" stroke="#2b2622" stroke-width="1.5"/>
+          <path d="M18.6 6.7c.6-2.6 4.4-2.8 4.6-.2.1 1.4-1.6 2-2.4 1" fill="none" stroke="#2b2622" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M13.6 16.4q2.1-2.4 4.2 0M22.2 16.4q2.1-2.4 4.2 0" fill="none" stroke="#2b2622" stroke-width="1.4" stroke-linecap="round"/>
+          <ellipse cx="13.3" cy="20.4" rx="1.9" ry="1.15" fill="#d0705c" opacity="0.55"/>
+          <ellipse cx="26.7" cy="20.4" rx="1.9" ry="1.15" fill="#d0705c" opacity="0.55"/>
+          <path d="M16.8 20.6q3.2 4.2 6.4 0z" fill="#8b2e28" stroke="#2b2622" stroke-width="1.2" stroke-linejoin="round"/>
+          <path d="M6.5 38c0-7.6 4.6-11.6 9.6-11.2 1.6 1.1 2.6 1.5 3.9 1.5s2.3-.4 3.9-1.5c5-.4 9.6 3.6 9.6 11.2z" fill="#7d2a24" stroke="#2b2622" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12 31.6q8 4.6 16 0" fill="none" stroke="#e8e4da" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
+        </svg></div>
 
       <div class="therm-track"><div class="therm-fill" id="thermFill"></div></div>
       <div class="therm-scale">
@@ -3875,6 +3893,8 @@ function renderDeaths() {
     guardarRessalva(box);
     return;
   }
+  // Nenhuma morte ainda: no lugar da caveira, o bebê.
+  if (!p.mortes) box.className += " esperando";
   // Ainda procurando. O traço já diz que não se sabe; explicar isso em texto
   // fixo no painel só ocupava espaço. O andamento fica no title, para quem
   // quiser saber por que ainda não tem número.
