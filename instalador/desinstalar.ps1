@@ -42,6 +42,27 @@ function Ok($t)    { Write-Host "  $t" -ForegroundColor Green }
 function Nota($t)  { Write-Host "  $t" -ForegroundColor DarkGray }
 function Ruim($t)  { Write-Host "  $t" -ForegroundColor Red }
 
+<#
+  Pela janela do desinstalador (TRACKEROAO_GUI), como no instalar.ps1: sem
+  console, contando o que faz por linhas @@, sem perguntas e sem pedir nada.
+  O administrador ja foi pedido pelo .exe; o progresso e guardado, que e a
+  resposta padrao da pergunta que o console faria.
+#>
+$gui = [bool]$env:TRACKEROAO_GUI
+if ($gui) {
+  [Console]::OutputEncoding = [Text.Encoding]::UTF8
+  $ProgressPreference = 'SilentlyContinue'
+  if ($env:TRACKEROAO_USUARIO) { $UsuarioOriginal = $env:TRACKEROAO_USUARIO }
+  if (-not $ApagarProgresso) { $GuardarProgresso = $true }
+}
+function Tela($tipo, $texto) {
+  if ($gui) { [Console]::Out.WriteLine("@@$tipo $texto"); [Console]::Out.Flush() }
+}
+function Etapa($pct, $texto) { Tela 'PASSO' "$pct $texto" }
+function Detalhe($texto) { Tela 'DETALHE' $texto }
+$fraseDaCopia = $null
+Etapa 3 'Preparando a remoção'
+
 $pendencias = @()
 
 <#
@@ -58,7 +79,7 @@ $souAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsId
              ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 $elevacaoNegada = $false
 
-if (-not $souAdmin -and -not $JaElevado) {
+if (-not $gui -and -not $souAdmin -and -not $JaElevado) {
   $quemPediu = "$env:USERDOMAIN\$env:USERNAME"
   Nota 'pedindo administrador para remover a regra de firewall'
   $argsElevado = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"",
@@ -74,6 +95,7 @@ if (-not $souAdmin -and -not $JaElevado) {
   }
 }
 
+if ($gui) { $JaElevado = $souAdmin }
 if (-not $UsuarioOriginal) { $UsuarioOriginal = "$env:USERDOMAIN\$env:USERNAME" }
 
 # A pasta pessoal de quem pediu, e nao a do processo -- ver o bloco acima.
@@ -92,6 +114,8 @@ Nota "pasta: $Destino"
 
 # ============================================================== 1. servico
 Passo '1/5  Servico'
+Etapa 12 'Encerrando o Trackeroao'
+Detalhe 'O serviço em segundo plano e o ícone da bandeja'
 foreach ($nome in @('TrackeroaoSync', 'SekiroProgressSync')) {
   if (Get-ScheduledTask -TaskName $nome -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $nome -Confirm:$false -ErrorAction SilentlyContinue
@@ -117,11 +141,13 @@ if ($encerrados) { Ok "$encerrados processo(s) encerrado(s)" } else { Nota 'nada
 
 # ================================================================ 2. atalho
 Passo '2/5  Atalho'
+Etapa 34 'Removendo o atalho'
 $lnk = Join-Path (Pasta-DeQuemPediu 'Desktop') 'trackeroao.lnk'
 if (Test-Path $lnk) { Remove-Item $lnk -Force; Ok "removido: $lnk" } else { Nota 'nao havia atalho' }
 
 # ================================================================== 3. rede
 Passo '3/5  Rede'
+Etapa 46 'Fechando a porta do celular'
 if ($souAdmin -or $JaElevado) {
   $regras = @(Get-NetFirewallRule -DisplayName 'trackeroao (*)' -ErrorAction SilentlyContinue)
   if ($regras.Count) {
@@ -130,11 +156,13 @@ if ($souAdmin -or $JaElevado) {
   } else { Nota 'nao havia regra de firewall' }
 } else {
   Nota 'sem administrador, a regra de firewall fica'
-  $pendencias += "a regra 'trackeroao (8777)' continua no Firewall do Windows; ela so libera a porta 8777 na rede local"
+  $pendencias += $(if ($gui) { 'A regra da porta 8777 continua no Firewall do Windows. Ela só libera essa porta na rede local.' }
+                   else { "a regra 'trackeroao (8777)' continua no Firewall do Windows; ela so libera a porta 8777 na rede local" })
 }
 
 # ============================================================= 4. progresso
 Passo '4/5  Progresso'
+Etapa 60 'Guardando uma cópia do seu progresso'
 # Tudo que nasce nesta maquina e nao vem de release nenhuma.
 $estado = @('progress.json', 'deaths.json', 'deaths-mem.json', 'bosskills.json', 'efeitos.json',
             'selecao.json', 'sync\.state.json', 'arquivo')
@@ -160,6 +188,7 @@ if (-not (Test-Path $Destino)) {
       Copy-Item -Path (Join-Path $Destino $rel) -Destination $alvo -Recurse -Force
     }
     Ok "copia em $copia"
+    $fraseDaCopia = "Seu progresso ficou guardado em Documentos\$(Split-Path $copia -Leaf)."
   } else {
     Nota 'o progresso sai junto com a pasta'
   }
@@ -173,6 +202,7 @@ if ($UsuarioOriginal -eq "$env:USERDOMAIN\$env:USERNAME" -and (Test-Path $chave)
 
 # ================================================================= 5. pasta
 Passo '5/5  Pasta'
+Etapa 78 'Removendo os arquivos'
 if (Test-Path $Destino) {
   # Um processo recem-encerrado pode segurar um arquivo por um instante.
   $removida = $false
@@ -183,7 +213,8 @@ if (Test-Path $Destino) {
   if ($removida) { Ok "removida: $Destino" }
   else {
     Ruim "nao consegui remover tudo de $Destino"
-    $pendencias += "apagar a pasta $Destino (algum arquivo estava em uso)"
+    $pendencias += $(if ($gui) { "Alguns arquivos estavam em uso e ficaram em $Destino. Pode apagar essa pasta depois." }
+                     else { "apagar a pasta $Destino (algum arquivo estava em uso)" })
   }
 } else {
   Nota 'nada a remover'
@@ -194,12 +225,14 @@ Nota 'o Node.js, se foi instalado fora da pasta, continua: pode servir a outros 
 
 if ($pendencias) {
   Write-Host "`nFicou para voce:" -ForegroundColor Yellow
-  foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow }
+  foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow; Tela 'PENDENCIA' $p }
 }
+if ($fraseDaCopia) { Detalhe $fraseDaCopia }
+Tela 'PRONTO' 'Trackeroao removido'
 
 # A janela fecha sozinha no fim -- a elevada sempre, e a do .exe tambem, que
 # ja saiu antes para a pasta poder ser apagada. O relatorio iria junto.
-if ($JaElevado -or $env:TRACKEROAO_EXE) {
+if (-not $gui -and ($JaElevado -or $env:TRACKEROAO_EXE)) {
   Write-Host "`nTecle algo para fechar." -ForegroundColor DarkGray
   [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }

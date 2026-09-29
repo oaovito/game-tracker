@@ -65,6 +65,38 @@ function Ok($t)    { Write-Host "  $t" -ForegroundColor Green }
 function Nota($t)  { Write-Host "  $t" -ForegroundColor DarkGray }
 function Ruim($t)  { Write-Host "  $t" -ForegroundColor Red }
 
+<#
+  Rodando pela janela do trackeroao-instalador.exe (TRACKEROAO_GUI), este
+  script nao tem console visivel: ele conta o que esta fazendo por linhas que
+  comecam com @@, que a janela transforma em texto e barra de progresso (o
+  protocolo esta descrito no construir-exe.ps1). O resto da saida vai para o
+  registro em %TEMP%\trackeroao-instalar.log. Pela linha de comando, sem a
+  janela, nada disso aparece e o script fala no console como sempre falou.
+
+  Os textos da janela tem acento: o .exe grava este script como UTF-8 com BOM,
+  e a saida vai em UTF-8.
+#>
+$gui = [bool]$env:TRACKEROAO_GUI
+if ($gui) {
+  [Console]::OutputEncoding = [Text.Encoding]::UTF8
+  # A barra de progresso do proprio PowerShell nao aparece em lugar nenhum, e
+  # desenha-la deixa o Invoke-WebRequest varias vezes mais lento.
+  $ProgressPreference = 'SilentlyContinue'
+  if ($env:TRACKEROAO_USUARIO) { $UsuarioOriginal = $env:TRACKEROAO_USUARIO }
+}
+function Tela($tipo, $texto) {
+  if ($gui) { [Console]::Out.WriteLine("@@$tipo $texto"); [Console]::Out.Flush() }
+}
+function Etapa($pct, $texto) { Tela 'PASSO' "$pct $texto" }
+function Detalhe($texto) { Tela 'DETALHE' $texto }
+# Parar de vez: diz o motivo na janela e sai com erro, para ela saber.
+function Falhar($texto, $janela) {
+  Ruim $texto
+  Tela 'ERRO' $(if ($janela) { $janela } else { $texto })
+  exit 1
+}
+Etapa 2 'Preparando a instalação'
+
 # O que ficou por fazer, para o relatorio do fim. Instalacao que termina com
 # pendencia silenciosa e pior que instalacao que falha.
 $pendencias = @()
@@ -102,7 +134,7 @@ $souAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsId
              ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 $elevacaoNegada = $false
 
-if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
+if (-not $gui -and -not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
   $quemPediu = "$env:USERDOMAIN\$env:USERNAME"
   Nota 'pedindo administrador para a instalacao inteira'
   # Nao chamar de $args: e variavel automatica do PowerShell, e sobrescreve-la
@@ -125,6 +157,12 @@ if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
   }
 }
 
+# Pela janela, quem pede administrador e o .exe, antes de o script existir.
+if ($gui) {
+  $JaElevado = $souAdmin
+  $elevacaoNegada = -not $souAdmin
+}
+
 # Quem joga e quem pediu a instalacao, nao necessariamente quem a esta rodando.
 if (-not $UsuarioOriginal) { $UsuarioOriginal = "$env:USERDOMAIN\$env:USERNAME" }
 if ($JaElevado -and $UsuarioOriginal -ne "$env:USERDOMAIN\$env:USERNAME") {
@@ -136,6 +174,7 @@ Nota "destino: $Destino"
 
 # ================================================================== 1. Node
 Passo '1/6  Node.js'
+Etapa 6 'Verificando o Node.js'
 
 function Node-Portatil($raiz) {
   <#
@@ -163,6 +202,8 @@ function Node-Portatil($raiz) {
   }
 
   Nota "baixando o Node oficial ($arq) -- winget nao esta disponivel aqui"
+  Etapa 10 'Baixando o Node.js'
+  Detalhe 'Direto do nodejs.org, com a assinatura conferida'
   $indice = Invoke-RestMethod -Uri 'https://nodejs.org/dist/index.json' -UseBasicParsing
   $lts = $indice | Where-Object { $_.lts -and $_.files -contains "$arq-zip" } | Select-Object -First 1
   if (-not $lts) { throw "o nodejs.org nao publica zip de $arq" }
@@ -209,6 +250,8 @@ if (-not $node) {
 }
 if (-not $node -and (Get-Command winget -ErrorAction SilentlyContinue)) {
   Nota 'nao encontrado; instalando via winget'
+  Etapa 10 'Instalando o Node.js'
+  Detalhe 'Pelo winget, o instalador de programas do Windows'
   winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
   $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
   $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
@@ -218,15 +261,16 @@ if (-not $node) {
   try { $node = Node-Portatil $Destino }
   catch {
     Ruim "nao consegui obter o Node: $($_.Exception.Message)"
-    Ruim 'sem ele nao ha o que instalar. Instale em https://nodejs.org e rode de novo.'
-    return
+    Falhar 'sem ele nao ha o que instalar. Instale em https://nodejs.org e rode de novo.' 'Não consegui obter o Node.js, que o Trackeroao precisa para rodar. Confira a internet e tente de novo.'
   }
 }
-if (-not (Test-Path $node)) { Ruim "o Node apontado nao existe: $node"; return }
+if (-not (Test-Path $node)) { Falhar "o Node apontado nao existe: $node" 'O Node.js encontrado nesta máquina não está funcionando.' }
 Ok "node em $node  ($(& $node -v))"
 
 # =============================================================== 2. projeto
 Passo '2/6  Projeto'
+Etapa 28 'Baixando o Trackeroao'
+Detalhe 'A versão mais recente, do repositório oficial'
 $tmp = Join-Path $env:TEMP ("trackeroao-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 $zip = Join-Path $tmp 'fonte.zip'
@@ -252,10 +296,11 @@ try {
 try {
   Invoke-WebRequest -Uri $origem -OutFile $zip -UseBasicParsing
 } catch {
-  Ruim "nao consegui baixar: $($_.Exception.Message)"
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  return
+  Falhar "nao consegui baixar: $($_.Exception.Message)" 'Não consegui baixar o Trackeroao. Confira a internet e tente de novo.'
 }
+Etapa 42 'Copiando os arquivos'
+Detalhe "Versão $tag"
 Expand-Archive -Path $zip -DestinationPath $tmp -Force
 $raizBaixada = (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName
 
@@ -272,7 +317,7 @@ New-Item -ItemType Directory -Path $Destino -Force | Out-Null
   ForEach-Object { Nota $_ }
 $copiou = $LASTEXITCODE
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-if ($copiou -ne 0) { Ruim 'a copia do projeto falhou; nada foi instalado'; return }
+if ($copiou -ne 0) { Falhar 'a copia do projeto falhou; nada foi instalado' 'A cópia dos arquivos falhou, e nada foi instalado.' }
 $artes = @(Get-ChildItem (Join-Path $Destino 'docs\icones') -Recurse -File -ErrorAction SilentlyContinue).Count
 Ok "projeto $tag em $Destino  ($artes imagens)"
 
@@ -289,6 +334,8 @@ Ok "projeto $tag em $Destino  ($artes imagens)"
   instalou e nao pede administrador -- e por isso so e feito quando quem roda
   e quem pediu: elevado com outra conta, o HKCU seria o do administrador.
 #>
+Etapa 56 'Registrando no Windows'
+Detalhe 'Em Aplicativos instalados, para poder remover depois'
 if ($Exe -and (Test-Path $Exe)) {
   $desinstalador = Join-Path $Destino 'trackeroao-desinstalador.exe'
   try {
@@ -317,11 +364,14 @@ if ($Exe -and (Test-Path $Exe)) {
 
 # =============================================================== 3. servico
 Passo '3/6  Servico'
+Etapa 62 'Preparando o serviço em segundo plano'
+Detalhe 'Ele acompanha o jogo sem abrir janela nenhuma'
 $instalador = Join-Path $Destino 'windows\install-sync-service.ps1'
 & $instalador -NodePath $node -Usuario $UsuarioOriginal
 
 # =============================================================== 4. atalho
 Passo '4/6  Atalho'
+Etapa 74 'Criando o atalho na área de trabalho'
 <#
   O atalho na area de trabalho.
 
@@ -375,6 +425,8 @@ if (-not (Test-Path $atalhoVbs)) {
 
 # ================================================================== 4. rede
 Passo '5/6  Rede'
+Etapa 78 'Liberando o acesso pelo celular'
+Detalhe 'A porta 8777, só na rede de casa'
 <#
   A porta 8777 na rede local.
 
@@ -390,7 +442,12 @@ Passo '5/6  Rede'
   classificada como Public a regra existia sem servir para nada -- que e o pior
   resultado possivel, porque parece resolvido.
 #>
-if ($SemFirewall) {
+if ($gui -and $elevacaoNegada -and -not $SemFirewall) {
+  # Sem administrador, liberar a porta abriria um segundo pedido e uma segunda
+  # janela; pela janela do instalador, fica como pendencia escrita no fim.
+  Nota 'sem administrador: a porta fica fechada'
+  $pendencias += 'A porta 8777 não foi liberada, então o celular ainda não acha a página. Para liberar, instale de novo e aceite o pedido de administrador.'
+} elseif ($SemFirewall) {
   Nota 'pulado a pedido (-SemFirewall)'
   $pendencias += 'a porta 8777 nao foi liberada, a pedido: o celular nao vai achar a pagina'
 } else {
@@ -411,6 +468,7 @@ if ($SemFirewall) {
 
 # ============================================================= 5. conferir
 Passo '6/6  Conferindo'
+Etapa 84 'Lendo o seu progresso'
 Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.
@@ -419,16 +477,21 @@ Push-Location $Destino
 # vez do retrato que veio no zip. Sem isto a pasta publicada fica com o
 # progresso de outra pessoa ate o servico completar o primeiro ciclo.
 & $node 'sync/publish.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota $_ }
+Etapa 90 'Conferindo a instalação'
+Detalhe 'Rodando os testes do Trackeroao nesta máquina'
 & $node 'sync/selftest.js'
 $testes = $LASTEXITCODE
 Pop-Location
 if ($testes -eq 0) { Ok 'a suite passou inteira nesta maquina' }
 else {
   Nota 'alguns testes falharam; se for a parte do save, o jogo talvez nao esteja instalado aqui'
-  $pendencias += "a suite terminou com falha (codigo $testes) -- rode 'npm run selftest' em $Destino para ver quais"
+  # Na janela, isto fica so no registro: sem o jogo instalado alguns testes
+  # falham por definicao, e isso nao e algo que a pessoa precise resolver.
+  if (-not $gui) { $pendencias += "a suite terminou com falha (codigo $testes) -- rode 'npm run selftest' em $Destino para ver quais" }
 }
 
-Start-Process 'http://localhost:8777/'
+# Pela janela, a pagina abre no botao "Abrir o Trackeroao".
+if (-not $gui) { Start-Process 'http://localhost:8777/' }
 Write-Host "`nPronto." -ForegroundColor Green
 Nota 'local  : http://localhost:8777/'
 Nota 'publico: https://oaovito.github.io/trackeroao/'
@@ -437,13 +500,15 @@ Nota 'para remover: Aplicativos instalados do Windows, ou trackeroao-desinstalad
 
 if ($pendencias) {
   Write-Host "`nFicou para voce:" -ForegroundColor Yellow
-  foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow }
+  foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow; Tela 'PENDENCIA' $p }
 }
+Detalhe 'Ele abre sozinho quando você começar a jogar.'
+Tela 'PRONTO' 'Trackeroao instalado'
 
 # Rodando elevada, a janela e uma nova e fecha sozinha no fim, levando junto
 # tudo que foi escrito. Esperar uma tecla e o que permite ler o relatorio --
 # inclusive as pendencias, que sao a parte que mais importa ler.
-if ($JaElevado) {
+if ($JaElevado -and -not $gui) {
   Write-Host "`nTecle algo para fechar." -ForegroundColor DarkGray
   [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }

@@ -78,7 +78,46 @@ jobs:
 
       - name: Construir o executavel
         shell: powershell
-        run: .\instalador\construir-exe.ps1 -Saida dist
+        run: .\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}"
+
+      # A janela do instalador, num Windows de verdade: abre, le o protocolo
+      # @@ do script, termina com 0 quando ele termina bem e com 1 quando ele
+      # para com erro. Roda um script de ensaio no lugar do instalador, para
+      # nao instalar nada no runner.
+      - name: A janela do instalador funciona
+        shell: powershell
+        timeout-minutes: 5
+        run: |
+          $bom = New-Object Text.UTF8Encoding($true)
+          # O acento vem de um codigo, e nao escrito aqui, para nao depender da
+          # codificacao com que o runner grava este passo.
+          $fim = 'Ensaio conclu' + [char]0x00ED + 'do'
+          $ok = Join-Path $env:RUNNER_TEMP 'ensaio-ok.ps1'
+          $ruim = Join-Path $env:RUNNER_TEMP 'ensaio-ruim.ps1'
+          [IO.File]::WriteAllText($ok, @(
+            'if (-not $env:TRACKEROAO_GUI) { exit 3 }',
+            '[Console]::OutputEncoding = [Text.Encoding]::UTF8',
+            '[Console]::Out.WriteLine("@@PASSO 40 Ensaio"); Start-Sleep -Milliseconds 400',
+            'Write-Host "uma linha qualquer, que vai so para o registro"',
+            '[Console]::Out.WriteLine("@@DETALHE detalhe do ensaio"); Start-Sleep -Milliseconds 400',
+            ('[Console]::Out.WriteLine("@@PRONTO {0}")' -f $fim)
+          ) -join "`r`n", $bom)
+          [IO.File]::WriteAllText($ruim, @(
+            '[Console]::Out.WriteLine("@@PASSO 20 Ensaio que falha")',
+            '[Console]::Out.WriteLine("@@ERRO falhou de proposito")',
+            'exit 1'
+          ) -join "`r`n", $bom)
+          $log = Join-Path $env:TEMP 'trackeroao-instalar.log'
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$ok", '/fechar' -Wait -PassThru
+          Get-Content $log -Encoding UTF8 | ForEach-Object { Write-Host "  | $_" }
+          if ($p.ExitCode -ne 0) { throw "o ensaio que termina bem saiu com $($p.ExitCode)" }
+          if (-not (Select-String -Path $log -SimpleMatch "@@PRONTO $fim" -Encoding UTF8)) { throw 'o registro nao tem a linha do fim, ou o acento chegou trocado' }
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$ruim", '/fechar' -Wait -PassThru
+          if ($p.ExitCode -ne 1) { throw "o ensaio que falha saiu com $($p.ExitCode), e nao 1" }
+          $v = (Get-Item dist\trackeroao-instalador.exe).VersionInfo
+          Write-Host "produto: $($v.ProductName)  versao: $($v.FileVersion)  descricao: $($v.FileDescription)"
+          if ($v.ProductName -ne 'Trackeroao') { throw 'o .exe saiu sem as propriedades do produto' }
+          Write-Host 'a janela abriu, leu o protocolo e fechou com o codigo certo'
 
       - name: Publicar
         if: steps.versao.outputs.tag != ''

@@ -998,6 +998,29 @@ check('existe o desinstalador, e ele desfaz o que o instalador fez', () => {
 });
 
 /*
+ * Pela janela do .exe, o PowerShell roda escondido. Qualquer pergunta ou
+ * pedido que ele fizesse ali ficaria esperando para sempre numa tela que
+ * ninguem ve, e um segundo pedido de administrador abriria outra janela.
+ */
+check('pela janela, os scripts nao perguntam nem abrem outra janela', () => {
+  const problemas = [];
+  for (const nome of ['instalar.ps1', 'desinstalar.ps1']) {
+    const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', nome), 'utf8');
+    if (!/TRACKEROAO_GUI/.test(src)) problemas.push(nome + ' nao conhece a janela');
+    if (!/if \(-not \$gui -and -not \$souAdmin/.test(src)) problemas.push(nome + ' pede administrador por conta propria');
+    const leTecla = src.split('\n').filter((l) => /ReadKey/.test(l));
+    if (!src.split('\n').some((l) => /-not \$gui/.test(l) && /JaElevado/.test(l))) problemas.push(nome + ' espera uma tecla na janela');
+    if (!/Tela 'PRONTO'/.test(src)) problemas.push(nome + ' nao avisa a janela do fim');
+    if (!leTecla.length) problemas.push(nome + ' perdeu a pausa do console');
+  }
+  assert(problemas.length === 0, problemas.join('; '));
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
+  assert(/\/target:winexe/.test(construir), 'o .exe voltou a ser de console');
+  assert(/CreateNoWindow = true/.test(construir), 'o PowerShell apareceria numa janela de console');
+  return 'sem console, sem pergunta, um pedido de administrador so, feito pelo .exe';
+});
+
+/*
  * 18. Quando a aplicacao aparece, e como se escolhe o que a faz aparecer.
  *
  * A regra pedida tem duas metades, e elas sao opostas de proposito: pelo
