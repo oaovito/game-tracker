@@ -96,6 +96,7 @@ $pendencias = @()
 #>
 $souAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
              ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$elevacaoNegada = $false
 
 if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
   $quemPediu = "$env:USERDOMAIN\$env:USERNAME"
@@ -111,8 +112,11 @@ if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
   } catch {
     Nota 'administrador recusado; seguindo sem ele'
     Nota 'tudo que nao depende de administrador vai ser feito normalmente'
-    $SemFirewall = $true
-    $pendencias += 'liberar a porta 8777 no Firewall do Windows para redes privadas, senao o celular nao acha a pagina'
+    # Uma bandeira propria, e nao $SemFirewall: reusar a do parametro fazia o
+    # passo 4 anunciar "pulado a pedido", quando ninguem pediu -- o prompt e
+    # que foi negado. Relatorio que descreve errado o proprio estado e pior que
+    # relatorio que nao descreve.
+    $elevacaoNegada = $true
   }
 }
 
@@ -256,16 +260,18 @@ $instalador = Join-Path $Destino 'install-sync-service.ps1'
 Passo '4/5  Rede'
 if ($SemFirewall) {
   Nota 'pulado a pedido (-SemFirewall)'
-  $pendencias += 'a porta 8777 nao foi liberada: o celular nao vai achar a pagina'
+  $pendencias += 'a porta 8777 nao foi liberada, a pedido: o celular nao vai achar a pagina'
+} elseif ($elevacaoNegada) {
+  Nota 'sem administrador: a porta 8777 continua fechada'
+  $pendencias += 'liberar a porta 8777 no Firewall do Windows para redes privadas, senao o celular nao acha a pagina'
 } else {
   <#
     A regra de firewall da porta 8777.
 
     Sem ela a pagina responde no proprio PC e nao responde no celular, que e a
     reclamacao numero um registrada no README. E o unico passo que precisa de
-    administrador, entao sobe num processo separado e de vida curta, em vez de
-    elevar a instalacao inteira -- elevar tudo registraria a tarefa agendada
-    para o usuario errado.
+    administrador, e por isso a instalacao ja subiu elevada la em cima -- aqui
+    e so criar a regra.
 
     O escopo e o minimo que resolve: entrada, TCP, porta 8777, e so no perfil
     Private. No perfil Public (cafe, aeroporto) a porta continua fechada.
@@ -276,9 +282,6 @@ if ($SemFirewall) {
 
   if ($jaTem) {
     Ok 'a porta 8777 ja estava liberada para a rede local'
-  } elseif (-not $souAdmin -and -not $JaElevado) {
-    # So chega aqui quem recusou o prompt la em cima; a pendencia ja foi anotada.
-    Nota 'sem administrador: a porta 8777 continua fechada'
   } else {
     try {
       New-NetFirewallRule -DisplayName $nomeRegra -Direction Inbound -Protocol TCP `
