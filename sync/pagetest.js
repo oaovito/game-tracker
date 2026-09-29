@@ -736,76 +736,51 @@ async function rodar(log) {
   log(petalas >= 16, 'com pétalas bastantes para ler como crisântemo',
     petalas + ' pétalas em duas coroas');
 
-  // As almas: três, com tempos que não coincidem.
-  // Conta os elementos na marcação, não as regras de CSS: uma alma pode ter
-  // mais de uma regra (tamanho, posição), e contar regras dava 8 para 5 almas.
-  const almas = (src.match(/<span class="alma a\d"/g) || []).length;
-  log(almas >= 4, 'há almas bastantes para o bloco nunca ficar vazio',
-    almas + ' subindo');
-  const tempos = [...src.matchAll(/\.alma\.a\d \{[^}]*animation: subir-alma (\d+)s/g)].map((m) => Number(m[1]));
-  log(tempos.length === almas && new Set(tempos).size === almas,
-    'cada uma com a sua duração', tempos.join('s, ') + 's');
-  // O que importa não é serem diferentes, é não voltarem a coincidir: com
-  // períodos primos entre si, o ciclo completo do conjunto é o produto deles.
-  const mdc = (a, b) => (b ? mdc(b, a % b) : a);
-  const primosEntreSi = tempos.every((a, i) => tempos.every((b, j) => i === j || mdc(a, b) === 1));
-  const cicloDasAlmas = tempos.reduce((a, b) => a * b, 1);
-  log(primosEntreSi, 'e em períodos que não voltam a coincidir',
-    'o conjunto só se repete a cada ' + (cicloDasAlmas / 3600).toFixed(1) + ' h');
-  log(/@keyframes subir-alma \{[\s\S]*?opacity: 0;[\s\S]*?\n  \}/.test(src),
-    'cada uma apaga antes de chegar ao topo', 'fantasma não bate no teto');
-
   /*
-   * A alma é o Samurai Spirit, recortado da captura do jogo.
+   * A chama do Ídolo, à esquerda do número.
    *
-   * Cinco desenhos à mão falharam antes deste, e vale guardar a sequência
-   * porque ela é sobre método e não sobre mão. Bulbo com cauda lia como
-   * espermatozoide. O seguinte tinha rosto, mas rosto de ninguém. O terceiro
-   * era um chibi de Shinobi morto: legível e genérico. O quarto era o 鬼仏, o
-   * Ídolo do Escultor — referência certa, mas pedra parada, sem nada que se
-   * possa animar. O quinto acertou a referência e ainda assim saiu cômico:
-   * cabeça redonda sobre corpo cônico, em traço claro, lê como boneco de
-   * neve.
+   * Aqui havia cinco fantasmas subindo, e antes deles um 死. Os fantasmas
+   * saíram inteiros; o kanji deu lugar à chama. O motivo do segundo vale
+   * guardar: os outros dois blocos já abrem com ideograma, 討 e 首, e um
+   * terceiro na mesma posição vira padrão em vez de significado. A chama diz
+   * a mesma coisa por outro caminho, e diz mais — é o fogo que arde no alto
+   * de todo Ídolo do Escultor, onde se ressuscita.
    *
-   * A lição: proporção humana não sobrevive a ser simplificada em 21 por 50
-   * pixels. O que sobra de uma pessoa reduzida a poucas linhas é um
-   * brinquedo. Então o vulto deixou de ser desenhado e passou a ser extraído
-   * da própria captura, onde as proporções já são as certas porque são as do
-   * jogo.
-   *
-   * O que se testa aqui é justamente isso: que ninguém volte a desenhá-lo.
+   * O que se testa é o tom, porque é nele que está a referência: turquesa é a
+   * única cor dessa família no jogo, e uma chama laranja aqui seria fogo
+   * genérico.
    */
-  log(!/<symbol id="almaChibi"/.test(src), 'a alma não é mais desenhada à mão',
-    'cinco tentativas provaram que neste tamanho a figura vira brinquedo');
-  const cssVulto = cssDe('.alma .vulto');
-  log(/icones\/alma\.png/.test(cssVulto), 'ela é o recorte da captura do jogo',
-    'o Samurai Spirit de Mibu Village, separado do cenário pelo brilho');
+  log(!/class=\"alma/.test(src), 'os fantasmas saíram do bloco',
+    'o bloco ficou com o 白菊, a névoa e a chama');
+  const chama = /<span class=\"deaths-chama\"[\s\S]*?<\/span>/.exec(src);
+  const svgChama = chama ? chama[0] : '';
+  log(!!svgChama && !/死/.test(svgChama), 'e o 死 deu lugar a uma chama desenhada',
+    'emoji traria a paleta de outra pessoa, e o tom aqui é o ponto');
   /*
-   * A imagem tem de ir junto no que se publica. O bloco inteiro depende dela:
-   * sem o arquivo não há vulto nenhum, e o link público é a aplicação.
+   * O turquesa do 鬼仏. Conferido pelo canal: num azul de verdade o verde e o
+   * azul dominam e o vermelho fica para trás. Se alguém trocar por um laranja
+   * de fogo comum, esta conta reprova.
    */
-  log(fs.existsSync(path.join(RAIZ, 'docs', 'icones', 'alma.png')),
-    'e ela vai junto para o ar', 'docs/icones/alma.png, versionado');
-  /*
-   * O vulto precisa se mexer sozinho, e não só subir. O movimento da peça
-   * leva a alma de baixo para cima; o que a faz parecer presente é o que
-   * acontece nela enquanto está parada.
-   */
-  log(/desfazer/.test(cssVulto) && /bambolear/.test(cssVulto) && /esvair/.test(cssVulto),
-    'e se desfaz, balança e esvai ao mesmo tempo',
-    'três ritmos que não são múltiplos, então o conjunto nunca repete o mesmo quadro');
-  log(/mask-image/.test(cssVulto),
-    'o desfazer é máscara, e de uma camada só',
-    'no jogo o espírito some antes de chegar ao chão; duas camadas com mask-composite já falharam aqui');
-  // A proporção do recorte é 84x200. Esticar acharia o vulto, que é a primeira
-  // coisa que o faria voltar a parecer boneco.
-  const cssAlma = cssDe('.alma');
-  const larg = parseFloat((/width:\s*([\d.]+)px/.exec(cssAlma) || [])[1] || 0);
-  const alt = parseFloat((/height:\s*([\d.]+)px/.exec(cssAlma) || [])[1] || 0);
-  const proporcao = alt ? larg / alt : 0;
-  log(Math.abs(proporcao - 84 / 200) < 0.06,
-    'e a proporção é a do recorte, não uma qualquer',
-    larg + 'x' + alt + ' — ' + proporcao.toFixed(2) + ' contra ' + (84 / 200).toFixed(2) + ' da imagem');
+  const tonsChama = (svgChama.match(/#[0-9a-f]{6}/gi) || []);
+  const quentes = tonsChama.filter((h) => {
+    const r = parseInt(h.slice(1, 3), 16);
+    const b = parseInt(h.slice(5, 7), 16);
+    // Branco puro (r === b) e o nucleo da chama e passa; o que nao pode e
+    // puxar para o quente, que e o fogo comum e nao o do Idolo.
+    return r > b;
+  });
+  log(tonsChama.length > 0 && quentes.length === 0,
+    'e o tom e o turquesa dos checkpoints do jogo',
+    tonsChama.length + ' paradas, nenhuma puxando para o quente' +
+      (quentes.length ? ': ' + quentes.join(', ') : ''));
+  const cssChama = cssDe('.deaths-chama');
+  log(/animation: vela/.test(cssChama), 'a chama oscila como a do Ídolo',
+    'quase apaga e volta, em vez de pulsar num ritmo regular');
+  log(/<animate /.test(svgChama), 'e a língua de fogo lambe por conta própria',
+    'o d alterna entre desenhos de mesmo número de segmentos, então interpola');
+  const fagulhas = (svgChama.match(/class=\"fagulha/g) || []).length;
+  log(fagulhas >= 3, 'com fagulhas que sobem soltas e apagam',
+    fagulhas + ' delas, em períodos que não são múltiplos entre si');
 
   /*
    * `hidden` tem de vencer qualquer `display` de classe.
@@ -1061,8 +1036,8 @@ async function rodar(log) {
     'o número respira em vez de pulsar', 'animação "luto", lenta');
   log(/\.deaths-count::after \{[^}]*animation: incenso/.test(src),
     'sobe fumaça de incenso no lugar da gota de sangue', 'animação "incenso"');
-  log(/\.deaths-kanji \{[^}]*animation: vela/.test(src),
-    'e a luz sobre o 死 oscila como vela', 'animação "vela"');
+  log(/\.deaths-chama \{[^}]*animation: vela/.test(src),
+    'e a chama do Ídolo oscila como vela', 'animação "vela"');
   // A escala também: morrer mais apaga, não esquenta.
   const fim = /\.therm-fill \{[\s\S]*?linear-gradient\(90deg,[^)]*?(#[0-9a-f]{6})\);/i.exec(src);
   const fimCor = fim ? fim[1] : '';

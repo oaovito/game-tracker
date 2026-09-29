@@ -318,140 +318,6 @@
    * redondo. O desespero está no contraste, então as cavidades são quase
    * pretas contra o pálido, e não cinzas.
    */
-  /*
-   * A alma é o desenho, e o span só carrega o movimento e o brilho.
-   *
-   * A primeira versão era um bulbo com rabo fino, e lia como espermatozoide —
-   * cabeça redonda mais cauda afilada é esse desenho, em qualquer contexto. A
-   * segunda tinha cara, mas cara genérica. Esta é o próprio Shinobi morto, e
-   * o que a faz funcionar é ser ÍCONE: traço fechado, não gradiente. Gradiente
-   * some no fundo escuro e vira borrão.
-   */
-  .alma {
-    position: absolute;
-    bottom: 10px;
-    /* A proporção é a do recorte (84x200): esticar acharia o vulto. */
-    width: 21px; height: 50px;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .alma .vulto {
-    display: block;
-    width: 100%; height: 100%;
-    background-image: url("icones/alma.png");
-    background-size: contain;
-    background-position: center bottom;
-    background-repeat: no-repeat;
-    /* O halo é do espírito, não do desenho: envolve a silhueta inteira. */
-    filter: drop-shadow(0 0 7px rgba(178, 216, 250, 0.75))
-            drop-shadow(0 0 18px rgba(120, 170, 220, 0.4));
-    /*
-     * O desfazer-se, de baixo para cima.
-     *
-     * No jogo o espírito não tem pé: ele some antes de chegar ao chão. Uma
-     * máscara em gradiente corta a barra do hakama, e mover a posição dela faz
-     * a linha do desfazer subir e descer devagar — é o que substitui, agora
-     * que o vulto é imagem e não caminho, a ondulação que a barra tinha em SVG.
-     *
-     * A máscara é de UMA camada, sem composição. A versão com duas camadas e
-     * `mask-composite` já falhou neste projeto: a forma abreviada com prefixo
-     * `-webkit-` não pegou e o recorte saiu como uma fatia atravessando o
-     * elemento.
-     */
-    -webkit-mask-image: linear-gradient(to top,
-      transparent 0%, rgba(0,0,0,0.4) 10%, #000 28%, #000 100%);
-    mask-image: linear-gradient(to top,
-      transparent 0%, rgba(0,0,0,0.4) 10%, #000 28%, #000 100%);
-    -webkit-mask-size: 100% 128%;
-    mask-size: 100% 128%;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    /* O eixo do giro fica no alto, onde estaria a cabeça, então a barra do
-       hakama descreve um arco embaixo em vez de o conjunto deslizar de lado. */
-    transform-origin: 50% 12%;
-    animation: desfazer 4.3s ease-in-out infinite,
-               bambolear 5.3s ease-in-out infinite,
-               esvair 3.1s ease-in-out infinite;
-  }
-  /* Cada alma com o seu atraso, para as cinco não balançarem em bloco. Os
-     períodos não são múltiplos: é a soma deles que nunca fecha o mesmo quadro. */
-  .alma.a2 .vulto { animation-delay: -0.9s, -1.4s, -2.2s; }
-  .alma.a3 .vulto { animation-delay: -2.1s, -2.9s, -0.6s; }
-  .alma.a4 .vulto { animation-delay: -3.3s, -0.7s, -1.8s; }
-  .alma.a5 .vulto { animation-delay: -1.5s, -3.6s, -2.7s; }
-
-  /*
-   * O balanço do vulto.
-   *
-   * No jogo o Samurai Spirit não anda: ele paira e oscila devagar no lugar,
-   * como se a corrente de ar o movesse. Rotação pequena e deslocamento menor
-   * ainda — o que denuncia boneco animado é amplitude, não velocidade.
-   */
-  /* no jogo: o espírito de Mibu se desfazendo de baixo para cima, sem pé que toque o chão */
-  @keyframes desfazer {
-    0%, 100% { -webkit-mask-position: 0 0;    mask-position: 0 0; }
-    50%      { -webkit-mask-position: 0 -13%; mask-position: 0 -13%; }
-  }
-  /* no jogo: o Samurai Spirit pairando: ele não anda, oscila no lugar */
-  @keyframes bambolear {
-    0%, 100% { transform: rotate(-3deg) translateX(-0.5px); }
-    50%      { transform: rotate(3deg)  translateX(0.5px); }
-  }
-  /*
-   * O esvair.
-   *
-   * O fantasma do jogo não tem opacidade constante: ele some e volta, e é
-   * isso que faz olhar duas vezes para conferir se está mesmo ali. Em período
-   * primo em relação ao do balanço, para os dois nunca baterem no mesmo ponto
-   * e o conjunto não criar um pulso regular.
-   */
-  /* no jogo: o fantasma do jogo, que some e volta em vez de ficar sólido */
-  @keyframes esvair {
-    0%, 100% { opacity: 1; }
-    38%      { opacity: 0.68; }
-    64%      { opacity: 0.93; }
-  }
-  /* O rastro: fumaça larga embaixo, sem contorno — contorno é o que fazia o
-     rabo parecer cauda. */
-  .alma::after {
-    content: "";
-    position: absolute;
-    left: 50%; top: 82%;
-    width: 150%; height: 130%;
-    margin-left: -75%;
-    background: radial-gradient(50% 42% at 50% 0%,
-      rgba(200, 230, 252, 0.3) 0%, rgba(170, 210, 240, 0.12) 46%, rgba(150,195,230,0) 78%);
-    filter: blur(3px);
-  }
-  /* Cinco almas, não três, e em períodos primos entre si: 11, 13, 17, 19 e 23
-     segundos só voltam a coincidir depois de mais de 17 horas, então o bloco
-     nunca repete a mesma cena. Com três havia intervalos longos de nada
-     acontecendo; com cinco há sempre uma no ar. */
-  .alma.a1 { left: 11%; animation: subir-alma 11s ease-in-out infinite; }
-  .alma.a2 { left: 31%; animation: subir-alma 17s ease-in-out 3s infinite; }
-  .alma.a3 { left: 52%; animation: subir-alma 13s ease-in-out 7s infinite; }
-  .alma.a4 { left: 73%; animation: subir-alma 23s ease-in-out 5s infinite; }
-  .alma.a5 { left: 89%; animation: subir-alma 19s ease-in-out 11s infinite; }
-  /* Tamanhos diferentes viram profundidade: a menor lê como mais longe. */
-  .alma.a2 { --corpo: 0.72; }
-  .alma.a4 { --corpo: 1.25; }
-  .alma.a5 { --corpo: 0.86; }
-  /* O percurso ficou mais alto e o desvio mais largo — antes elas mal saíam
-     do lugar antes de apagar. E o brilho agora pulsa no meio da subida, como
-     chama que respira. */
-  /* no jogo: os espíritos de Mibu Village subindo e desviando, nunca em linha reta */
-  @keyframes subir-alma {
-    0%   { transform: translate(0, 4px)      scale(calc(var(--corpo, 1) * 0.55)); opacity: 0; }
-    10%  { transform: translate(9px, -16px)  scale(calc(var(--corpo, 1) * 1.05)); opacity: 0.95; }
-    26%  { transform: translate(-13px, -42px) scale(calc(var(--corpo, 1) * 0.92)); opacity: 0.72; }
-    44%  { transform: translate(11px, -70px) scale(calc(var(--corpo, 1) * 1.12)); opacity: 0.9; }
-    62%  { transform: translate(-9px, -96px) scale(calc(var(--corpo, 1) * 0.95)); opacity: 0.55; }
-    80%  { transform: translate(7px, -120px) scale(calc(var(--corpo, 1) * 0.82)); opacity: 0.28; }
-    100% { transform: translate(-3px, -146px) scale(calc(var(--corpo, 1) * 0.6));  opacity: 0; }
-  }
-  /* Com o ponteiro em cima elas ganham corpo, sem acelerar: luto não corre. */
-  .deaths-panel:hover .alma .vulto, .deaths-panel.animando .alma .vulto { filter: blur(0.3px) drop-shadow(0 0 12px rgba(190,230,255,0.95)); }
-
   .deaths-head { display: flex; align-items: baseline; gap: 12px; }
   /* O rótulo voltou ao lado do número, em inglês como o resto da interface.
      Ao lado, e não embaixo, para a linha ler como uma frase: 死 221 deaths. */
@@ -462,17 +328,48 @@
     color: #8d887d;
     align-self: baseline;
   }
-  .deaths-kanji {
-    font-family: var(--font-display);
-    font-size: 1.9rem;
-    font-weight: 800;
-    /* Osso, não sangue: o 死 fica pálido, e a luz que ele recebe oscila devagar
-       como a de uma vela num velório. */
-    color: #cfcabd;
-    line-height: 1;
-    text-shadow: 0 0 10px rgba(226, 222, 212, 0.35);
+  /*
+   * A chama do Ídolo, à esquerda do número.
+   *
+   * Tom: o turquesa do 鬼仏. É a única cor dessa família no jogo inteiro e
+   * aparece exatamente onde se volta depois de morrer, então ela diz "morte"
+   * sem precisar de palavra — e diz melhor que o 死 que estava aqui, porque os
+   * outros dois blocos já abrem com ideograma e um terceiro na mesma posição
+   * vira padrão em vez de significado.
+   *
+   * A altura acompanha o número, e não é fixa: os dois crescem juntos quando a
+   * página escala com o monitor.
+   */
+  .deaths-chama {
+    display: block;
+    width: 1.55rem; height: 2.1rem;
+    flex: 0 0 auto;
+    align-self: center;
+    /* O halo é do fogo, não do traço: envolve a silhueta inteira em vez de
+       cada caminho, que é o que faz a luz parecer sair de dentro. */
+    filter: drop-shadow(0 0 7px rgba(94, 200, 240, 0.75))
+            drop-shadow(0 0 20px rgba(46, 159, 212, 0.45));
     animation: vela 6.4s ease-in-out infinite;
   }
+  .deaths-chama svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /*
+   * As fagulhas.
+   *
+   * Sobem soltas e apagam antes de chegar longe, como as do Ídolo. Os três
+   * períodos não são múltiplos entre si: é a soma deles que impede o conjunto
+   * de fechar um ciclo visível e virar pisca-pisca.
+   */
+  .deaths-chama .fagulha { opacity: 0; }
+  .deaths-chama .f1 { animation: fagulha 3.1s ease-out infinite; }
+  .deaths-chama .f2 { animation: fagulha 4.3s ease-out infinite -1.6s; }
+  .deaths-chama .f3 { animation: fagulha 5.7s ease-out infinite -3.4s; }
+  /* no jogo: as fagulhas que se desprendem da chama do Ídolo e apagam no ar */
+  @keyframes fagulha {
+    0%   { opacity: 0;    transform: translateY(0)      scale(1); }
+    18%  { opacity: 0.95; transform: translateY(-2px)   scale(0.95); }
+    100% { opacity: 0;    transform: translateY(-11px)  scale(0.3); }
+  }
+
   /*
    * O número é lápide.
    *
@@ -564,7 +461,7 @@
      e o halo mal mudava — parado ao lado de um número imóvel, ninguém veria.
      Agora ela chega a quase apagar, e o brilho vai de 3px a 26px: é a
      diferença entre "tem uma animação ali" e "tem uma chama ali". */
-  /* no jogo: a vela do altar oscilando sobre o 死 */
+  /* no jogo: a chama do Ídolo do Escultor oscilando, que quase apaga e volta */
   @keyframes vela {
     0%, 100% { opacity: 1;    text-shadow: 0 0 14px rgba(232, 228, 216, 0.55); }
     7%       { opacity: 0.55; text-shadow: 0 0 4px  rgba(232, 228, 216, 0.15); }
@@ -853,7 +750,9 @@
   .rot-vazio { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
 
   .deaths-panel.unknown .deaths-count,
-  .deaths-panel.unknown .deaths-kanji { color: var(--text-dim); }
+  /* Sem leitura, o fogo apaga: fica o traço cinza, sem halo. Uma chama acesa
+     sobre um número desconhecido afirmaria que há o que contar. */
+  .deaths-panel.unknown .deaths-chama { filter: grayscale(1) opacity(0.4); }
   .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
   .deaths-panel.unknown .therm-pin::after { background: var(--line); }
   /* Estourou a escala: o pino encosta no fim e o 1000 vira "1000+". Branco e
@@ -1105,27 +1004,12 @@
             drop-shadow(0 0 16px rgba(120, 140, 70, 0.5))
             sepia(0.35) hue-rotate(28deg) saturate(1.25);
   }
-  .deaths-panel.apodrecendo .deaths-kanji { color: #b6bf94; }
-  /* As almas também: alma de quem morreu de podridão não sobe branca. */
-  /*
-   * A podridão adoece a alma pelo filtro, não por fundo.
-   *
-   * Esta regra vinha de quando `.alma` ERA o desenho — um blob com
-   * `border-radius`, onde pintar o fundo pintava o fantasma. Depois que o
-   * desenho virou SVG lá dentro, o mesmo `background` passou a pintar a caixa
-   * de 28×38 atrás dele: cinco retângulos verdes acesos no bloco, que era o
-   * que se via. Tingir o próprio traço não tem esse efeito colateral.
-   */
-  .deaths-panel.apodrecendo .alma {
-    filter: sepia(0.55) hue-rotate(35deg) saturate(1.5) brightness(0.92)
-            drop-shadow(0 0 8px rgba(150, 180, 95, 0.55))
-            drop-shadow(0 0 18px rgba(110, 140, 70, 0.3));
+  /* A podridão adoece o fogo pelo filtro, e não por cor: o degradê tem cinco
+     paradas, e repintar cada uma seria cinco lugares para errar. */
+  .deaths-panel.apodrecendo .deaths-chama {
+    filter: drop-shadow(0 0 7px rgba(150, 168, 96, 0.7))
+            sepia(0.5) hue-rotate(24deg) saturate(1.2);
   }
-  .deaths-panel.apodrecendo .alma::after {
-    background: radial-gradient(50% 42% at 50% 0%,
-      rgba(206, 224, 160, 0.26) 0%, rgba(170, 195, 120, 0.1) 46%, rgba(150,180,100,0) 78%);
-  }
-
   /* --- a lista de conquistas --- */
   /* Lista de uma coluna, e não grade: cada conquista tem nome e descrição de
      comprimentos muito diferentes, e em grade as caixas ficam com alturas
@@ -2567,7 +2451,7 @@
        da última fileira. */
     .topics .gaveta { flex: 0 0 auto; margin-left: auto; }
     .deaths-count { font-size: 2.3rem; }
-    .deaths-kanji { font-size: 1.6rem; }
+    .deaths-chama { width: 1.3rem; height: 1.75rem; }
     /* Pino menor e recuo menor: no celular a pista é curta e o rosto grande
        comeria boa parte dela. */
     .therm { padding: 0 18px; }
@@ -2591,13 +2475,15 @@
    * grandes, que são os que incomodam. Daqui do fim, vence todos.
    */
   @media (prefers-reduced-motion: reduce) {
-    .deaths-count, .deaths-kanji, .tempo-num, .boss-num, .headless-num,
+    .deaths-count, .deaths-chama, .tempo-num, .boss-num, .headless-num,
     .boss-quadro::before, .headless-quadro::before, .headless-quadro {
       animation: none;
     }
-    /* Sem a vela oscilando, o 死 fica na luz cheia em vez de num quadro
-       qualquer do ciclo. */
-    .deaths-kanji { opacity: 1; text-shadow: 0 0 10px rgba(226, 222, 212, 0.35); }
+    /* Sem a oscilação, a chama fica na luz cheia em vez de num quadro
+       qualquer do ciclo — e as fagulhas somem, porque movimento solto é
+       justamente o que quem pede menos movimento não quer. */
+    .deaths-chama { opacity: 1; filter: drop-shadow(0 0 8px rgba(94, 200, 240, 0.6)); }
+    .deaths-chama .fagulha { display: none; }
     .deaths-count { background-position: 50% 30%; }
     .tempo-num { background-position: 40% 50%; }
     .boss-num, .headless-num { background-position: 50% 30%; }
@@ -2746,38 +2632,72 @@
     <div class="manchas" aria-hidden="true"></div>
 
     
-    <!--
-      As almas que sobem são o Samurai Spirit, recortado da captura do jogo.
-
-      Cinco desenhos à mão falharam antes deste, e o último falhou pelo motivo
-      mais difícil de prever: era correto e mesmo assim cômico. Cabeça redonda
-      sobre corpo cônico, em traço claro, lê como boneco de neve — a proporção
-      humana não sobrevive a ser simplificada neste tamanho, e o que resta é a
-      silhueta de um brinquedo.
-
-      Então o vulto deixou de ser desenhado e passou a ser extraído. A fonte é
-      a captura do Samurai Spirit, o fantasma que o jogo põe em Mibu Village e
-      no Fountainhead Palace, e a separação é um problema de brilho, não de
-      cor: o jogo desenha o espírito como luz branca sobre cenário escuro. O
-      que sobra vira alfa proporcional ao brilho, o que deixa a borda macia em
-      vez de recortada — é isso que faz parecer fantasma e não adesivo.
-
-      As proporções, portanto, são as do jogo: ombros de kataginu, hakama
-      comprido, katana ao lado, cabeça pequena. Não há como virar boneco de
-      neve, porque não passou por nenhuma mão que pudesse arredondá-lo.
-
-      O `span` de dentro existe para separar os dois movimentos: a subida é da
-      peça, o balanço e o desfazer são do vulto. Numa só, a animação de cima
-      sobrescreveria a de baixo.
-    -->
-    <span class="alma a1" aria-hidden="true"><span class="vulto"></span></span>
-    <span class="alma a2" aria-hidden="true"><span class="vulto"></span></span>
-    <span class="alma a3" aria-hidden="true"><span class="vulto"></span></span>
-    <span class="alma a4" aria-hidden="true"><span class="vulto"></span></span>
-    <span class="alma a5" aria-hidden="true"><span class="vulto"></span></span>
-
+    
     <div class="deaths-head" role="group" aria-label="Deaths">
-      <span class="deaths-kanji">死</span>
+      <!--
+        A chama do Ídolo, no lugar do 死.
+        =================================
+
+        O kanji dizia "morte" e estava certo, mas era o mesmo recurso do resto
+        da página — os outros blocos já abrem com 討 e com 首, e um terceiro
+        ideograma na mesma posição vira padrão em vez de significado.
+
+        A chama azul diz a mesma coisa por outro caminho, e diz mais: é o fogo
+        que arde no alto de todo Ídolo do Escultor, o 鬼仏, que é onde se
+        ressuscita. Quem jogou reconhece a cor antes de ler o número — ela é a
+        única turquesa do jogo inteiro, e aparece exatamente onde se volta
+        depois de morrer.
+
+        Desenhada e não emoji: emoji traria a paleta de outra pessoa, e o tom
+        aqui é o ponto.
+      -->
+      <span class="deaths-chama" role="img" aria-label="deaths">
+        <svg viewBox="0 0 22 30" aria-hidden="true">
+          <defs>
+            <!--
+              O degradê do fogo do Ídolo: base quase transparente, corpo
+              turquesa e ponta branca. É a ordem inversa da chama de vela, que
+              é amarela na ponta — fogo espiritual no jogo tem o núcleo claro.
+            -->
+            <linearGradient id="chamaIdolo" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#1d5f8a" stop-opacity="0.15"/>
+              <stop offset="28%"  stop-color="#2e9fd4" stop-opacity="0.75"/>
+              <stop offset="62%"  stop-color="#5ec8f0"/>
+              <stop offset="88%"  stop-color="#c8f4ff"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <radialGradient id="chamaNucleo" cx="50%" cy="62%" r="50%">
+              <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="55%"  stop-color="#a5e9ff" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#5ec8f0" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!--
+            A língua de fogo. O `d` alterna entre três desenhos com o MESMO
+            número de segmentos — é o que permite interpolar entre eles —, e o
+            que muda é para que lado a ponta pende. É isso que faz a chama
+            lamber em vez de só crescer e encolher.
+          -->
+          <path fill="url(#chamaIdolo)"
+                d="M11 1.2c3.4 4.3 5.2 7.6 5.2 10.4 0 3-1.5 5.2-3.4 6.3 1-2 .7-3.9-1-5.6-.6 2.6-1.9 4.2-3.9 4.9-2.4.8-4.1-.6-4.1-3.2 0-4 2.4-8.4 7.2-12.8z">
+            <animate attributeName="d" dur="2.9s" repeatCount="indefinite"
+              values="M11 1.2c3.4 4.3 5.2 7.6 5.2 10.4 0 3-1.5 5.2-3.4 6.3 1-2 .7-3.9-1-5.6-.6 2.6-1.9 4.2-3.9 4.9-2.4.8-4.1-.6-4.1-3.2 0-4 2.4-8.4 7.2-12.8z;
+                      M11.6 0.6c2.6 4.9 4.4 8.2 4.4 11 0 3-1.8 5-3.7 6 1.2-2.1 1.1-4-.5-5.8-.9 2.5-2.3 4-4.3 4.5-2.5.6-4-.9-3.8-3.5.3-4 2.9-8.1 7.9-12.2z;
+                      M10.4 1.6c4 3.8 5.7 7 5.8 9.8.1 3-1.2 5.3-3 6.5.8-2.1.3-4-1.5-5.5-.3 2.6-1.5 4.3-3.5 5.2-2.3 1-4.1-.3-4.3-2.9-.3-4 1.9-8.5 6.5-13.1z;
+                      M11 1.2c3.4 4.3 5.2 7.6 5.2 10.4 0 3-1.5 5.2-3.4 6.3 1-2 .7-3.9-1-5.6-.6 2.6-1.9 4.2-3.9 4.9-2.4.8-4.1-.6-4.1-3.2 0-4 2.4-8.4 7.2-12.8z"/>
+          </path>
+          <!-- O miolo claro, que é o que dá o branco no meio do azul. -->
+          <ellipse cx="10.6" cy="13.4" rx="2.6" ry="3.6" fill="url(#chamaNucleo)"/>
+          <!--
+            As fagulhas que sobem soltas. No jogo elas se desprendem da chama e
+            apagam antes de chegar longe; aqui são três, em períodos que não
+            são múltiplos, para nunca subirem juntas.
+          -->
+          <circle class="fagulha f1" cx="7.6" cy="9" r="0.85" fill="#bfefff"/>
+          <circle class="fagulha f2" cx="14.2" cy="11" r="0.7" fill="#9ae0fb"/>
+          <circle class="fagulha f3" cx="11" cy="7" r="0.55" fill="#e8fbff"/>
+        </svg>
+      </span>
       <span class="deaths-count" id="deathsCount">—</span>
       <span class="deaths-rot">deaths</span>
     </div>
