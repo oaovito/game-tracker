@@ -12,7 +12,8 @@
  * a pagina abre numa janela de aplicativo do Edge, tambem sem barra.
  *
  * Uma janela so: abrir de novo traz a que ja esta aberta para a frente. O
- * "Fechar" do menu da bandeja fecha esta janela tambem.
+ * "Fechar" do menu da bandeja fecha esta janela tambem, e o servico junto;
+ * abrir esta janela e o que o traz de volta.
  *
  * Compila com o csc do .NET Framework (C# 5) contra as bibliotecas do
  * WebView2; quem compila e o construir-janela.ps1.
@@ -155,6 +156,12 @@ class Janela : Form {
    * o caminho certo para subi-lo: roda como o usuario certo e na pasta certa.
    */
   static bool GarantirServico() {
+    // Abrir a mao desfaz o "Fechar" da bandeja: sem esta marca, o servico
+    // volta a subir sozinho no logon e com o jogo.
+    try {
+      string raiz = Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath));
+      File.Delete(Path.Combine(Path.Combine(raiz, "sync"), "fechado.flag"));
+    } catch { }
     if (Responde()) return true;
     try {
       ProcessStartInfo p = new ProcessStartInfo("schtasks.exe", "/run /tn TrackeroaoSync");

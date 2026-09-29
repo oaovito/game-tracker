@@ -24,6 +24,12 @@ raiz = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))
 porta = 8777
 url = "http://localhost:" & porta & "/"
 
+' Abrir a mao desfaz o "Fechar" da bandeja: sem a marca, o servico volta a
+' subir sozinho no logon e com o jogo.
+If fso.FileExists(fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "fechado.flag")) Then
+  fso.DeleteFile fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "fechado.flag"), True
+End If
+
 ' --- 1. o servico esta no ar? ---
 Dim http, vivo
 vivo = False

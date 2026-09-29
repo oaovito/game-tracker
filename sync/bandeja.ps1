@@ -89,18 +89,18 @@ $icone.Visible = $true
   maquina.
 #>
 $textos = @{
-  'en' = @('Force update', 'Close')
-  'pt-BR' = @('For\u00e7ar atualiza\u00e7\u00e3o', 'Fechar')
-  'es' = @('Forzar actualizaci\u00f3n', 'Cerrar')
-  'fr' = @('Forcer la mise \u00e0 jour', 'Fermer')
-  'de' = @('Update erzwingen', 'Schlie\u00dfen')
-  'it' = @('Forza aggiornamento', 'Chiudi')
-  'ru' = @('\u041f\u0440\u0438\u043d\u0443\u0434\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c', '\u0417\u0430\u043a\u0440\u044b\u0442\u044c')
-  'pl' = @('Wymu\u015b aktualizacj\u0119', 'Zamknij')
-  'tr' = @('G\u00fcncellemeyi zorla', 'Kapat')
-  'ja' = @('\u4eca\u3059\u3050\u66f4\u65b0', '\u9589\u3058\u308b')
-  'ko' = @('\uac15\uc81c \uc5c5\ub370\uc774\ud2b8', '\ub2eb\uae30')
-  'zh-CN' = @('\u5f3a\u5236\u66f4\u65b0', '\u5173\u95ed')
+  'en' = @('Force update', 'Close', 'You are on the latest version ({0}).')
+  'pt-BR' = @('For\u00e7ar atualiza\u00e7\u00e3o', 'Fechar', 'Voc\u00ea j\u00e1 est\u00e1 na vers\u00e3o mais recente ({0}).')
+  'es' = @('Forzar actualizaci\u00f3n', 'Cerrar', 'Ya tienes la versi\u00f3n m\u00e1s reciente ({0}).')
+  'fr' = @('Forcer la mise \u00e0 jour', 'Fermer', 'Vous avez d\u00e9j\u00e0 la derni\u00e8re version ({0}).')
+  'de' = @('Update erzwingen', 'Schlie\u00dfen', 'Du hast bereits die neueste Version ({0}).')
+  'it' = @('Forza aggiornamento', 'Chiudi', 'Hai gi\u00e0 la versione pi\u00f9 recente ({0}).')
+  'ru' = @('\u041f\u0440\u0438\u043d\u0443\u0434\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c', '\u0417\u0430\u043a\u0440\u044b\u0442\u044c', '\u0423 \u0432\u0430\u0441 \u0443\u0436\u0435 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u044f\u044f \u0432\u0435\u0440\u0441\u0438\u044f ({0}).')
+  'pl' = @('Wymu\u015b aktualizacj\u0119', 'Zamknij', 'Masz ju\u017c najnowsz\u0105 wersj\u0119 ({0}).')
+  'tr' = @('G\u00fcncellemeyi zorla', 'Kapat', 'Zaten en g\u00fcncel s\u00fcr\u00fcmdesiniz ({0}).')
+  'ja' = @('\u4eca\u3059\u3050\u66f4\u65b0', '\u9589\u3058\u308b', '\u6700\u65b0\u30d0\u30fc\u30b8\u30e7\u30f3\u3067\u3059\uff08{0}\uff09\u3002')
+  'ko' = @('\uac15\uc81c \uc5c5\ub370\uc774\ud2b8', '\ub2eb\uae30', '\uc774\ubbf8 \ucd5c\uc2e0 \ubc84\uc804\uc785\ub2c8\ub2e4({0}).')
+  'zh-CN' = @('\u5f3a\u5236\u66f4\u65b0', '\u5173\u95ed', '\u5df2\u662f\u6700\u65b0\u7248\u672c\uff08{0}\uff09\u3002')
 }
 function Idioma-Atual {
   try {
@@ -131,9 +131,19 @@ $menu = New-Object System.Windows.Forms.ContextMenuStrip
 
 $atualizar = $menu.Items.Add($t[0])
 $atualizar.add_Click({
-  # O servico confere a release agora, em vez de esperar a proxima rodada.
-  # Havendo versao nova, ele se reinicia sozinho e esta chama volta junto.
-  try { (New-Object Net.WebClient).UploadString("http://127.0.0.1:$Porta/atualizar", '') | Out-Null } catch { }
+  <#
+    O servico confere a release agora. Ja na ultima versao, um aviso pequeno
+    sai ao lado desta chama e some sozinho. Havendo versao nova, ela e
+    aplicada em silencio: o servico se reinicia e esta chama volta junto.
+  #>
+  try {
+    $wc = New-Object Net.WebClient
+    $wc.Encoding = [Text.Encoding]::UTF8
+    $r = $wc.UploadString("http://127.0.0.1:$Porta/atualizar", '') | ConvertFrom-Json
+    if ($r.atual) {
+      $icone.ShowBalloonTip(4000, 'Trackeroao', ($t[2] -f $r.instalada), [System.Windows.Forms.ToolTipIcon]::None)
+    }
+  } catch { }
 })
 
 $menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
@@ -141,12 +151,16 @@ $menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
 $fechar = $menu.Items.Add($t[1])
 $fechar.add_Click({
   <#
-    Fecha o que se ve: a janela do Trackeroao, se estiver aberta, e esta
-    chama. O servico continua lendo o save em segundo plano, sem nada na tela,
-    e a chama volta quando o jogo escolhido abrir de novo.
+    Fecha tudo de verdade: a janela do Trackeroao, esta chama e o servico.
+    Nada disso volta sozinho -- nem no logon, nem com o jogo -- ate a pessoa
+    abrir o Trackeroao pelo atalho.
   #>
   [System.Threading.EventWaitHandle]$sinal = $null
   if ([System.Threading.EventWaitHandle]::TryOpenExisting('Local\TrackeroaoFechar', [ref]$sinal)) { [void]$sinal.Set() }
+  # O servico tambem sai, e marca que so volta aberto a mao (nem no logon).
+  # A marca e escrita aqui tambem, para valer mesmo com o servico sem responder.
+  try { Set-Content -Path (Join-Path $PSScriptRoot 'fechado.flag') -Value (Get-Date -Format o) } catch { }
+  try { (New-Object Net.WebClient).UploadString("http://127.0.0.1:$Porta/encerrar", '') | Out-Null } catch { }
   $icone.Visible = $false
   [System.Windows.Forms.Application]::Exit()
 })

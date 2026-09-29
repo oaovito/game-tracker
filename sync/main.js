@@ -714,7 +714,21 @@ function reiniciar() {
   process.exit(0);
 }
 
+/*
+ * Fechado pela bandeja: enquanto este arquivo existir, o serviço não sobe
+ * sozinho -- nem pela tarefa do logon, nem por nada. Quem o apaga é a abertura
+ * manual (a janela do Trackeroao, ou o abrir.vbs num clone).
+ */
+const FECHADO = path.join(__dirname, 'fechado.flag');
+
+function encerrarDeVez() {
+  try { fs.writeFileSync(FECHADO, new Date().toISOString()); } catch (e) { /* sai mesmo assim */ }
+  console.log('  [fechar] fechado pela bandeja; só volta aberto à mão');
+  process.exit(0);
+}
+
 async function run() {
+  if (fs.existsSync(FECHADO)) process.exit(0);
   const reinicio = !!process.env.TRACKEROAO_REINICIO;
   delete process.env.TRACKEROAO_REINICIO;
   hookConsole();
@@ -753,6 +767,7 @@ async function run() {
           aoAbrir: () => abrirBandeja('atalho'),
           aoVarrer: () => pedirVarredura(),
           aoAtualizar: () => pedirAtualizacao(),
+          aoEncerrar: () => encerrarDeVez(),
         });
         break;
       } catch (e) {

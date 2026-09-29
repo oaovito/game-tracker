@@ -279,7 +279,21 @@ async function verificar(raiz) {
   }
 }
 
-module.exports = { verificar, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
+/**
+ * Só confere, sem aplicar: a versão instalada e a última publicada. É o que o
+ * "Forçar atualização" da bandeja pergunta antes de decidir. Num clone, a
+ * versão é a do git, e a resposta é sempre "confira pela atualização".
+ */
+async function situacao(raiz) {
+  raiz = raiz || RAIZ;
+  if (fs.existsSync(path.join(raiz, '.git'))) return { git: true };
+  const ultima = await ultimaRelease();
+  const estado = lerEstado(raiz);
+  const instalada = estado ? estado.tag : null;
+  return { instalada, ultima, atual: instalada === ultima };
+}
+
+module.exports = { verificar, situacao, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
 
 /*
  * Linha de comando.

@@ -81,6 +81,7 @@ function createServer(options) {
   const aoAbrir = typeof options.aoAbrir === 'function' ? options.aoAbrir : null;
   const aoVarrer = typeof options.aoVarrer === 'function' ? options.aoVarrer : null;
   const aoAtualizar = typeof options.aoAtualizar === 'function' ? options.aoAtualizar : null;
+  const aoEncerrar = typeof options.aoEncerrar === 'function' ? options.aoEncerrar : null;
 
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
@@ -160,8 +161,27 @@ function createServer(options) {
     if (urlPath === '/atualizar') {
       const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
       if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
-      if (aoAtualizar) { try { aoAtualizar(); } catch (e) { /* não derruba o servidor */ } }
+      /*
+       * Responde o que achou: já na última versão ({atual: true}), ou com a
+       * versão nova a caminho ({atual: false}), que o serviço aplica na
+       * próxima folga e se reinicia. A bandeja só avisa no primeiro caso.
+       */
+      require('./atualizar').situacao().then((s) => {
+        if (!s.atual && aoAtualizar) { try { aoAtualizar(); } catch (e) { /* não derruba o servidor */ } }
+        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(s));
+      }, (e) => {
+        res.writeHead(502, { 'content-type': 'application/json' }).end(JSON.stringify({ erro: e.message }));
+      });
+      return;
+    }
+
+    // "Fechar", no menu da bandeja: encerra o serviço de verdade, e ele não
+    // volta sozinho (nem no logon) até a pessoa abrir o Trackeroao à mão.
+    if (urlPath === '/encerrar') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina || req.method !== 'POST') { res.writeHead(403).end('forbidden'); return; }
       res.writeHead(202).end();
+      if (aoEncerrar) setTimeout(() => { try { aoEncerrar(); } catch (e) { /* sai de qualquer jeito */ } }, 200);
       return;
     }
 
@@ -275,7 +295,7 @@ function createServer(options) {
  * problema nenhum, porque a porta principal continua valendo.
  */
 function listenExtra(options) {
-  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar });
+  const server = createServer({ root: options.root, indexFile: options.indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar, aoEncerrar: options.aoEncerrar });
   return new Promise((resolve) => {
     const desistir = (err) => resolve({ ok: false, port: options.port, error: err && err.message });
     server.once('error', desistir);
@@ -291,7 +311,7 @@ function start(options) {
   const root = options.root;
   const port = options.port || 8777;
   const indexFile = options.indexFile || 'trackeroao.html';
-  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar });
+  const server = createServer({ root, indexFile, aoAbrir: options.aoAbrir, aoVarrer: options.aoVarrer, aoAtualizar: options.aoAtualizar, aoEncerrar: options.aoEncerrar });
 
   // Rodando como serviço, o processo sobe antes do Wi-Fi associar: não existe
   // IP de LAN ainda, e anunciar isso como "sem rede" seria mentira. Nesse caso

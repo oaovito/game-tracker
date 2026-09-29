@@ -177,6 +177,22 @@ jobs:
           $destino = Join-Path $env:LOCALAPPDATA 'trackeroao'
           if (-not (Test-Path (Join-Path $destino 'sync\main.js'))) { throw "nada foi instalado em $destino" }
 
+          # O instalador baixa o codigo da ultima release publicada; o que se
+          # testa daqui em diante e o deste commit, posto por cima e religado.
+          Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+            Where-Object { $_.CommandLine -like "*$destino*" } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+          Start-Sleep -Seconds 2
+          Copy-Item sync\*.js, sync\*.ps1, sync\*.vbs, sync\*.json (Join-Path $destino 'sync') -Force
+          Copy-Item trackeroao.html $destino -Force
+          schtasks /run /tn TrackeroaoSync | Out-Null
+          $vivo = $false
+          for ($i = 0; $i -lt 30 -and -not $vivo; $i++) {
+            Start-Sleep -Seconds 1
+            try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:8777/progress.json' | Out-Null; $vivo = $true } catch { }
+          }
+          if (-not $vivo) { throw 'o servico deste commit nao subiu' }
+
           # A janela do Trackeroao: abre e fica de pe, uma segunda abertura nao
           # cria outra, e o sinal do "Fechar" da bandeja a fecha.
           $janela = Join-Path $destino 'app\Trackeroao.exe'
@@ -195,6 +211,29 @@ jobs:
           [void]$sinal.Set()
           if (-not $j.WaitForExit(15000)) { throw 'o Fechar da bandeja nao fechou a janela' }
           Write-Host 'a janela abriu, e unica e fecha pelo menu da bandeja'
+
+          # "Forcar atualizacao": recem-instalada, a versao e a ultima.
+          $r = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8777/atualizar'
+          Write-Host "atualizar: instalada $($r.instalada), ultima $($r.ultima), atual $($r.atual)"
+          if (-not $r.atual) { throw 'a versao recem-instalada nao foi reconhecida como a ultima' }
+
+          # "Fechar": o servico sai e nao volta sozinho, nem pela tarefa do logon;
+          # so a abertura manual (a janela) o traz de volta.
+          Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8777/encerrar' | Out-Null
+          Start-Sleep -Seconds 3
+          if (-not (Test-Path (Join-Path $destino 'sync\fechado.flag'))) { throw 'o Fechar nao deixou a marca' }
+          function Responde { try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:8777/progress.json' | Out-Null; $true } catch { $false } }
+          if (Responde) { throw 'o servico continuou de pe depois do Fechar' }
+          schtasks /run /tn TrackeroaoSync | Out-Null
+          Start-Sleep -Seconds 10
+          if (Responde) { throw 'a tarefa do logon religou o servico depois do Fechar' }
+          $j = Start-Process $janela -PassThru
+          $voltou = $false
+          for ($i = 0; $i -lt 30 -and -not $voltou; $i++) { Start-Sleep -Seconds 1; $voltou = Responde }
+          if (-not $voltou) { throw 'abrir a janela nao trouxe o servico de volta' }
+          [void]$sinal.Set()
+          [void]$j.WaitForExit(15000)
+          Write-Host 'fechar desliga tudo, e so a abertura manual religa'
           $logD = Join-Path $env:TEMP 'trackeroao-desinstalar.log'
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/desinstalar', "/ensaio=$PWD\instalador\desinstalar.ps1", "/destino=$destino", '/fechar' -Wait -PassThru
           Get-Content $logD -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }

@@ -34,3 +34,5 @@ sync/.jogo-pasta.json
 /jogador.json
 # O idioma escolhido no globo da página.
 sync/idioma.json
+# Fechado pela bandeja: o serviço não sobe sozinho enquanto existir.
+sync/fechado.flag
