@@ -1454,5 +1454,70 @@ function resumo() {
     console.log('   FALHA a página publicada desenha igual à local\n            ' + err.message);
   }
 
+  /*
+   * A release publicada tem de carregar o executável de agora.
+   *
+   * "Atualiza sempre no Releases" é regra, e regra que depende de lembrança
+   * quebra em silêncio: o .exe é binário, então um diff nunca mostra que a
+   * release ficou para trás, e quem baixar pelo link continua recebendo o
+   * instalador velho enquanto o repositório já tem o novo.
+   *
+   * A comparação é por tamanho, e não pelo corpo: baixar 70 KB a cada execução
+   * da suíte seria caro para o que se quer pegar, que é o .exe ter sido
+   * recompilado e ninguém ter publicado. O instalar.ps1 vai embutido dentro
+   * dele, então qualquer mudança no script muda o tamanho do binário.
+   *
+   * Isto mora aqui, e não entre os checks síncronos, porque lá a espera seria
+   * um laço bloqueante — e laço bloqueante impede o próprio callback da
+   * resposta de rodar. A primeira versão fazia isso e pulava sempre, dizendo
+   * "sem alcançar o GitHub" numa máquina com rede perfeita.
+   *
+   * Sem rede o teste se cala em vez de acusar: máquina offline não é defeito
+   * do projeto.
+   */
+  console.log('\n  === 17. A release publicada ===');
+  try {
+    const exe = path.join(RAIZ_PROJETO, 'trackeroao-instalador.exe');
+    if (!fs.existsSync(exe)) {
+      console.log('   --    a release carrega o executável de agora  -  o .exe não está nesta pasta');
+    } else {
+      const https = require('https');
+      const local = fs.statSync(exe).size;
+      const pedir = (u, saltos) => new Promise((resolve) => {
+        if (saltos > 6) return resolve(null);
+        const req = https.request(u, { method: 'HEAD', headers: { 'User-Agent': 'trackeroao' } }, (res) => {
+          res.resume();
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return resolve(pedir(res.headers.location, saltos + 1));
+          }
+          if (res.statusCode !== 200) return resolve(null);
+          resolve(Number(res.headers['content-length']) || null);
+        });
+        req.on('error', () => resolve(null));
+        req.setTimeout(8000, () => { req.destroy(); resolve(null); });
+        req.end();
+      });
+
+      const publicado = await pedir(
+        'https://github.com/oaovito/trackeroao/releases/latest/download/trackeroao-instalador.exe', 0);
+
+      if (publicado === null) {
+        console.log('   --    a release carrega o executável de agora  -  sem alcançar o GitHub');
+      } else if (publicado === local) {
+        pass++;
+        console.log('   ok    a release carrega o executável de agora  -  '
+          + (local / 1024).toFixed(1) + ' KB, igual ao que o link de download entrega');
+      } else {
+        fail++;
+        failures.push('a release carrega o executável de agora');
+        console.log('   FALHA a release carrega o executável de agora\n            '
+          + 'publicado ' + (publicado / 1024).toFixed(1) + ' KB, local '
+          + (local / 1024).toFixed(1) + ' KB — rode construir-exe.ps1 e publique a release');
+      }
+    }
+  } catch (err) {
+    console.log('   --    a release carrega o executável de agora  -  ' + err.message);
+  }
+
   resumo();
 })();
