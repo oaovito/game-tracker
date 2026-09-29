@@ -106,6 +106,77 @@ jogo:
 
 Para conferir se a tarefa está de pé, `Get-ScheduledTask TrackeroaoSync`.
 
+## Quanto a aplicação consome
+
+A aplicação foi desenhada para ficar ligada o tempo inteiro sem que isso se
+perceba, e o consumo acompanha essa intenção: com o jogo fechado ela quase não
+existe, e com o jogo aberto trabalha apenas quando o save é gravado. Os números
+abaixo vêm de duas origens, que convém distinguir. A memória do servidor foi
+medida diretamente; o tempo do `tasklist` foi medido nesta máquina durante o
+desenvolvimento; os demais valores são estimativas feitas a partir do código e
+do comportamento conhecido do PowerShell no Windows. Onde o número é estimado,
+o texto diz.
+
+### Com o jogo fechado
+
+Resta um único processo `node`, que ocupa algo entre 50 e 60 MB de memória
+(medido) e mantém o uso de CPU praticamente em zero. Ele faz quatro coisas, e
+nenhuma delas é contínua:
+
+- **Procura o jogo a cada cinco segundos.** Uma chamada ao `tasklist`, sem
+  filtro, devolve cerca de 9 KB e leva aproximadamente 190 ms. Em média, isso
+  representa bem menos de 1% de um núcleo. A chamada é uma só,
+  independentemente de quantos jogos estejam sendo vigiados, e a comparação
+  com o catálogo é feita dentro do próprio serviço.
+- **Serve a página** na porta 8777, e também na porta 80 quando ela está livre.
+  Sem ninguém com a página aberta, o servidor fica parado à espera de conexão.
+  Com a página aberta na rede local, cada aba pede o `progress.json` a cada
+  cinco segundos, o que custa uma leitura de arquivo pequena por pedido.
+- **Responde pelo nome na rede local** (mDNS), através de um socket UDP que
+  apenas escuta e atende perguntas. O custo é desprezível.
+- **Confere a rede a cada 15 segundos** e **a instalação do jogo a cada dez
+  minutos**. São verificações baratas, que existem para anunciar o endereço
+  certo quando o Wi-Fi associa depois do boot e para perceber quando o jogo foi
+  desinstalado.
+
+Com o jogo fechado, nenhum handle fica aberto sobre o arquivo do save. O
+observador do arquivo só existe enquanto o jogo está rodando.
+
+### Com o jogo aberto
+
+Ao processo `node` somam-se três coisas.
+
+- **O ícone da bandeja**, que é um `powershell` residente com Windows Forms. A
+  estimativa é de 60 a 90 MB de memória, com CPU quase nula. O único trabalho
+  periódico dele é conferir, a cada dois segundos, se o serviço que o abriu
+  continua vivo, para não deixar na bandeja um ícone que não leva a lugar
+  nenhum.
+- **A leitura do save**, a cada gravação feita pelo jogo. Gravações próximas
+  são reunidas numa só, com uma espera de 0,9 s, porque o Sekiro costuma gravar
+  várias vezes em sequência. Cada leitura percorre os cerca de 11 MB do arquivo,
+  sempre em modo somente leitura.
+- **A leitura da memória do jogo**, que acompanha a leitura do save e é a parte
+  mais custosa do conjunto. O Node não consegue chamar `ReadProcessMemory` por
+  conta própria, e o projeto não usa dependência nativa. Por isso, cada
+  consulta à memória abre um `powershell` curto, que compila a ponte com o
+  Windows, lê o que foi pedido e termina. Uma leitura completa faz algumas
+  dessas consultas em sequência (localizar o processo, resolver os ponteiros,
+  ler os valores). A estimativa é de cerca de um segundo de CPU por consulta,
+  e a memória volta ao sistema assim que cada processo termina. Essas chamadas
+  são síncronas: enquanto duram, o servidor espera, e uma página aberta naquele
+  instante recebe a resposta com esse atraso.
+
+Por fim, quando há algo novo, o progresso é publicado no GitHub Pages por meio
+do `git`, **no máximo uma vez a cada três minutos**. O intervalo existe para
+não encher o histórico de commits enquanto se joga.
+
+### O que não acontece
+
+A aplicação não escreve nada no jogo, não mantém o save aberto fora das
+leituras e não baixa nada em tempo de execução. Também não abre janela nem
+navegador por conta própria: quando o jogo começa, o único sinal visível é o
+ícone na bandeja.
+
 ## O que a página lê do save
 
 | Item | Origem | Confiança |
