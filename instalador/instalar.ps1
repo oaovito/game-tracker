@@ -15,8 +15,8 @@ O que ele resolve sozinho:
   - Node.js, por tres caminhos em ordem de preferencia: o que ja existe na
     maquina, o winget, e -- se nenhum dos dois -- o zip oficial do nodejs.org
     descompactado dentro da propria pasta do projeto, com o hash conferido
-  - o projeto, baixado do repositorio publico (sem exigir git: usa o zip que o
-    GitHub publica)
+  - o projeto, na versao da ultima release, baixado do repositorio publico
+    (sem exigir git: usa o zip que o GitHub publica)
   - a tarefa agendada que sobe o servico oculto no logon
   - a regra de firewall da porta 8777, para o celular alcancar a pagina --
     unico passo que pede elevacao, e so ele
@@ -50,7 +50,11 @@ param(
   # A diferenca importa quando a elevacao troca de conta -- ver o bloco logo
   # abaixo.
   [string]$UsuarioOriginal,
-  [switch]$JaElevado
+  [switch]$JaElevado,
+  # O proprio trackeroao-instalador.exe, que vira o desinstalador dentro da
+  # pasta. Vem do ambiente na primeira execucao e por argumento na elevada,
+  # porque o processo elevado nao herda o ambiente de quem o pediu.
+  [string]$Exe = $env:TRACKEROAO_EXE
 )
 
 $ErrorActionPreference = 'Stop'
@@ -106,6 +110,7 @@ if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
   $argsElevado = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"",
             '-Destino', "`"$Destino`"", '-Repo', "`"$Repo`"",
             '-UsuarioOriginal', "`"$quemPediu`"", '-JaElevado')
+  if ($Exe) { $argsElevado += @('-Exe', "`"$Exe`"") }
   try {
     $p = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList $argsElevado
     exit $p.ExitCode
@@ -225,8 +230,27 @@ Passo '2/6  Projeto'
 $tmp = Join-Path $env:TEMP ("trackeroao-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 $zip = Join-Path $tmp 'fonte.zip'
+<#
+  A versao instalada e a ultima release, e nao a main.
+
+  E a mesma unidade que a atualizacao automatica usa: cada release marca um
+  ciclo terminado, e a main entre duas releases pode estar no meio de uma
+  mudanca. Instalar pela release tambem da a atualizacao um ponto de partida
+  conhecido -- a tag fica gravada em versao.json. Sem release alcancavel (API
+  fora do ar, limite de pedidos), cai para a main, que e melhor que nao
+  instalar.
+#>
+$tag = 'main'
+$origem = "$Repo/archive/refs/heads/main.zip"
 try {
-  Invoke-WebRequest -Uri "$Repo/archive/refs/heads/main.zip" -OutFile $zip -UseBasicParsing
+  $apiRepo = $Repo -replace '^https://github\.com/', 'https://api.github.com/repos/'
+  $rel = Invoke-RestMethod -Uri "$apiRepo/releases/latest" -UseBasicParsing -Headers @{ 'User-Agent' = 'trackeroao' }
+  if ($rel.tag_name) { $tag = $rel.tag_name; $origem = "$Repo/archive/refs/tags/$tag.zip" }
+} catch {
+  Nota 'nao consegui consultar a ultima release; instalando a main'
+}
+try {
+  Invoke-WebRequest -Uri $origem -OutFile $zip -UseBasicParsing
 } catch {
   Ruim "nao consegui baixar: $($_.Exception.Message)"
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
@@ -237,23 +261,63 @@ $raizBaixada = (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName
 
 New-Item -ItemType Directory -Path $Destino -Force | Out-Null
 
-# Os arquivos de estado sao desta maquina e nao vem no zip; se ja existirem,
-# ficam onde estao. Copiar por cima do resto atualiza sem zerar o progresso.
-Copy-Item -Path (Join-Path $raizBaixada '*') -Destination $Destino -Recurse -Force
+<#
+  A copia e a mesma da atualizacao automatica: sync\atualizar.js, rodado da
+  pasta baixada. Ele confere se o zip veio inteiro antes de copiar (zip
+  truncado descompacta sem reclamar), preserva o estado desta maquina, tira da
+  raiz o que versoes antigas deixavam la e grava em versao.json o que foi
+  instalado. Duas rotinas para a mesma copia acabariam discordando.
+#>
+& $node (Join-Path $raizBaixada 'sync\atualizar.js') --aplicar $raizBaixada $tag $Destino |
+  ForEach-Object { Nota $_ }
+$copiou = $LASTEXITCODE
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-
-# Conferir o que chegou, e nao so que o comando nao deu erro: zip truncado
-# descompacta sem reclamar e deixa a instalacao pela metade.
-$exigidos = @('trackeroao.html', 'package.json', 'sync\main.js', 'sync\offsets.json',
-              'sync\conquistas.json', 'install-sync-service.ps1', 'docs\index.html')
-$faltando = $exigidos | Where-Object { -not (Test-Path (Join-Path $Destino $_)) }
-if ($faltando) { Ruim "o download veio incompleto, faltou: $($faltando -join ', ')"; return }
+if ($copiou -ne 0) { Ruim 'a copia do projeto falhou; nada foi instalado'; return }
 $artes = @(Get-ChildItem (Join-Path $Destino 'docs\icones') -Recurse -File -ErrorAction SilentlyContinue).Count
-Ok "projeto em $Destino  ($artes imagens)"
+Ok "projeto $tag em $Destino  ($artes imagens)"
+
+<#
+  O desinstalador.
+
+  E o proprio .exe que esta rodando agora, copiado para dentro da pasta com
+  outro nome: com "desinstal" no nome, ele desinstala (ver construir-exe.ps1).
+  A release carrega um arquivo so, e quem instalou tem como remover sem voltar
+  a pagina de download.
+
+  O registro em "Aplicativos instalados" e o lugar onde o Windows ensina a
+  procurar como remover um programa. Fica em HKCU, que e da conta de quem
+  instalou e nao pede administrador -- e por isso so e feito quando quem roda
+  e quem pediu: elevado com outra conta, o HKCU seria o do administrador.
+#>
+if ($Exe -and (Test-Path $Exe)) {
+  $desinstalador = Join-Path $Destino 'trackeroao-desinstalador.exe'
+  try {
+    Copy-Item -Path $Exe -Destination $desinstalador -Force
+    if ($UsuarioOriginal -eq "$env:USERDOMAIN\$env:USERNAME") {
+      $chave = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\trackeroao'
+      New-Item -Path $chave -Force | Out-Null
+      $valores = @{
+        DisplayName = 'trackeroao'; DisplayVersion = ($tag -replace '^v', ''); Publisher = 'oaovito'
+        InstallLocation = $Destino; UninstallString = "`"$desinstalador`""
+        DisplayIcon = "$desinstalador,0"; URLInfoAbout = $Repo
+      }
+      foreach ($k in $valores.Keys) { Set-ItemProperty -Path $chave -Name $k -Value $valores[$k] }
+      Set-ItemProperty -Path $chave -Name NoModify -Value 1 -Type DWord
+      Set-ItemProperty -Path $chave -Name NoRepair -Value 1 -Type DWord
+      Ok 'desinstalador em Aplicativos instalados'
+    } else {
+      Ok "desinstalador em $desinstalador"
+    }
+  } catch {
+    Nota "nao registrei o desinstalador: $($_.Exception.Message)"
+  }
+} else {
+  Nota 'rodando sem o .exe: sem desinstalador; para remover, instalador\desinstalar.ps1'
+}
 
 # =============================================================== 3. servico
 Passo '3/6  Servico'
-$instalador = Join-Path $Destino 'install-sync-service.ps1'
+$instalador = Join-Path $Destino 'windows\install-sync-service.ps1'
 & $instalador -NodePath $node -Usuario $UsuarioOriginal
 
 # =============================================================== 4. atalho
@@ -314,7 +378,7 @@ Passo '5/6  Rede'
 <#
   A porta 8777 na rede local.
 
-  O trabalho todo mora em liberar-porta.ps1, e nao aqui, por dois motivos. Ele
+  O trabalho todo mora em windows\liberar-porta.ps1, e nao aqui, por dois motivos. Ele
   precisa existir sozinho para quem recusou o administrador resolver depois com
   uma acao em vez de um roteiro pelo Firewall do Windows; e o perfil da rede
   muda com o lugar, entao a mesma maquina volta a precisar disso sem
@@ -330,7 +394,7 @@ if ($SemFirewall) {
   Nota 'pulado a pedido (-SemFirewall)'
   $pendencias += 'a porta 8777 nao foi liberada, a pedido: o celular nao vai achar a pagina'
 } else {
-  $liberar = Join-Path $Destino 'liberar-porta.ps1'
+  $liberar = Join-Path $Destino 'windows\liberar-porta.ps1'
   if (-not (Test-Path $liberar)) {
     Nota 'liberar-porta.ps1 nao veio no download'
     $pendencias += 'liberar a porta 8777 na rede local'
@@ -340,7 +404,7 @@ if ($SemFirewall) {
     # chance de quem mudou de ideia, em vez de uma pendencia seca.
     & $liberar
     if ($LASTEXITCODE -ne 0) {
-      $pendencias += "liberar a porta 8777: rode $Destino\liberar-porta.ps1 e aceite o pedido de administrador"
+      $pendencias += "liberar a porta 8777: rode $Destino\windows\liberar-porta.ps1 e aceite o pedido de administrador"
     }
   }
 }
@@ -368,7 +432,8 @@ Start-Process 'http://localhost:8777/'
 Write-Host "`nPronto." -ForegroundColor Green
 Nota 'local  : http://localhost:8777/'
 Nota 'publico: https://oaovito.github.io/trackeroao/'
-Nota "para remover: $Destino\uninstall-sync-service.ps1"
+Nota 'atualizacoes: automaticas e silenciosas, a cada nova release'
+Nota 'para remover: Aplicativos instalados do Windows, ou trackeroao-desinstalador.exe na pasta'
 
 if ($pendencias) {
   Write-Host "`nFicou para voce:" -ForegroundColor Yellow

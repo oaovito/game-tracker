@@ -705,7 +705,7 @@ check('a cópia da hibernação está fora do git', () => {
 });
 
 check('existe o caminho de volta, e ele não apaga save sozinho', () => {
-  const p = path.join(RAIZ_PROJETO, 'reativar.ps1');
+  const p = path.join(RAIZ_PROJETO, 'windows', 'reativar.ps1');
   assert(fs.existsSync(p), 'reativar.ps1 não existe');
   const txt = fs.readFileSync(p, 'utf8');
   assert(/install-sync-service\.ps1/.test(txt), 'não religa a tarefa');
@@ -928,7 +928,7 @@ check('quem clonar recebe as artes dos Headless tambem', () => {
  * e o erro nao vai dizer o motivo.
  */
 check('o instalador nao usa os padroes que o antivirus derruba', () => {
-  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'construir-exe.ps1'), 'utf8');
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
   const gerado = /\$cs = @"([\s\S]*?)"@/.exec(construir);
   assert(gerado, 'nao achei o C# embutido no construir-exe.ps1');
   /*
@@ -956,19 +956,45 @@ check('o instalador nao usa os padroes que o antivirus derruba', () => {
   return 'script em disco, chamado por -File, politica pelo ambiente';
 });
 
-check('o executavel do instalador esta versionado e atual', () => {
-  const exe = path.join(RAIZ_PROJETO, 'trackeroao-instalador.exe');
-  assert(fs.existsSync(exe), 'o .exe nao esta na pasta');
+check('o executavel nasce na release, dos scripts desta versao', () => {
   /*
-   * O .exe carrega o instalar.ps1 dentro dele, em base64. Se o .ps1 mudar e
-   * ninguem reconstruir, o que se distribui e a versao velha -- e como o
-   * arquivo e binario, nada no diff denuncia. Comparar as datas pega isso.
+   * O .exe nao mora mais no repositorio. Ele carregava o instalar.ps1 dentro
+   * dele, e se o .ps1 mudasse e ninguem reconstruisse, o que se distribuia
+   * era a versao velha -- binario nao aparece em diff. E reconstruir exigia um
+   * Windows a mao. Agora a Action de release gera o .exe num runner Windows a
+   * cada versao, entao ele e sempre o dos scripts daquela versao.
    */
-  const doExe = fs.statSync(exe).mtimeMs;
-  const doPs1 = fs.statSync(path.join(RAIZ_PROJETO, 'instalar.ps1')).mtimeMs;
-  assert(doExe >= doPs1,
-    'o instalar.ps1 mudou depois da ultima compilacao: rode construir-exe.ps1');
-  return (fs.statSync(exe).size / 1024).toFixed(1) + ' KB, mais novo que o script que ele carrega';
+  assert(!fs.existsSync(path.join(RAIZ_PROJETO, 'trackeroao-instalador.exe')),
+    'ha um .exe versionado na raiz: ele ficaria velho em relacao ao que a release gera');
+  const wf = fs.readFileSync(path.join(RAIZ_PROJETO, '.github', 'workflows', 'release.yml'), 'utf8');
+  assert(/runs-on:\s*windows/.test(wf), 'a release nao roda em Windows, onde o csc existe');
+  assert(/construir-exe\.ps1/.test(wf), 'a release nao constroi o .exe');
+  assert(/gh release create[^\n]*trackeroao-instalador\.exe/.test(wf), 'a release nao anexa o instalador');
+  // A release carrega um arquivo so: o desinstalador e o mesmo .exe.
+  assert(!/desinstalador\.exe/.test(wf.split('gh release create')[1] || ''),
+    'a release anexa um desinstalador separado; ele e o proprio instalador, copiado na instalacao');
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
+  assert(/Embutir 'instalar\.ps1'/.test(construir) && /Embutir 'desinstalar\.ps1'/.test(construir),
+    'o .exe nao carrega os dois scripts');
+  return 'gerado no runner Windows, um .exe que instala e desinstala';
+});
+
+check('existe o desinstalador, e ele desfaz o que o instalador fez', () => {
+  const des = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'desinstalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
+  assert(/Unregister-ScheduledTask/.test(des) && /SekiroProgressSync/.test(des), 'nao tira a tarefa (nem a de nome antigo)');
+  assert(/trackeroao\.lnk/.test(des), 'nao tira o atalho');
+  assert(/Remove-NetFirewallRule/.test(des), 'nao tira a regra de firewall');
+  assert(/CurrentVersion\\Uninstall\\trackeroao/.test(des), 'nao tira o registro de Aplicativos instalados');
+  assert(/Remove-Item -Path \$Destino -Recurse/.test(des), 'nao tira a pasta');
+  // O progresso nao sai sem pergunta, e a resposta padrao e guardar.
+  assert(/Read-Host[^\n]*\(S\/n\)/.test(des), 'apaga o progresso sem perguntar');
+  // So os processos desta instalacao: o que roda de dentro do sync\ dela.
+  assert(/\\sync\\/.test(des) && /\$PID/.test(des), 'poderia encerrar processo que nao e desta instalacao');
+  // E o instalador deixa o desinstalador na pasta e em Aplicativos instalados.
+  assert(/trackeroao-desinstalador\.exe/.test(inst) && /UninstallString/.test(inst),
+    'o instalador nao deixa o desinstalador');
+  return 'tarefa, processos, atalho, firewall, registro e pasta, perguntando antes do progresso';
 });
 
 /*
@@ -1119,12 +1145,85 @@ check('existe o atalho, e ele nao e um link de internet', () => {
   assert(/url & "abrir"/.test(src), 'o atalho nao acende a bandeja');
   assert(/shell\.Run url/.test(src), 'o atalho nao abre a pagina');
 
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
   assert(/CreateShortcut/.test(inst), 'o instalador nao cria atalho nenhum');
   assert(/abrir\.vbs/.test(inst), 'o atalho do instalador nao aponta para o abrir.vbs');
   assert(/UsuarioOriginal/.test(inst.slice(inst.indexOf('4/6  Atalho'), inst.indexOf('5/6  Rede'))),
     'o atalho nasce na area de trabalho de quem elevou, e nao de quem joga');
   return 'wscript + abrir.vbs, na area de trabalho de quem pediu a instalacao';
+});
+
+/*
+ * 20. A atualização automática.
+ *
+ * Quem tem a aplicação instalada recebe cada release sozinho, em silêncio, sem
+ * que a atualização atrapalhe nada. Três coisas precisam ser verdade, e as três
+ * são fáceis de quebrar sem perceber: o estado desta máquina sobrevive à
+ * cópia; o que a versão nova não tem mais sai da pasta; e a atualização não
+ * disputa tempo com o resto -- ela roda entre duas voltas do ciclo, nunca com
+ * o jogo aberto.
+ */
+console.log('\n  === 20. A atualização automática ===');
+
+check('atualizar preserva o estado e limpa o que a versão nova não tem', () => {
+  const atualizar = require('./atualizar');
+  const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'trackeroao-teste-'));
+  try {
+    const fonte = path.join(tmp, 'fonte');
+    const inst = path.join(tmp, 'inst');
+    for (const rel of atualizar.EXIGIDOS) {
+      fs.mkdirSync(path.dirname(path.join(fonte, rel)), { recursive: true });
+      fs.writeFileSync(path.join(fonte, rel), 'novo');
+    }
+    fs.mkdirSync(path.join(inst, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(inst, 'progress.json'), 'meu progresso');
+    fs.writeFileSync(path.join(inst, 'docs', 'progress.json'), 'publicado aqui');
+    fs.writeFileSync(path.join(inst, 'install-sync-service.ps1'), 'da raiz antiga');
+
+    // Primeira atualização de uma instalação sem versao.json: sai o legado.
+    const r1 = atualizar.aplicarPasta(fonte, 'v9.0.0', inst);
+    assert(r1.removidos.includes('install-sync-service.ps1'), 'o script velho da raiz ficou');
+    assert(fs.readFileSync(path.join(inst, 'progress.json'), 'utf8') === 'meu progresso', 'apagou o progresso');
+    assert(fs.readFileSync(path.join(inst, 'docs', 'progress.json'), 'utf8') === 'publicado aqui',
+      'trocou o progresso publicado desta maquina pelo que veio no zip');
+    assert(atualizar.lerEstado(inst).tag === 'v9.0.0', 'nao gravou a versao');
+
+    // Segunda: um arquivo do projeto deixou de existir e sai junto.
+    fs.writeFileSync(path.join(fonte, 'windows', 'extra.ps1'), 'x');
+    atualizar.aplicarPasta(fonte, 'v9.1.0', inst);
+    fs.unlinkSync(path.join(fonte, 'windows', 'extra.ps1'));
+    const r3 = atualizar.aplicarPasta(fonte, 'v9.2.0', inst);
+    assert(r3.removidos.includes('windows/extra.ps1'), 'o arquivo que saiu do projeto ficou na pasta');
+
+    // Zip truncado nao e copiado.
+    fs.unlinkSync(path.join(fonte, 'sync', 'main.js'));
+    let recusou = false;
+    try { atualizar.aplicarPasta(fonte, 'v9.3.0', inst); } catch (e) { recusou = true; }
+    assert(recusou, 'copiou uma versao incompleta');
+    assert(atualizar.lerEstado(inst).tag === 'v9.2.0', 'a versao incompleta ficou registrada');
+    return 'estado intacto, legado removido, zip incompleto recusado';
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+check('a atualização roda entre voltas do ciclo, e nunca com o jogo aberto', () => {
+  const main = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+  const ciclo = /const ciclo = async \(\) => \{[\s\S]*?\n  \};/.exec(main);
+  assert(ciclo, 'nao achei o ciclo');
+  const c = ciclo[0];
+  assert(c.indexOf('await pollOnce()') >= 0 && c.indexOf('await passoDeAtualizacao()') > c.indexOf('await pollOnce()'),
+    'a atualizacao nao roda depois da volta');
+  assert(c.indexOf('setTimeout(ciclo') > c.indexOf('await passoDeAtualizacao()'),
+    'a proxima volta nao espera a atualizacao terminar');
+  assert(!/setInterval\(pollOnce/.test(main), 'um setInterval rodaria voltas por cima da atualizacao');
+  const passo = /async function passoDeAtualizacao\(\) \{[\s\S]*?\n\}/.exec(main);
+  assert(passo && /if \(gameWasRunning/.test(passo[0]), 'a atualizacao nao espera o jogo fechar');
+  // Silenciosa: nada de janela, navegador ou aviso.
+  const mod = fs.readFileSync(path.join(__dirname, 'atualizar.js'), 'utf8');
+  assert(!/start\s+http|msg\s|MessageBox|Popup|shell\.Run/i.test(mod + passo[0]), 'a atualizacao mostra algo na tela');
+  assert(/windowsHide:\s*true/.test(mod), 'o PowerShell da descompactacao abriria janela');
+  return 'depois da volta, antes da proxima, so com o jogo fechado, sem nada na tela';
 });
 
 check('nenhum modulo do sync esta quebrado', () => {
@@ -1289,10 +1388,11 @@ check('nada é resolvido para fora da pasta clonada', () => {
   for (const a of rastreados) {
     if (!/\.(ps1|js|bat|vbs)$/i.test(a)) continue;
     const t = fs.readFileSync(path.join(RAIZ_PROJETO, a), 'utf8');
-    // Subir um nível a partir de sync/ é a raiz do projeto, e isso vale. O que
-    // não vale é sair da raiz: era por aí que entrava o utilitário de terceiro
-    // que escondia a janela, morando numa pasta irmã que não vinha no clone.
-    if (/Split-Path \$PSScriptRoot -Parent/.test(t)) foraDaPasta.push(a + ': sobe acima da raiz');
+    // Subir um nível a partir de uma pasta do projeto (sync/, windows/) é a
+    // raiz, e isso vale. O que não vale é sair da raiz: era por aí que entrava
+    // o utilitário de terceiro que escondia a janela, morando numa pasta irmã
+    // que não vinha no clone.
+    if (!a.includes('/') && /Split-Path \$PSScriptRoot -Parent/.test(t)) foraDaPasta.push(a + ': sobe acima da raiz');
     if (/\.\.[\\/]\.\.[\\/]/.test(t)) foraDaPasta.push(a + ': caminho para fora da raiz');
     /*
      * Um .exe de terceiro chamado por caminho é o caso que se quer impedir:
@@ -1331,7 +1431,7 @@ check('a porta da rede local e liberada pelo perfil em uso, nao no escuro', () =
    * se limite ao LocalSubnet. A segunda parte e o que torna aceitavel valer
    * tambem no perfil Public -- so alcanca quem esta no mesmo segmento de rede.
    */
-  const arq = path.join(RAIZ_PROJETO, 'liberar-porta.ps1');
+  const arq = path.join(RAIZ_PROJETO, 'windows', 'liberar-porta.ps1');
   assert(fs.existsSync(arq), 'liberar-porta.ps1 nao esta na pasta');
   const src = fs.readFileSync(arq, 'utf8');
 
@@ -1357,7 +1457,7 @@ check('a porta da rede local e liberada pelo perfil em uso, nao no escuro', () =
     'a existencia da regra e conferida por texto traduzivel: quebra em Windows de outro idioma');
 
   // E o instalador delega, em vez de manter uma segunda copia da logica.
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
   assert(/liberar-porta\.ps1/.test(inst), 'o instalador nao chama o script da porta');
   assert(!/New-NetFirewallRule/.test(inst),
     'o instalador tem a sua propria copia da regra: duas copias divergem');
@@ -1399,7 +1499,7 @@ check('a janela é escondida sem binário de terceiro', () => {
   assert(fs.existsSync(vbs), 'sem o lançador oculto');
   const t = fs.readFileSync(vbs, 'utf8');
   assert(/\.Run .*, 0, False/.test(t), 'não pede janela oculta');
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'install-sync-service.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'install-sync-service.ps1'), 'utf8');
   assert(/wscript/i.test(inst), 'o instalador não usa o wscript');
   return 'wscript.exe do próprio Windows, nada para baixar';
 });
@@ -1704,89 +1804,68 @@ function resumo() {
   }
 
   /*
-   * A release publicada tem de carregar o executável de agora.
+   * A release publicada é a versão mais nova, e carrega o instalador.
    *
    * "Atualiza sempre no Releases" é regra, e regra que depende de lembrança
-   * quebra em silêncio: o .exe é binário, então um diff nunca mostra que a
-   * release ficou para trás, e quem baixar pelo link continua recebendo o
-   * instalador velho enquanto o repositório já tem o novo.
+   * quebra em silêncio. O .exe agora nasce na própria release, então o que
+   * sobra conferir é que a última nota escrita em releases/ virou release
+   * publicada: é dela que as instalações se atualizam sozinhas, e uma nota que
+   * ficou sem release deixa todo mundo na versão anterior.
    *
-   * A comparação é por tamanho, e não pelo corpo: baixar 70 KB a cada execução
-   * da suíte seria caro para o que se quer pegar, que é o .exe ter sido
-   * recompilado e ninguém ter publicado. O instalar.ps1 vai embutido dentro
-   * dele, então qualquer mudança no script muda o tamanho do binário.
+   * A pergunta vai à API, e não ao link de download do 'latest': o GitHub
+   * cacheia aquele redirecionamento, e ele chegou a apontar para a versão
+   * anterior minutos depois de a nova estar no ar.
    *
    * Isto mora aqui, e não entre os checks síncronos, porque lá a espera seria
    * um laço bloqueante — e laço bloqueante impede o próprio callback da
-   * resposta de rodar. A primeira versão fazia isso e pulava sempre, dizendo
-   * "sem alcançar o GitHub" numa máquina com rede perfeita.
-   *
-   * Sem rede o teste se cala em vez de acusar: máquina offline não é defeito
-   * do projeto.
+   * resposta de rodar. Sem rede o teste se cala em vez de acusar: máquina
+   * offline não é defeito do projeto.
    */
   console.log('\n  === 17. A release publicada ===');
+  const NOME_17 = 'a última versão de releases/ está publicada, com o instalador';
   try {
-    const exe = path.join(RAIZ_PROJETO, 'trackeroao-instalador.exe');
-    if (!fs.existsSync(exe)) {
-      console.log('   --    a release carrega o executável de agora  -  o .exe não está nesta pasta');
+    const versao = (t) => t.replace(/^v/, '').split('.').map(Number);
+    const maior = (a, b) => { const x = versao(a), y = versao(b); for (let k = 0; k < 3; k++) if (x[k] !== y[k]) return x[k] > y[k] ? a : b; return a; };
+    const notas = fs.readdirSync(path.join(RAIZ_PROJETO, 'releases'))
+      .filter((n) => /^v\d+\.\d+\.\d+\.md$/.test(n)).map((n) => n.slice(0, -3));
+    const esperada = notas.reduce((a, b) => maior(a, b), notas[0]);
+
+    const https = require('https');
+    const buscar = () => new Promise((resolve) => {
+      const req = https.request(
+        'https://api.github.com/repos/oaovito/trackeroao/releases/latest',
+        { headers: { 'User-Agent': 'trackeroao', Accept: 'application/vnd.github+json' } },
+        (res) => {
+          if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+          let corpo = '';
+          res.on('data', (c) => { corpo += c; });
+          res.on('end', () => { try { resolve(JSON.parse(corpo)); } catch (e) { resolve(null); } });
+        });
+      req.on('error', () => resolve(null));
+      req.setTimeout(8000, () => { req.destroy(); resolve(null); });
+      req.end();
+    });
+
+    const release = esperada ? await buscar() : null;
+    const anexo = release && (release.assets || []).find((a) => a.name === 'trackeroao-instalador.exe');
+    const falha = (msg) => { fail++; failures.push(NOME_17); console.log('   FALHA ' + NOME_17 + '\n            ' + msg); };
+
+    if (!esperada) {
+      console.log('   --    ' + NOME_17 + '  -  nenhuma nota em releases/');
+    } else if (!release) {
+      console.log('   --    ' + NOME_17 + '  -  sem alcançar a API do GitHub');
+    } else if (maior(release.tag_name, esperada) !== release.tag_name) {
+      falha('a nota ' + esperada + ' existe, mas a release mais nova é ' + release.tag_name
+        + ' — veja a Action "release" no GitHub');
+    } else if (!anexo) {
+      falha('a release ' + release.tag_name + ' não tem o instalador anexado');
     } else {
-      /*
-       * A pergunta é o que está PUBLICADO, e quem responde isso é a API.
-       *
-       * A primeira versão media o link de download do 'latest', e ele mentiu
-       * logo na primeira release depois de existir: o GitHub cacheia esse
-       * redirecionamento, então por um tempo ele ainda apontava para a versão
-       * anterior enquanto a nova já estava no ar. O teste acusava
-       * desatualização de uma release publicada minutos antes.
-       *
-       * A API devolve o release mais recente e o tamanho de cada anexo, sem
-       * camada de cache no meio. É também a pergunta certa: o que interessa
-       * não é o que um cliente baixaria agora, é o que foi publicado.
-       *
-       * Sem rede o teste se cala em vez de acusar: máquina offline não é
-       * defeito do projeto.
-       */
-      const https = require('https');
-      const local = fs.statSync(exe).size;
-      const buscar = () => new Promise((resolve) => {
-        const req = https.request(
-          'https://api.github.com/repos/oaovito/trackeroao/releases/latest',
-          { headers: { 'User-Agent': 'trackeroao', Accept: 'application/vnd.github+json' } },
-          (res) => {
-            if (res.statusCode !== 200) { res.resume(); return resolve(null); }
-            let corpo = '';
-            res.on('data', (c) => { corpo += c; });
-            res.on('end', () => { try { resolve(JSON.parse(corpo)); } catch (e) { resolve(null); } });
-          });
-        req.on('error', () => resolve(null));
-        req.setTimeout(8000, () => { req.destroy(); resolve(null); });
-        req.end();
-      });
-
-      const release = await buscar();
-      const anexo = release && (release.assets || []).find((a) => a.name === 'trackeroao-instalador.exe');
-
-      if (!release) {
-        console.log('   --    a release carrega o executável de agora  -  sem alcançar a API do GitHub');
-      } else if (!anexo) {
-        fail++;
-        failures.push('a release carrega o executável de agora');
-        console.log('   FALHA a release carrega o executável de agora\n            '
-          + 'a release ' + release.tag_name + ' não tem o instalador anexado');
-      } else if (anexo.size === local) {
-        pass++;
-        console.log('   ok    a release carrega o executável de agora  -  '
-          + release.tag_name + ', ' + (local / 1024).toFixed(1) + ' KB, igual ao desta pasta');
-      } else {
-        fail++;
-        failures.push('a release carrega o executável de agora');
-        console.log('   FALHA a release carrega o executável de agora\n            '
-          + release.tag_name + ' tem ' + (anexo.size / 1024).toFixed(1) + ' KB, local '
-          + (local / 1024).toFixed(1) + ' KB — rode construir-exe.ps1 e publique a release');
-      }
+      pass++;
+      console.log('   ok    ' + NOME_17 + '  -  ' + release.tag_name + ', '
+        + (anexo.size / 1024).toFixed(1) + ' KB');
     }
   } catch (err) {
-    console.log('   --    a release carrega o executável de agora  -  ' + err.message);
+    console.log('   --    ' + NOME_17 + '  -  ' + err.message);
   }
 
   /*

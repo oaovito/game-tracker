@@ -27,4 +27,4 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
     }
 
 if (-not $achou) { Write-Host "Nenhuma instancia em execucao." -ForegroundColor DarkGray }
-Write-Host "A pagina para de responder. Para voltar: .\install-sync-service.ps1" -ForegroundColor Yellow
+Write-Host "A pagina para de responder. Para voltar: .\windows\install-sync-service.ps1" -ForegroundColor Yellow

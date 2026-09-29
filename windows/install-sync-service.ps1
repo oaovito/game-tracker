@@ -29,11 +29,13 @@ $ErrorActionPreference = 'Stop'
 # o servico ja estava instalado, a tarefa continua registrada como
 # 'SekiroProgressSync'. Reinstalar sem remove-la deixaria duas tarefas subindo
 # dois servicos na mesma porta.
+# Este script mora em windows\, e o projeto e a pasta acima dela.
+$raiz       = Split-Path $PSScriptRoot -Parent
 $taskName   = 'TrackeroaoSync'
 $taskAntigo = 'SekiroProgressSync'
-$mainScript = Join-Path $PSScriptRoot 'sync\main.js'
+$mainScript = Join-Path $raiz 'sync\main.js'
 # Tudo dentro do proprio projeto: nada resolvido para fora da pasta clonada.
-$ocultoVbs  = Join-Path $PSScriptRoot 'sync\oculto.vbs'
+$ocultoVbs  = Join-Path $raiz 'sync\oculto.vbs'
 $wscript    = Join-Path $env:WINDIR 'System32\wscript.exe'
 
 # --- node ---
@@ -44,7 +46,7 @@ if ($NodePath -and (Test-Path $NodePath)) { $node = $NodePath }
 if (-not $node) { $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source }
 if (-not $node) {
     foreach ($c in @((Join-Path $env:ProgramFiles 'nodejs\node.exe'),
-                     (Join-Path $PSScriptRoot 'runtime\node\node.exe'))) {
+                     (Join-Path $raiz 'runtime\node\node.exe'))) {
         if (Test-Path $c) { $node = $c; break }
     }
 }
@@ -68,12 +70,12 @@ if (-not (Test-Path $mainScript)) {
 if (Test-Path $ocultoVbs) {
     $action = New-ScheduledTaskAction -Execute $wscript `
         -Argument "`"$ocultoVbs`" `"$node`" `"$mainScript`"" `
-        -WorkingDirectory $PSScriptRoot
+        -WorkingDirectory $raiz
     Write-Host "janela : oculta via wscript (sem dependencia externa)" -ForegroundColor DarkGray
 } else {
     $action = New-ScheduledTaskAction -Execute $node `
         -Argument "`"$mainScript`"" `
-        -WorkingDirectory $PSScriptRoot
+        -WorkingDirectory $raiz
     Write-Host "janela : oculto.vbs nao encontrado, a janela do node vai aparecer" -ForegroundColor Yellow
 }
 
@@ -118,7 +120,7 @@ foreach ($tentativa in 1..5) {
 
 if (-not $ok) {
     Write-Host "O servidor nao respondeu em localhost:$porta." -ForegroundColor Red
-    Write-Host "Veja o log: $(Join-Path $PSScriptRoot 'sync\trackeroao.log')" -ForegroundColor Yellow
+    Write-Host "Veja o log: $(Join-Path $raiz 'sync\trackeroao.log')" -ForegroundColor Yellow
     exit 1
 }
 
@@ -133,4 +135,4 @@ foreach ($ip in $ips) {
 
 Write-Host ""
 Write-Host "A partir de agora sobe sozinho no login. Nao precisa abrir nada." -ForegroundColor Green
-Write-Host "Para remover: .\uninstall-sync-service.ps1" -ForegroundColor Yellow
+Write-Host "Para remover: .\windows\uninstall-sync-service.ps1" -ForegroundColor Yellow

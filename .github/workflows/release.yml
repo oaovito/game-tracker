@@ -1,9 +1,11 @@
 # Publica a release quando um arquivo de notas novo chega a main.
 #
 # A regra do projeto e que todo ciclo de inovacao ou de correcao termina com
-# uma release nova, carregando o instalador daquele momento. Quem baixa pelo
-# link da release recebe o .exe; uma release atrasada entrega um instalador
-# velho sem aviso nenhum.
+# uma release nova, carregando o instalador daquele momento -- um .exe so, que
+# tambem vira o desinstalador dentro da instalacao (ver construir-exe.ps1).
+# Quem baixa pelo link da release recebe o .exe, e as instalacoes existentes
+# se atualizam sozinhas para a release mais nova (sync/atualizar.js); uma
+# release atrasada entrega codigo velho sem aviso nenhum.
 #
 # O gatilho e o arquivo releases/vX.Y.Z.md aparecer na main: o nome do
 # arquivo e a tag, a primeira linha e o titulo (depois do "# ") e o resto e o
@@ -14,16 +16,25 @@
 # ultimo push: se uma execucao falhar, a seguinte recupera, e corrigir o texto
 # de uma release que ja existe nao gera outra.
 #
-# Antes de publicar, confere que o .exe foi gerado do instalar.ps1 desta
-# mesma tag. O .exe so e reconstruido no Windows (construir-exe.ps1), entao
-# esquecer de reconstrui-lo depois de mexer no instalador e o erro provavel.
+# O .exe nasce aqui, num runner Windows, a partir dos .ps1 desta mesma
+# versao. Assim nao existe .exe esquecido de reconstruir depois de mexer no
+# instalador, nem release que dependa de um Windows a mao.
+#
+# Toda mudanca em .ps1 passa tambem pelo parser do PowerShell, com ou sem
+# release: um erro de sintaxe num script que so roda na maquina de quem instala
+# nao pode ser descoberto por quem instala.
 
 name: release
 
 on:
   push:
     branches: [main]
-    paths: ['releases/v*.md', '.github/workflows/release.yml']
+    paths:
+      - 'releases/v*.md'
+      - 'instalador/**'
+      - 'windows/**'
+      - 'sync/*.ps1'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
 
 permissions:
@@ -31,12 +42,25 @@ permissions:
 
 jobs:
   publicar:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Os scripts do PowerShell sao validos
+        shell: powershell
+        run: |
+          $erros = @()
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $e = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$e)
+            foreach ($x in $e) { $erros += "$($_.Name):$($x.Extent.StartLineNumber): $($x.Message)" }
+          }
+          if ($erros) { $erros | ForEach-Object { Write-Host $_ }; exit 1 }
+          Write-Host 'nenhum erro de sintaxe'
+
       - name: Qual versao falta publicar
         id: versao
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -47,36 +71,18 @@ jobs:
             gh release view "$t" >/dev/null 2>&1 || faltam="$faltam $t"
           done
           faltam="$(echo $faltam)"
-          # O .exe e um so, o da main de agora. Duas versoes pendentes levariam
-          # o mesmo instalador, e a mais antiga sairia com o .exe errado.
+          # O .exe e o desta versao do codigo. Duas versoes pendentes sairiam
+          # com o mesmo executavel, e a mais antiga com o errado.
           case "$faltam" in *" "*) echo "mais de uma versao pendente: $faltam"; exit 1;; esac
           echo "tag=$faltam" >> "$GITHUB_OUTPUT"
 
-      - name: O .exe carrega o instalar.ps1 atual
-        if: steps.versao.outputs.tag != ''
-        run: |
-          python3 - <<'PY'
-          import re, base64, sys
-          exe = open('trackeroao-instalador.exe', 'rb').read()
-          fonte = open('instalar.ps1', 'rb').read().decode('utf-8-sig').replace('\r\n', '\n')
-          blocos = [x for off in (0, 1) for x in re.findall(r'[A-Za-z0-9+/=]{2000,}', exe[off:].decode('utf-16le', 'ignore'))]
-          if not blocos:
-              sys.exit('nao achei o instalar.ps1 embutido no .exe')
-          embutido = base64.b64decode(blocos[0] + '=' * (-len(blocos[0]) % 4)).decode('utf-8').replace('\r\n', '\n')
-          # O construir-exe.ps1 le o instalar.ps1 sem BOM como ANSI no PowerShell 5.1,
-          # entao o acento pode chegar trocado. Desfazer a troca e comparar tambem.
-          candidatos = [embutido]
-          try:
-              candidatos.append(embutido.encode('cp1252').decode('utf-8'))
-          except (UnicodeEncodeError, UnicodeDecodeError):
-              pass
-          if fonte not in candidatos:
-              sys.exit('o .exe foi gerado de outro instalar.ps1: rode construir-exe.ps1 e faca commit do .exe')
-          print('o .exe carrega o instalar.ps1 atual')
-          PY
+      - name: Construir o executavel
+        shell: powershell
+        run: .\instalador\construir-exe.ps1 -Saida dist
 
       - name: Publicar
         if: steps.versao.outputs.tag != ''
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.versao.outputs.tag }}
@@ -84,5 +90,5 @@ jobs:
           notas="releases/${TAG}.md"
           titulo="$(head -n 1 "$notas" | sed 's/^# //')"
           tail -n +3 "$notas" > corpo.md
-          gh release create "$TAG" trackeroao-instalador.exe \
+          gh release create "$TAG" dist/trackeroao-instalador.exe \
             --target "$GITHUB_SHA" --title "$titulo" --notes-file corpo.md

@@ -27,6 +27,7 @@ const publish = require('./publish');
 const instalacao = require('./instalacao');
 const hibernar = require('./hibernar');
 const jogos = require('./jogos');
+const atualizar = require('./atualizar');
 
 // --------------------------------------------------------------------- log
 // Instalado como tarefa agendada, o processo roda oculto e o stdout se perde.
@@ -326,7 +327,7 @@ function hibernarAgora(e) {
   console.log(t.ok ? '  [tarefa] removida do login' : `  [tarefa] ${t.erro}`);
   console.log('');
   console.log('  Para voltar, depois de reinstalar o jogo:');
-  console.log('      powershell -ExecutionPolicy Bypass -File reativar.ps1');
+  console.log('      powershell -ExecutionPolicy Bypass -File windows\\reativar.ps1');
   console.log('');
   process.exit(0);
 }
@@ -630,7 +631,63 @@ async function pollOnce() {
   }
 }
 
+/* ------------------------------------------------------- atualização */
+
+// Primeira conferência pouco depois de subir: no logon a rede costuma chegar
+// segundos depois do serviço, e perguntar antes disso só produziria um erro.
+const ATUALIZAR_PRIMEIRA_MS = 20 * 1000;
+const ATUALIZAR_MS = 6 * 60 * 60 * 1000;
+const ATUALIZAR_ERRO_MS = 10 * 60 * 1000;
+let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
+
+/**
+ * Mantém a instalação atual sem que isso chegue a quem usa.
+ *
+ * O pedido é que a atualização não interfira em nada: sem mensagem, sem
+ * janela, sem navegador, e sem competir com o trabalho da aplicação. Por isso
+ * ela não tem relógio próprio. Ela roda DENTRO do ciclo de verificação, no
+ * intervalo entre uma volta e a seguinte, e a volta seguinte espera ela
+ * terminar -- a verificação atrasa um pouco naquela vez, e nada acontece ao
+ * mesmo tempo que ela. Tudo que ela tem a dizer vai só para o log.
+ *
+ * Com um jogo aberto ela nem começa. Reiniciar o serviço no meio de uma sessão
+ * apagaria e reacenderia a chama na bandeja, que é justamente o tipo de coisa
+ * que se vê -- e a leitura daquela sessão passaria por dois processos.
+ */
+async function passoDeAtualizacao() {
+  if (gameWasRunning || Date.now() < proximaAtualizacao) return;
+  const r = await atualizar.verificar();
+  if (r.atualizou) {
+    console.log(`  [atualizacao] ${r.de || 'versão anterior'} -> ${r.para}; reiniciando em silêncio`);
+    reiniciar();
+    return;
+  }
+  if (r.erro) console.log('  [atualizacao] não conferiu: ' + r.erro);
+  else if (r.motivo) console.log('  [atualizacao] ' + r.motivo);
+  proximaAtualizacao = Date.now() + (r.erro ? ATUALIZAR_ERRO_MS : ATUALIZAR_MS);
+}
+
+/**
+ * Troca este processo por um novo, já com o código atualizado.
+ *
+ * O filho nasce desligado deste e sem janela, e sabe por variável de ambiente
+ * que é um reinício: se a porta ainda estiver presa a este processo quando ele
+ * subir, ele insiste por alguns instantes em vez de desistir. A página aberta
+ * num celular fica sem resposta por menos de um ciclo dela, e segue.
+ */
+function reiniciar() {
+  fecharBandeja();
+  const filho = require('child_process').spawn(process.execPath, process.argv.slice(1), {
+    cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true,
+    env: Object.assign({}, process.env, { TRACKEROAO_REINICIO: '1' }),
+  });
+  filho.unref();
+  process.exit(0);
+}
+
 async function run() {
+  const reinicio = !!process.env.TRACKEROAO_REINICIO;
+  delete process.env.TRACKEROAO_REINICIO;
   hookConsole();
   console.log('');
   console.log('  Sekiro - sincronização de progresso');
@@ -657,10 +714,21 @@ async function run() {
   syncNow('leitura inicial');
 
   try {
-    await serve.start({
-      root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
-      aoAbrir: () => abrirBandeja('atalho'),
-    });
+    // Depois de uma atualização, o processo anterior pode ainda estar soltando
+    // a porta. Só nesse caso vale insistir; fora dele, porta ocupada é outro
+    // programa, e insistir só adiaria a mensagem de erro.
+    for (let tentativa = 1; ; tentativa++) {
+      try {
+        await serve.start({
+          root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
+          aoAbrir: () => abrirBandeja('atalho'),
+        });
+        break;
+      } catch (e) {
+        if (!reinicio || e.code !== 'EADDRINUSE' || tentativa >= 20) throw e;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
   } catch (err) {
     if (err && err.code === 'EADDRINUSE') {
       console.error(`\n  A porta ${PORT} já está ocupada.`);
@@ -702,11 +770,25 @@ async function run() {
   vigiarRede(null, null, (novo) => nomeador.ipMudou(novo));
   vigiarInstalacao(hibernarAgora);
 
-  await pollOnce();
-  const timer = setInterval(pollOnce, POLL_MS);
+  /*
+   * O ciclo se reagenda no fim de cada volta, em vez de um setInterval: é o
+   * que deixa a atualização caber entre duas voltas. A próxima só é marcada
+   * depois que a anterior -- e a atualização, quando houver -- terminou.
+   */
+  let timer = null;
+  const ciclo = async () => {
+    try {
+      await pollOnce();
+      await passoDeAtualizacao();
+    } catch (e) {
+      console.error('  [erro] no ciclo:', e && e.message ? e.message : e);
+    }
+    timer = setTimeout(ciclo, POLL_MS);
+  };
+  await ciclo();
 
   const shutdown = () => {
-    clearInterval(timer);
+    clearTimeout(timer);
     stopWatching();
     console.log('\n  Encerrando.');
     process.exit(0);

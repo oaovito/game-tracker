@@ -7,7 +7,8 @@
 # Não precisa de administrador.
 
 $ErrorActionPreference = 'Stop'
-$raiz = $PSScriptRoot
+# Este script mora em windows\, e o projeto e a pasta acima dela.
+$raiz = Split-Path $PSScriptRoot -Parent
 
 Write-Host ''
 Write-Host '  Reativando o acompanhamento de progresso' -ForegroundColor Cyan
@@ -44,4 +45,4 @@ if (-not $temSave) {
 
 # 3. Religar a tarefa, reaproveitando o instalador.
 Write-Host ''
-& powershell -ExecutionPolicy Bypass -File (Join-Path $raiz 'install-sync-service.ps1')
+& powershell -ExecutionPolicy Bypass -File (Join-Path $raiz 'windows\install-sync-service.ps1')

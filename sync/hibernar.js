@@ -102,7 +102,7 @@ function arquivar(opts) {
     evidencias: o.evidencias || [],
     projeto: guardados,
     save: saves,
-    comoVoltar: 'Reinstale o Sekiro e rode: powershell -ExecutionPolicy Bypass -File reativar.ps1',
+    comoVoltar: 'Reinstale o Sekiro e rode: powershell -ExecutionPolicy Bypass -File windows\\reativar.ps1',
     observacao:
       'Nada foi apagado. Esta pasta é cópia. O save original segue em %APPDATA%\\Sekiro ' +
       'se ninguém o removeu, e a cópia aqui existe para o caso de ele ter sido removido.',

@@ -3,7 +3,8 @@ REM Sobe o sincronizador do save + o servidor do tracker.
 REM Somente leitura: nada aqui escreve no save do Sekiro.
 
 setlocal
-cd /d "%~dp0"
+REM Este arquivo mora em windows\; o projeto e a pasta acima.
+cd /d "%~dp0.."
 
 where node >nul 2>nul
 if errorlevel 1 (

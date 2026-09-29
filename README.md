@@ -26,26 +26,57 @@ Para quem já tem git e Node na máquina:
 ```powershell
 git clone https://github.com/oaovito/trackeroao.git
 cd trackeroao
-.\install-sync-service.ps1
+.\windows\install-sync-service.ps1
 ```
 
-Para quem não tem, existe `trackeroao-instalador.exe`, que resolve tudo sozinho:
-instala o Node via winget se não houver, baixa a versão atual do projeto sem
-exigir git, registra o serviço e roda a suíte no fim para provar que funcionou
-naquela máquina. Ele atualiza uma instalação existente em vez de zerá-la,
-preservando os arquivos de estado. O executável é gerado por
-`construir-exe.ps1` a partir do `instalar.ps1`.
+Para quem não tem, a [última release](https://github.com/oaovito/trackeroao/releases/latest)
+traz um único arquivo, `trackeroao-instalador.exe`, que resolve tudo sozinho:
+instala o Node via winget se não houver, baixa o código da release mais recente
+sem exigir git, registra o serviço e roda a suíte no fim para provar que
+funcionou naquela máquina. Ele atualiza uma instalação existente em vez de
+zerá-la, preservando os arquivos de estado. O executável é gerado por
+`instalador/construir-exe.ps1` a partir de `instalador/instalar.ps1` e
+`instalador/desinstalar.ps1`, e não fica versionado: nasce a cada release.
 
 Toda release sai sozinha. Basta o arquivo de notas `releases/vX.Y.Z.md`
-chegar à `main`: `.github/workflows/release.yml` confere se o `.exe` foi gerado
-do `instalar.ps1` atual e publica a release `vX.Y.Z` com ele anexado. A
+chegar à `main`: `.github/workflows/release.yml` valida a sintaxe de todos os
+scripts do PowerShell, compila o `.exe` num runner Windows a partir dos
+scripts daquela mesma versão e publica a release `vX.Y.Z` com ele anexado. A
 primeira linha do arquivo é o título, e o resto é o corpo.
 
 Em qualquer dos dois caminhos, o que se registra é uma tarefa agendada que sobe
 oculta no login. Depois disso não é preciso abrir mais nada: a página fica no ar
 o tempo todo e a leitura do save liga sozinha quando o jogo abre. Não é preciso
 administrador — o programa só lê arquivos do próprio usuário e escuta numa
-porta alta. Para remover, `.\uninstall-sync-service.ps1`.
+porta alta.
+
+### Atualização
+
+A instalação se mantém atual sem intervenção. O serviço confere se há release
+nova vinte segundos depois de subir e, a partir daí, a cada seis horas; uma
+falha de rede adia a próxima tentativa para dez minutos depois. A conferência
+acontece sempre entre duas rodadas de verificação do jogo, nunca no meio de
+uma, e nunca com o jogo aberto: enquanto se joga, ela simplesmente espera. Há
+versão nova, o código da tag é baixado, copiado por cima da instalação e o
+serviço se reinicia sozinho, sem janela, sem aviso e sem tocar nos arquivos de
+estado. O que aconteceu fica apenas no log. Num clone do repositório, a mesma
+rotina só avança a `main` por fast-forward, e só com a árvore limpa. A
+variável de ambiente `TRACKEROAO_SEM_ATUALIZAR` desliga tudo isso.
+
+Instalações anteriores à v1.5.0 não têm essa rotina e precisam de uma única
+reinstalação com o instalador da v1.5.0 ou posterior; dali em diante, elas se
+atualizam sozinhas.
+
+### Desinstalando
+
+O instalador deixa uma cópia de si mesmo na pasta da instalação, com o nome
+`trackeroao-desinstalador.exe`, e registra o trackeroao em "Aplicativos
+instalados" do Windows. Remover por lá, ou rodar esse executável, desfaz na
+ordem inversa tudo o que o instalador fez: a tarefa agendada, os processos e o
+ícone da bandeja, o atalho, a regra de firewall e a pasta. Antes de apagar, ele
+pergunta se deve guardar uma cópia do progresso nos Documentos. O Node.js e o
+save do jogo ficam como estão. Num clone, `.\windows\uninstall-sync-service.ps1`
+remove só a tarefa agendada.
 
 ### Rodando na mão, para depurar
 
@@ -53,7 +84,7 @@ porta alta. Para remover, `.\uninstall-sync-service.ps1`.
 npm start
 ```
 
-Ou dois cliques em `run.bat`. Pare o serviço antes, senão os dois disputam a
+Ou dois cliques em `windows\run.bat`. Pare o serviço antes, senão os dois disputam a
 porta 8777.
 
 Isso sobe duas coisas ao mesmo tempo. A primeira é o poll do processo, que a
@@ -79,7 +110,7 @@ página — porque a instalação foi feita à mão, ou porque o pedido de
 administrador foi recusado na hora —, o caminho é uma ação:
 
 ```powershell
-.\liberar-porta.ps1
+.\windows\liberar-porta.ps1
 ```
 
 Ele pede administrador, cria a regra para os perfis de rede que a máquina está
@@ -448,14 +479,21 @@ teste na suíte cobrando isso.
 ```
 trackeroao/
   trackeroao.html             a página (abra pelo servidor, não por file://)
-  run.bat                     execução manual
-  install-sync-service.ps1    registra a tarefa agendada (não precisa de admin)
-  uninstall-sync-service.ps1  remove a tarefa e encerra o serviço
-  reativar.ps1                volta do arquivamento, se o jogo for reinstalado
-  liberar-porta.ps1           abre a porta 8777 na rede local (pede administrador)
-  instalar.ps1                instalação do zero em máquina nova
-  construir-exe.ps1           compila o instalador num .exe
   package.json                scripts npm (sem dependências)
+
+  instalador/                 o que vira o .exe da release
+    instalar.ps1              instalação do zero, ou por cima de uma existente
+    desinstalar.ps1           o oposto exato do instalar.ps1
+    construir-exe.ps1         compila os dois num .exe só
+
+  windows/                    atalhos para quem roda a partir de um clone
+    run.bat                   execução manual
+    install-sync-service.ps1  registra a tarefa agendada (não precisa de admin)
+    uninstall-sync-service.ps1  remove a tarefa e encerra o serviço
+    reativar.ps1              volta do arquivamento, se o jogo for reinstalado
+    liberar-porta.ps1         abre a porta 8777 na rede local (pede administrador)
+
+  releases/                   uma nota por versão; cada uma vira uma release
 
   docs/                       o que vai para o ar (GitHub Pages)
     index.html                cópia da página, gerada
@@ -492,6 +530,7 @@ trackeroao/
 
     instalacao.js             detecta se o jogo foi desinstalado
     hibernar.js               arquiva tudo e remove a tarefa agendada
+    atualizar.js              atualização silenciosa para a release mais nova
     discover.js               descoberta de offsets por diff
     auditoria.js              relatório do que está público
 
