@@ -23,6 +23,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json',
 };
 
 /**
@@ -165,7 +166,8 @@ function createServer(options) {
     // ela é servida da raiz do projeto — então, sem esta ponte, na rede local
     // todo chefe caía no kanji de reserva enquanto no site público aparecia a
     // ilustração. Duas páginas iguais mostrando coisas diferentes.
-    if (/^\/icones\//.test(urlPath) && !fs.existsSync(file)) {
+    // O mesmo vale para o que faz a página virar aplicativo no celular.
+    if (/^\/(icones\/|app\/|sw\.js$|manifest\.webmanifest$)/.test(urlPath) && !fs.existsSync(file)) {
       const noSite = safeJoin(path.join(root, 'docs'), urlPath);
       if (noSite && fs.existsSync(noSite)) file = noSite;
     }
