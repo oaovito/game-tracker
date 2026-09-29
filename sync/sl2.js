@@ -282,7 +282,17 @@ function nonEmptySlots(save) {
   return slotEntries(save).filter((e) => !isSlotEmpty(save, e));
 }
 
+/*
+ * O que o progresso diz quando nao ha save. Sem o nome do arquivo de proposito:
+ * a conferencia do publish.js trata qualquer "S0000.sl2" nos dados como sinal
+ * de um caminho real, e esta frase vai para o arquivo publico. Com o nome, a
+ * propria mensagem era acusada de vazamento e derrubava a instalacao numa
+ * maquina sem o save.
+ */
+const MENSAGEM_SEM_SAVE = 'No Sekiro save found. See the README for the paths searched.';
+
 module.exports = {
+  MENSAGEM_SEM_SAVE,
   CHECKSUM_LEN,
   SLOT_COUNT,
   STEAM_APP_ID,

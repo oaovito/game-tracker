@@ -488,8 +488,7 @@ function buildProgress(options) {
       generatedAt: new Date().toISOString(),
       ok: false,
       error: 'no-save-found',
-      message:
-        'No S0000.sl2 found. See the README for the paths searched.',
+      message: sl2.MENSAGEM_SEM_SAVE,
     };
   }
 

@@ -451,7 +451,7 @@ function syncNow(reason) {
         generatedAt: new Date().toISOString(),
         ok: false,
         error: 'no-save-found',
-        message: 'No S0000.sl2 found.',
+        message: sl2.MENSAGEM_SEM_SAVE,
       };
     } else {
       const save = sl2.readSave(file);

@@ -753,6 +753,19 @@ check('o que ficou de fora ficou por um motivo escrito', () => {
   return fora.length + ' fora: ' + fora.join(', ');
 });
 
+check('sem o save, a versão pública passa na conferência de vazamento', () => {
+  const semSave = { ok: false, error: 'no-save-found', message: require('./sl2').MENSAGEM_SEM_SAVE };
+  const v = publish.vazamentos(JSON.stringify(publish.sanitizar(semSave)));
+  assert(v.length === 0, 'a própria mensagem de save ausente foi acusada: ' + v.join(', '));
+  const bp = require('./parse').buildProgress;
+  if (!require('./sl2').findSavePath()) {
+    const r = bp({ config: {}, state: {} });
+    const v2 = publish.vazamentos(JSON.stringify(publish.sanitizar(r)));
+    assert(v2.length === 0, 'o parse sem save foi acusado: ' + v2.join(', '));
+  }
+  return 'nenhum aviso de vazamento numa máquina sem o jogo';
+});
+
 check('a versão pública segue sem nada de máquina ou conta', () => {
   const local = progressoLocal();
   const v = publish.vazamentos(JSON.stringify(publish.sanitizar(local)));

@@ -168,7 +168,9 @@ function montar(destino) {
   // underscore e pode reescrever arquivo. Aqui não há nada para processar.
   fs.writeFileSync(path.join(dir, '.nojekyll'), '');
 
-  const antes = fs.statSync(path.join(RAIZ, 'progress.json')).size;
+  // Sem leitura nenhuma ainda, nao ha arquivo local para medir.
+  let antes = 0;
+  try { antes = fs.statSync(path.join(RAIZ, 'progress.json')).size; } catch (e) { /* nada lido */ }
   const depois = fs.statSync(path.join(dir, 'progress.json')).size;
   return { dir, antes, depois, campos: Object.keys(limpo).length };
 }
