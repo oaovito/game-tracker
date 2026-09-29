@@ -183,6 +183,7 @@ static class Programa {
     }
     if (usuario == null) usuario = UsuarioAtual();
     if (exeOriginal == null) exeOriginal = proprio;
+    Limpar(proprio);
     if (desinstalando && destino == null && File.Exists(Path.Combine(pastaPropria, "sync\\main.js"))) {
       destino = pastaPropria;
     }
@@ -248,7 +249,46 @@ static class Programa {
     Janela j = new Janela(desinstalando, fechar);
     j.Preparar(texto, usuario, destino, exeOriginal, semElevar || !EhAdmin(), repassar.ToString());
     Application.Run(j);
-    return j.Codigo;
+    int codigo = j.Codigo;
+    // Deu certo: o registro nao serve a mais ninguem. So fica quando falha,
+    // para o botao "Ver registro" (e no ensaio, que a Action le).
+    if (codigo == 0 && ensaio == null) j.ApagarRegistro();
+    // A copia do desinstalador na pasta temporaria nao pode se apagar
+    // enquanto roda; o Windows a apaga no proximo reinicio (precisa de
+    // administrador; sem ele, a proxima execucao do instalador apaga).
+    if (desinstalando && Path.GetFileName(proprio).StartsWith("trackeroao-desinstalador-")) {
+      MoveFileEx(proprio, null, 4);
+    }
+    return codigo;
+  }
+
+  [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+  static extern bool MoveFileEx(string de, string para, int opcoes);
+
+  /*
+   * Nada se acumula entre uma execucao e outra. Sobras de execucoes que nao
+   * terminaram (o PC desligado no meio, o processo morto) saem aqui: as
+   * pastas de trabalho da janela e as copias antigas do desinstalador. Uma
+   * pasta ainda em uso por outra janela nao pode ser renomeada, e e assim que
+   * ela e reconhecida e deixada em paz.
+   */
+  static void Limpar(string proprio) {
+    string temp = Path.GetTempPath();
+    try {
+      foreach (string d in Directory.GetDirectories(temp, "trackeroao-*")) {
+        if (Path.GetFileName(d).Length != 43) continue;
+        string fora = d + "-apagando";
+        try { Directory.Move(d, fora); } catch { continue; }
+        try { Directory.Delete(fora, true); } catch { }
+      }
+      foreach (string a in Directory.GetFiles(temp, "trackeroao-desinstalador-*.exe")) {
+        if (string.Equals(Path.GetFullPath(a), Path.GetFullPath(proprio), StringComparison.OrdinalIgnoreCase)) continue;
+        try { File.Delete(a); } catch { }
+      }
+      foreach (string d in Directory.GetDirectories(temp, "trackeroao-*-apagando")) {
+        try { Directory.Delete(d, true); } catch { }
+      }
+    } catch { }
   }
 
   static void Relancar(string exe, string resto, bool jaAdmin) {
@@ -448,6 +488,10 @@ class Janela : Form {
 
   void BeginInvokeSeguro(Delegate d) {
     try { if (IsHandleCreated && !IsDisposed) BeginInvoke(d); } catch { }
+  }
+
+  internal void ApagarRegistro() {
+    try { File.Delete(registro); } catch { }
   }
 
   void Registrar(string linha) {

@@ -183,7 +183,39 @@ async function ultimaRelease() {
 
 /** Baixa e descompacta o código de uma tag; devolve a pasta e a limpeza. */
 async function baixar(tag) {
+  varrerTemporarios();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'trackeroao-'));
+  const limpar = () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* temp */ } };
+  try {
+    return await baixarEm(tmp, tag, limpar);
+  } catch (e) {
+    // Download ou zip que falhou nao deixa pasta para tras.
+    limpar();
+    throw e;
+  }
+}
+
+/*
+ * Nada se acumula na pasta temporaria: uma atualizacao interrompida (o PC
+ * desligado no meio, o processo morto) deixaria a pasta dela ali para
+ * sempre. Antes de baixar, as que sobraram de rodadas anteriores saem. Uma
+ * hora de folga para nunca pegar a de uma rodada que ainda esta em curso.
+ */
+function varrerTemporarios() {
+  const agora = Date.now();
+  let nomes = [];
+  try { nomes = fs.readdirSync(os.tmpdir()); } catch (e) { return; }
+  for (const nome of nomes) {
+    if (!/^trackeroao-[A-Za-z0-9]{6}$/.test(nome)) continue;
+    const cheio = path.join(os.tmpdir(), nome);
+    try {
+      if (agora - fs.statSync(cheio).mtimeMs < 60 * 60 * 1000) continue;
+      fs.rmSync(cheio, { recursive: true, force: true });
+    } catch (e) { /* em uso: sai na proxima */ }
+  }
+}
+
+async function baixarEm(tmp, tag, limpar) {
   const zip = path.join(tmp, 'fonte.zip');
   await pedir(`https://codeload.github.com/${REPO}/zip/refs/tags/${encodeURIComponent(tag)}`, zip);
   const pasta = path.join(tmp, 'x');
@@ -197,7 +229,7 @@ async function baixar(tag) {
   }
   const sub = fs.readdirSync(pasta).map((n) => path.join(pasta, n)).find((c) => fs.statSync(c).isDirectory());
   if (!sub) throw new Error('o zip da ' + tag + ' veio vazio');
-  return { pasta: sub, limpar: () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* temp */ } } };
+  return { pasta: sub, limpar };
 }
 
 /* ------------------------------------------------------------- modos */

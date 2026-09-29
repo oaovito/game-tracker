@@ -81,6 +81,8 @@ $gui = [bool]$env:TRACKEROAO_GUI
 # de erro que a pessoa le, com a linha onde aconteceu. Pelo console, segue
 # como sempre (break devolve o erro ao PowerShell).
 trap {
+  # Pelo console, a pasta do download sai junto com o erro.
+  if ($tmp -and (Test-Path $tmp)) { Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue }
   if ($gui) {
     [Console]::Out.WriteLine("@@ERRO Erro inesperado na linha $($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)")
     [Console]::Out.Flush()
@@ -114,6 +116,10 @@ function Falhar($texto, $janela) {
   avisava que nao achou o save. Dentro desta funcao a preferencia volta a
   Continue, so para eles; quem diz se deu certo e o codigo de saida.
 #>
+# Pela janela, as pastas temporarias ficam dentro da pasta do proprio .exe,
+# que ele apaga no fim, de qualquer jeito que o script termine: nada fica
+# para tras em %TEMP%, nem numa instalacao que falhou.
+$baseTemp = if ($gui -and $PSScriptRoot) { $PSScriptRoot } else { $env:TEMP }
 function Nativo([scriptblock]$bloco) {
   $ErrorActionPreference = 'Continue'
   & $bloco
@@ -233,7 +239,7 @@ function Node-Portatil($raiz) {
 
   $nome = "node-$($lts.version)-$arq.zip"
   $url  = "https://nodejs.org/dist/$($lts.version)/$nome"
-  $tmp  = Join-Path $env:TEMP ("node-" + [guid]::NewGuid().ToString('N'))
+  $tmp  = Join-Path $baseTemp ("trackeroao-node-" + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $tmp -Force | Out-Null
   $zip = Join-Path $tmp $nome
 
@@ -294,7 +300,7 @@ Ok "node em $node  ($(Nativo { & $node -v 2>&1 }))"
 Passo '2/6  Projeto'
 Etapa 28 'Baixando o Trackeroao'
 Detalhe 'A versão mais recente, do repositório oficial'
-$tmp = Join-Path $env:TEMP ("trackeroao-" + [guid]::NewGuid().ToString('N'))
+$tmp = Join-Path $baseTemp ("trackeroao-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 $zip = Join-Path $tmp 'fonte.zip'
 <#

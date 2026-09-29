@@ -159,9 +159,19 @@ jobs:
           # roda a suite -- num Windows sem o jogo, que e o caso em que o
           # parse.js reclama em stderr. Depois, o desinstalar.ps1 desfaz tudo.
           $log = Join-Path $env:TEMP 'trackeroao-instalar.log'
-          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$PWD\instalador\instalar.ps1", '/fechar' -Wait -PassThru
-          Get-Content $log -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
-          if ($p.ExitCode -ne 0) { throw "a instalacao completa saiu com $($p.ExitCode)" }
+          # Duas vezes seguidas: a segunda e uma reinstalacao por cima, e nada
+          # pode sair em dobro por causa dela.
+          foreach ($vez in 1, 2) {
+            $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$PWD\instalador\instalar.ps1", '/fechar' -Wait -PassThru
+            Get-Content $log -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
+            if ($p.ExitCode -ne 0) { throw "a instalacao completa ($vez) saiu com $($p.ExitCode)" }
+          }
+          $tarefas = @(Get-ScheduledTask | Where-Object { $_.TaskName -like 'Trackeroao*' }).Count
+          $regras = @(Get-NetFirewallRule -DisplayName 'trackeroao*' -ErrorAction SilentlyContinue).Count
+          $atalhos = @(Get-ChildItem ([Environment]::GetFolderPath('Desktop')) -Filter 'trackeroao*.lnk').Count
+          $chaves = @(Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' | Where-Object { $_.PSChildName -like 'trackeroao*' }).Count
+          Write-Host "depois de instalar duas vezes: $tarefas tarefa(s), $regras regra(s), $atalhos atalho(s), $chaves registro(s)"
+          if ($tarefas -ne 1 -or $regras -gt 1 -or $atalhos -ne 1 -or $chaves -ne 1) { throw 'a reinstalacao duplicou alguma coisa' }
           $destino = Join-Path $env:LOCALAPPDATA 'trackeroao'
           if (-not (Test-Path (Join-Path $destino 'sync\main.js'))) { throw "nada foi instalado em $destino" }
           $logD = Join-Path $env:TEMP 'trackeroao-desinstalar.log'
@@ -169,6 +179,14 @@ jobs:
           Get-Content $logD -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
           if ($p.ExitCode -ne 0) { throw "a remocao saiu com $($p.ExitCode)" }
           if (Test-Path (Join-Path $destino 'sync\main.js')) { throw "a pasta $destino continua la" }
+          $sobras = @()
+          if (Get-ScheduledTask -TaskName 'TrackeroaoSync' -ErrorAction SilentlyContinue) { $sobras += 'tarefa agendada' }
+          if (Get-NetFirewallRule -DisplayName 'trackeroao*' -ErrorAction SilentlyContinue) { $sobras += 'regra de firewall' }
+          if (Get-ChildItem ([Environment]::GetFolderPath('Desktop')) -Filter 'trackeroao*.lnk') { $sobras += 'atalho' }
+          if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\trackeroao') { $sobras += 'registro em Aplicativos instalados' }
+          $temps = @(Get-ChildItem $env:TEMP -Directory -Filter 'trackeroao-*' | Where-Object { $_.Name.Length -eq 43 -or $_.Name -like '*-apagando' })
+          if ($temps) { $sobras += "pastas temporarias: $($temps.Name -join ', ')" }
+          if ($sobras) { throw "a remocao deixou para tras: $($sobras -join '; ')" }
           Write-Host 'instalou e desinstalou pela janela, sem erro'
 
       - name: Publicar
