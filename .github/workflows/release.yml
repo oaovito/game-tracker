@@ -1,13 +1,18 @@
-# Publica a release quando uma tag vX.Y.Z chega ao repositorio.
+# Publica a release quando um arquivo de notas novo chega a main.
 #
 # A regra do projeto e que todo ciclo de inovacao ou de correcao termina com
 # uma release nova, carregando o instalador daquele momento. Quem baixa pelo
 # link da release recebe o .exe; uma release atrasada entrega um instalador
 # velho sem aviso nenhum.
 #
-# As notas vem de releases/<tag>.md: a primeira linha e o titulo (depois do
-# "# "), o resto e o corpo. Sem o arquivo, nada e publicado -- release sem
-# nota nao diz o que mudou.
+# O gatilho e o arquivo releases/vX.Y.Z.md aparecer na main: o nome do
+# arquivo e a tag, a primeira linha e o titulo (depois do "# ") e o resto e o
+# corpo. A tag e criada pela propria publicacao. Release sem nota nao diz o que
+# mudou, entao sem o arquivo nada sai.
+#
+# Publica toda versao de releases/ que ainda nao tem release, e nao so a do
+# ultimo push: se uma execucao falhar, a seguinte recupera, e corrigir o texto
+# de uma release que ja existe nao gera outra.
 #
 # Antes de publicar, confere que o .exe foi gerado do instalar.ps1 desta
 # mesma tag. O .exe so e reconstruido no Windows (construir-exe.ps1), entao
@@ -17,7 +22,9 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['releases/v*.md', '.github/workflows/release.yml']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -28,10 +35,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: As notas existem
-        run: test -f "releases/${GITHUB_REF_NAME}.md" || { echo "falta releases/${GITHUB_REF_NAME}.md"; exit 1; }
+      - name: Qual versao falta publicar
+        id: versao
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          faltam=""
+          for f in releases/v*.md; do
+            [ -e "$f" ] || continue
+            t="$(basename "$f" .md)"
+            gh release view "$t" >/dev/null 2>&1 || faltam="$faltam $t"
+          done
+          faltam="$(echo $faltam)"
+          # O .exe e um so, o da main de agora. Duas versoes pendentes levariam
+          # o mesmo instalador, e a mais antiga sairia com o .exe errado.
+          case "$faltam" in *" "*) echo "mais de uma versao pendente: $faltam"; exit 1;; esac
+          echo "tag=$faltam" >> "$GITHUB_OUTPUT"
 
-      - name: O .exe carrega o instalar.ps1 desta tag
+      - name: O .exe carrega o instalar.ps1 atual
+        if: steps.versao.outputs.tag != ''
         run: |
           python3 - <<'PY'
           import re, base64, sys
@@ -54,11 +76,13 @@ jobs:
           PY
 
       - name: Publicar
+        if: steps.versao.outputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.versao.outputs.tag }}
         run: |
-          notas="releases/${GITHUB_REF_NAME}.md"
+          notas="releases/${TAG}.md"
           titulo="$(head -n 1 "$notas" | sed 's/^# //')"
           tail -n +3 "$notas" > corpo.md
-          gh release create "$GITHUB_REF_NAME" trackeroao-instalador.exe \
-            --title "$titulo" --notes-file corpo.md --verify-tag
+          gh release create "$TAG" trackeroao-instalador.exe \
+            --target "$GITHUB_SHA" --title "$titulo" --notes-file corpo.md
