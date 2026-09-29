@@ -84,7 +84,7 @@ trap {
   # Pelo console, a pasta do download sai junto com o erro.
   if ($tmp -and (Test-Path $tmp)) { Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue }
   if ($gui) {
-    [Console]::Out.WriteLine("@@ERRO Erro inesperado na linha $($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)")
+    [Console]::Out.WriteLine("@@ERRO #unexpected|$($_.InvocationInfo.ScriptLineNumber)|$($_.Exception.Message)")
     [Console]::Out.Flush()
     exit 1
   }
@@ -124,7 +124,7 @@ function Nativo([scriptblock]$bloco) {
   $ErrorActionPreference = 'Continue'
   & $bloco
 }
-Etapa 2 'Preparando a instalação'
+Etapa 2 '#prep_inst'
 
 # O que ficou por fazer, para o relatorio do fim. Instalacao que termina com
 # pendencia silenciosa e pior que instalacao que falha.
@@ -203,7 +203,7 @@ Nota "destino: $Destino"
 
 # ================================================================== 1. Node
 Passo '1/6  Node.js'
-Etapa 6 'Verificando o Node.js'
+Etapa 6 '#node_check'
 
 function Node-Portatil($raiz) {
   <#
@@ -231,8 +231,8 @@ function Node-Portatil($raiz) {
   }
 
   Nota "baixando o Node oficial ($arq) -- winget nao esta disponivel aqui"
-  Etapa 10 'Baixando o Node.js'
-  Detalhe 'Direto do nodejs.org, com a assinatura conferida'
+  Etapa 10 '#node_dl'
+  Detalhe '#node_dl_d'
   $indice = Invoke-RestMethod -Uri 'https://nodejs.org/dist/index.json' -UseBasicParsing
   $lts = $indice | Where-Object { $_.lts -and $_.files -contains "$arq-zip" } | Select-Object -First 1
   if (-not $lts) { throw "o nodejs.org nao publica zip de $arq" }
@@ -279,8 +279,8 @@ if (-not $node) {
 }
 if (-not $node -and (Get-Command winget -ErrorAction SilentlyContinue)) {
   Nota 'nao encontrado; instalando via winget'
-  Etapa 10 'Instalando o Node.js'
-  Detalhe 'Pelo winget, o instalador de programas do Windows'
+  Etapa 10 '#node_inst'
+  Detalhe '#node_inst_d'
   Nativo { winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent 2>&1 | Out-Null }
   $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
   $node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
@@ -290,16 +290,16 @@ if (-not $node) {
   try { $node = Node-Portatil $Destino }
   catch {
     Ruim "nao consegui obter o Node: $($_.Exception.Message)"
-    Falhar 'sem ele nao ha o que instalar. Instale em https://nodejs.org e rode de novo.' 'Não consegui obter o Node.js, que o Trackeroao precisa para rodar. Confira a internet e tente de novo.'
+    Falhar 'sem ele nao ha o que instalar. Instale em https://nodejs.org e rode de novo.' '#node_fail'
   }
 }
-if (-not (Test-Path $node)) { Falhar "o Node apontado nao existe: $node" 'O Node.js encontrado nesta máquina não está funcionando.' }
+if (-not (Test-Path $node)) { Falhar "o Node apontado nao existe: $node" '#node_broken' }
 Ok "node em $node  ($(Nativo { & $node -v 2>&1 }))"
 
 # =============================================================== 2. projeto
 Passo '2/6  Projeto'
-Etapa 28 'Baixando o Trackeroao'
-Detalhe 'A versão mais recente, do repositório oficial'
+Etapa 28 '#dl'
+Detalhe '#dl_d'
 $tmp = Join-Path $baseTemp ("trackeroao-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 $zip = Join-Path $tmp 'fonte.zip'
@@ -326,10 +326,10 @@ try {
   Invoke-WebRequest -Uri $origem -OutFile $zip -UseBasicParsing
 } catch {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  Falhar "nao consegui baixar: $($_.Exception.Message)" 'Não consegui baixar o Trackeroao. Confira a internet e tente de novo.'
+  Falhar "nao consegui baixar: $($_.Exception.Message)" '#dl_fail'
 }
-Etapa 42 'Copiando os arquivos'
-Detalhe "Versão $tag"
+Etapa 42 '#copy'
+Detalhe "#version|$tag"
 Expand-Archive -Path $zip -DestinationPath $tmp -Force
 $raizBaixada = (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName
 
@@ -346,7 +346,7 @@ Nativo { & $node (Join-Path $raizBaixada 'sync\atualizar.js') --aplicar $raizBai
   ForEach-Object { Nota "$_" } }
 $copiou = $LASTEXITCODE
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-if ($copiou -ne 0) { Falhar 'a copia do projeto falhou; nada foi instalado' 'A cópia dos arquivos falhou, e nada foi instalado.' }
+if ($copiou -ne 0) { Falhar 'a copia do projeto falhou; nada foi instalado' '#copy_fail' }
 $artes = @(Get-ChildItem (Join-Path $Destino 'docs\icones') -Recurse -File -ErrorAction SilentlyContinue).Count
 Ok "projeto $tag em $Destino  ($artes imagens)"
 
@@ -363,8 +363,8 @@ Ok "projeto $tag em $Destino  ($artes imagens)"
   instalou e nao pede administrador -- e por isso so e feito quando quem roda
   e quem pediu: elevado com outra conta, o HKCU seria o do administrador.
 #>
-Etapa 56 'Registrando no Windows'
-Detalhe 'Em Aplicativos instalados, para poder remover depois'
+Etapa 56 '#register'
+Detalhe '#register_d'
 if ($Exe -and (Test-Path $Exe)) {
   $desinstalador = Join-Path $Destino 'trackeroao-desinstalador.exe'
   try {
@@ -393,8 +393,8 @@ if ($Exe -and (Test-Path $Exe)) {
 
 # =============================================================== 3. servico
 Passo '3/6  Servico'
-Etapa 62 'Preparando o serviço em segundo plano'
-Detalhe 'Ele acompanha o jogo sem abrir janela nenhuma'
+Etapa 62 '#service'
+Detalhe '#service_d'
 $instalador = Join-Path $Destino 'windows\install-sync-service.ps1'
 & $instalador -NodePath $node -Usuario $UsuarioOriginal
 
@@ -407,7 +407,7 @@ $instalador = Join-Path $Destino 'windows\install-sync-service.ps1'
 #>
 $janela = $null
 if ($env:TRACKEROAO_APP -and (Test-Path (Join-Path $env:TRACKEROAO_APP 'Trackeroao.exe'))) {
-  Etapa 70 'Instalando a janela do Trackeroao'
+  Etapa 70 '#window'
   $pastaApp = Join-Path $Destino 'app'
   Get-Process -Name 'Trackeroao' -ErrorAction SilentlyContinue |
     Where-Object { $_.Path -and $_.Path.StartsWith($pastaApp, [StringComparison]::OrdinalIgnoreCase) } |
@@ -421,7 +421,7 @@ if ($env:TRACKEROAO_APP -and (Test-Path (Join-Path $env:TRACKEROAO_APP 'Trackero
 
 # =============================================================== 4. atalho
 Passo '4/6  Atalho'
-Etapa 74 'Criando o atalho na área de trabalho'
+Etapa 74 '#shortcut'
 <#
   O atalho na area de trabalho.
 
@@ -441,7 +441,7 @@ Etapa 74 'Criando o atalho na área de trabalho'
 $atalhoVbs = Join-Path $Destino 'sync\abrir.vbs'
 if (-not (Test-Path $atalhoVbs)) {
   Nota 'abrir.vbs nao veio no download; sem atalho'
-  $pendencias += 'criar um atalho para o trackeroao: nao consegui'
+  $pendencias += $(if ($gui) { '#shortcut_fail' } else { 'criar um atalho para o trackeroao: nao consegui' })
 } else {
   try {
     <#
@@ -478,14 +478,14 @@ if (-not (Test-Path $atalhoVbs)) {
     Ok "atalho em $lnk"
   } catch {
     Nota "nao criei o atalho: $($_.Exception.Message)"
-    $pendencias += 'criar um atalho para o trackeroao na area de trabalho'
+    $pendencias += $(if ($gui) { '#shortcut_fail' } else { 'criar um atalho para o trackeroao na area de trabalho' })
   }
 }
 
 # ================================================================== 4. rede
 Passo '5/6  Rede'
-Etapa 78 'Liberando o acesso pelo celular'
-Detalhe 'A porta 8777, só na rede de casa'
+Etapa 78 '#net'
+Detalhe '#net_d'
 <#
   A porta 8777 na rede local.
 
@@ -505,7 +505,7 @@ if ($gui -and $elevacaoNegada -and -not $SemFirewall) {
   # Sem administrador, liberar a porta abriria um segundo pedido e uma segunda
   # janela; pela janela do instalador, fica como pendencia escrita no fim.
   Nota 'sem administrador: a porta fica fechada'
-  $pendencias += 'A porta 8777 não foi liberada, então o celular ainda não acha a página. Para liberar, instale de novo e aceite o pedido de administrador.'
+  $pendencias += '#net_pending'
 } elseif ($SemFirewall) {
   Nota 'pulado a pedido (-SemFirewall)'
   $pendencias += 'a porta 8777 nao foi liberada, a pedido: o celular nao vai achar a pagina'
@@ -527,13 +527,13 @@ if ($gui -and $elevacaoNegada -and -not $SemFirewall) {
 
 # ============================================================= 5. conferir
 Passo '6/6  Conferindo'
-Etapa 84 'Lendo o seu progresso'
+Etapa 84 '#read'
 Push-Location $Destino
 # Uma leitura antes da suite: assim a pagina ja abre com numero em vez de
 # tracinho, e a propria suite tem o que conferir.
 Nativo { & $node 'sync/parse.js' 2>&1 | Select-Object -Last 1 | ForEach-Object { Nota "$_" } }
-Etapa 90 'Conferindo a instalação'
-Detalhe 'Rodando os testes do Trackeroao nesta máquina'
+Etapa 90 '#check'
+Detalhe '#check_d'
 Nativo { & $node 'sync/selftest.js' 2>&1 | ForEach-Object { Write-Host "$_" } }
 $testes = $LASTEXITCODE
 Pop-Location
@@ -557,9 +557,9 @@ if ($pendencias) {
   Write-Host "`nFicou para voce:" -ForegroundColor Yellow
   foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow; Tela 'PENDENCIA' $p }
 }
-Detalhe 'Ele abre sozinho quando você começar a jogar.'
+Detalhe '#done_d'
 if ($janela) { Tela 'APP' $janela }
-Tela 'PRONTO' 'Trackeroao instalado'
+Tela 'PRONTO' '#installed'
 
 # Rodando elevada, a janela e uma nova e fecha sozinha no fim, levando junto
 # tudo que foi escrito. Esperar uma tecla e o que permite ler o relatorio --

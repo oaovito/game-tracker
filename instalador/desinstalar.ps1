@@ -54,7 +54,7 @@ $gui = [bool]$env:TRACKEROAO_GUI
 # como sempre (break devolve o erro ao PowerShell).
 trap {
   if ($gui) {
-    [Console]::Out.WriteLine("@@ERRO Erro inesperado na linha $($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)")
+    [Console]::Out.WriteLine("@@ERRO #unexpected|$($_.InvocationInfo.ScriptLineNumber)|$($_.Exception.Message)")
     [Console]::Out.Flush()
     exit 1
   }
@@ -72,7 +72,7 @@ function Tela($tipo, $texto) {
 function Etapa($pct, $texto) { Tela 'PASSO' "$pct $texto" }
 function Detalhe($texto) { Tela 'DETALHE' $texto }
 $fraseDaCopia = $null
-Etapa 3 'Preparando a remoção'
+Etapa 3 '#prep_rem'
 
 $pendencias = @()
 
@@ -125,8 +125,8 @@ Nota "pasta: $Destino"
 
 # ============================================================== 1. servico
 Passo '1/5  Servico'
-Etapa 12 'Encerrando o Trackeroao'
-Detalhe 'O serviço em segundo plano e o ícone da bandeja'
+Etapa 12 '#r_stop'
+Detalhe '#r_stop_d'
 foreach ($nome in @('TrackeroaoSync', 'SekiroProgressSync')) {
   if (Get-ScheduledTask -TaskName $nome -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $nome -Confirm:$false -ErrorAction SilentlyContinue
@@ -157,13 +157,13 @@ if ($encerrados) { Ok "$encerrados processo(s) encerrado(s)" } else { Nota 'nada
 
 # ================================================================ 2. atalho
 Passo '2/5  Atalho'
-Etapa 34 'Removendo o atalho'
+Etapa 34 '#r_shortcut'
 $lnk = Join-Path (Pasta-DeQuemPediu 'Desktop') 'trackeroao.lnk'
 if (Test-Path $lnk) { Remove-Item $lnk -Force; Ok "removido: $lnk" } else { Nota 'nao havia atalho' }
 
 # ================================================================== 3. rede
 Passo '3/5  Rede'
-Etapa 46 'Fechando a porta do celular'
+Etapa 46 '#r_port'
 if ($souAdmin -or $JaElevado) {
   $regras = @(Get-NetFirewallRule -DisplayName 'trackeroao (*)' -ErrorAction SilentlyContinue)
   if ($regras.Count) {
@@ -172,13 +172,13 @@ if ($souAdmin -or $JaElevado) {
   } else { Nota 'nao havia regra de firewall' }
 } else {
   Nota 'sem administrador, a regra de firewall fica'
-  $pendencias += $(if ($gui) { 'A regra da porta 8777 continua no Firewall do Windows. Ela só libera essa porta na rede local.' }
+  $pendencias += $(if ($gui) { '#r_port_pending' }
                    else { "a regra 'trackeroao (8777)' continua no Firewall do Windows; ela so libera a porta 8777 na rede local" })
 }
 
 # ============================================================= 4. progresso
 Passo '4/5  Progresso'
-Etapa 60 'Guardando uma cópia do seu progresso'
+Etapa 60 '#r_save'
 # Tudo que nasce nesta maquina e nao vem de release nenhuma.
 $estado = @('progress.json', 'deaths.json', 'deaths-mem.json', 'bosskills.json', 'efeitos.json',
             'selecao.json', 'sync\.state.json', 'arquivo')
@@ -204,7 +204,7 @@ if (-not (Test-Path $Destino)) {
       Copy-Item -Path (Join-Path $Destino $rel) -Destination $alvo -Recurse -Force
     }
     Ok "copia em $copia"
-    $fraseDaCopia = "Seu progresso ficou guardado em Documentos\$(Split-Path $copia -Leaf)."
+    $fraseDaCopia = "#r_saved|$(Split-Path $copia -Leaf)"
   } else {
     Nota 'o progresso sai junto com a pasta'
   }
@@ -218,7 +218,7 @@ if ($UsuarioOriginal -eq "$env:USERDOMAIN\$env:USERNAME" -and (Test-Path $chave)
 
 # ================================================================= 5. pasta
 Passo '5/5  Pasta'
-Etapa 78 'Removendo os arquivos'
+Etapa 78 '#r_files'
 if (Test-Path $Destino) {
   # Um processo recem-encerrado pode segurar um arquivo por um instante.
   $removida = $false
@@ -229,7 +229,7 @@ if (Test-Path $Destino) {
   if ($removida) { Ok "removida: $Destino" }
   else {
     Ruim "nao consegui remover tudo de $Destino"
-    $pendencias += $(if ($gui) { "Alguns arquivos estavam em uso e ficaram em $Destino. Pode apagar essa pasta depois." }
+    $pendencias += $(if ($gui) { "#r_inuse|$Destino" }
                      else { "apagar a pasta $Destino (algum arquivo estava em uso)" })
   }
 } else {
@@ -244,7 +244,7 @@ if ($pendencias) {
   foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow; Tela 'PENDENCIA' $p }
 }
 if ($fraseDaCopia) { Detalhe $fraseDaCopia }
-Tela 'PRONTO' 'Trackeroao removido'
+Tela 'PRONTO' '#removed'
 
 # A janela fecha sozinha no fim -- a elevada sempre, e a do .exe tambem, que
 # ja saiu antes para a pasta poder ser apagada. O relatorio iria junto.
