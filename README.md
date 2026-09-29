@@ -36,6 +36,11 @@ naquela máquina. Ele atualiza uma instalação existente em vez de zerá-la,
 preservando os arquivos de estado. O executável é gerado por
 `construir-exe.ps1` a partir do `instalar.ps1`.
 
+Toda release sai sozinha: uma tag `vX.Y.Z` enviada ao GitHub dispara
+`.github/workflows/release.yml`, que confere se o `.exe` foi gerado do
+`instalar.ps1` daquela tag e publica a release com ele anexado. As notas vêm de
+`releases/<tag>.md`, e sem esse arquivo nada é publicado.
+
 Em qualquer dos dois caminhos, o que se registra é uma tarefa agendada que sobe
 oculta no login. Depois disso não é preciso abrir mais nada: a página fica no ar
 o tempo todo e a leitura do save liga sozinha quando o jogo abre. Não é preciso

@@ -1,0 +1,64 @@
+# Publica a release quando uma tag vX.Y.Z chega ao repositorio.
+#
+# A regra do projeto e que todo ciclo de inovacao ou de correcao termina com
+# uma release nova, carregando o instalador daquele momento. Quem baixa pelo
+# link da release recebe o .exe; uma release atrasada entrega um instalador
+# velho sem aviso nenhum.
+#
+# As notas vem de releases/<tag>.md: a primeira linha e o titulo (depois do
+# "# "), o resto e o corpo. Sem o arquivo, nada e publicado -- release sem
+# nota nao diz o que mudou.
+#
+# Antes de publicar, confere que o .exe foi gerado do instalar.ps1 desta
+# mesma tag. O .exe so e reconstruido no Windows (construir-exe.ps1), entao
+# esquecer de reconstrui-lo depois de mexer no instalador e o erro provavel.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: As notas existem
+        run: test -f "releases/${GITHUB_REF_NAME}.md" || { echo "falta releases/${GITHUB_REF_NAME}.md"; exit 1; }
+
+      - name: O .exe carrega o instalar.ps1 desta tag
+        run: |
+          python3 - <<'PY'
+          import re, base64, sys
+          exe = open('trackeroao-instalador.exe', 'rb').read()
+          fonte = open('instalar.ps1', 'rb').read().decode('utf-8-sig').replace('\r\n', '\n')
+          blocos = [x for off in (0, 1) for x in re.findall(r'[A-Za-z0-9+/=]{2000,}', exe[off:].decode('utf-16le', 'ignore'))]
+          if not blocos:
+              sys.exit('nao achei o instalar.ps1 embutido no .exe')
+          embutido = base64.b64decode(blocos[0] + '=' * (-len(blocos[0]) % 4)).decode('utf-8').replace('\r\n', '\n')
+          # O construir-exe.ps1 le o instalar.ps1 sem BOM como ANSI no PowerShell 5.1,
+          # entao o acento pode chegar trocado. Desfazer a troca e comparar tambem.
+          candidatos = [embutido]
+          try:
+              candidatos.append(embutido.encode('cp1252').decode('utf-8'))
+          except (UnicodeEncodeError, UnicodeDecodeError):
+              pass
+          if fonte not in candidatos:
+              sys.exit('o .exe foi gerado de outro instalar.ps1: rode construir-exe.ps1 e faca commit do .exe')
+          print('o .exe carrega o instalar.ps1 atual')
+          PY
+
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notas="releases/${GITHUB_REF_NAME}.md"
+          titulo="$(head -n 1 "$notas" | sed 's/^# //')"
+          tail -n +3 "$notas" > corpo.md
+          gh release create "$GITHUB_REF_NAME" trackeroao-instalador.exe \
+            --title "$titulo" --notes-file corpo.md --verify-tag
