@@ -1481,37 +1481,58 @@ function resumo() {
     if (!fs.existsSync(exe)) {
       console.log('   --    a release carrega o executável de agora  -  o .exe não está nesta pasta');
     } else {
+      /*
+       * A pergunta é o que está PUBLICADO, e quem responde isso é a API.
+       *
+       * A primeira versão media o link de download do 'latest', e ele mentiu
+       * logo na primeira release depois de existir: o GitHub cacheia esse
+       * redirecionamento, então por um tempo ele ainda apontava para a versão
+       * anterior enquanto a nova já estava no ar. O teste acusava
+       * desatualização de uma release publicada minutos antes.
+       *
+       * A API devolve o release mais recente e o tamanho de cada anexo, sem
+       * camada de cache no meio. É também a pergunta certa: o que interessa
+       * não é o que um cliente baixaria agora, é o que foi publicado.
+       *
+       * Sem rede o teste se cala em vez de acusar: máquina offline não é
+       * defeito do projeto.
+       */
       const https = require('https');
       const local = fs.statSync(exe).size;
-      const pedir = (u, saltos) => new Promise((resolve) => {
-        if (saltos > 6) return resolve(null);
-        const req = https.request(u, { method: 'HEAD', headers: { 'User-Agent': 'trackeroao' } }, (res) => {
-          res.resume();
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            return resolve(pedir(res.headers.location, saltos + 1));
-          }
-          if (res.statusCode !== 200) return resolve(null);
-          resolve(Number(res.headers['content-length']) || null);
-        });
+      const buscar = () => new Promise((resolve) => {
+        const req = https.request(
+          'https://api.github.com/repos/oaovito/trackeroao/releases/latest',
+          { headers: { 'User-Agent': 'trackeroao', Accept: 'application/vnd.github+json' } },
+          (res) => {
+            if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+            let corpo = '';
+            res.on('data', (c) => { corpo += c; });
+            res.on('end', () => { try { resolve(JSON.parse(corpo)); } catch (e) { resolve(null); } });
+          });
         req.on('error', () => resolve(null));
         req.setTimeout(8000, () => { req.destroy(); resolve(null); });
         req.end();
       });
 
-      const publicado = await pedir(
-        'https://github.com/oaovito/trackeroao/releases/latest/download/trackeroao-instalador.exe', 0);
+      const release = await buscar();
+      const anexo = release && (release.assets || []).find((a) => a.name === 'trackeroao-instalador.exe');
 
-      if (publicado === null) {
-        console.log('   --    a release carrega o executável de agora  -  sem alcançar o GitHub');
-      } else if (publicado === local) {
+      if (!release) {
+        console.log('   --    a release carrega o executável de agora  -  sem alcançar a API do GitHub');
+      } else if (!anexo) {
+        fail++;
+        failures.push('a release carrega o executável de agora');
+        console.log('   FALHA a release carrega o executável de agora\n            '
+          + 'a release ' + release.tag_name + ' não tem o instalador anexado');
+      } else if (anexo.size === local) {
         pass++;
         console.log('   ok    a release carrega o executável de agora  -  '
-          + (local / 1024).toFixed(1) + ' KB, igual ao que o link de download entrega');
+          + release.tag_name + ', ' + (local / 1024).toFixed(1) + ' KB, igual ao desta pasta');
       } else {
         fail++;
         failures.push('a release carrega o executável de agora');
         console.log('   FALHA a release carrega o executável de agora\n            '
-          + 'publicado ' + (publicado / 1024).toFixed(1) + ' KB, local '
+          + release.tag_name + ' tem ' + (anexo.size / 1024).toFixed(1) + ' KB, local '
           + (local / 1024).toFixed(1) + ' KB — rode construir-exe.ps1 e publique a release');
       }
     }
