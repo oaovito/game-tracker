@@ -404,13 +404,17 @@ escreveu a página, e perdia as horas de jogo se o `localconfig.vdf` não
 existisse. Hoje cada coisa que vinha de lá tem caminho próprio, e a Steam,
 quando existe, serve de gabarito em vez de ser a única fonte.
 
-O **nome no cabeçalho** é o `PersonaName` do `config/loginusers.vdf`, que é o
-apelido público da conta. Quando há mais de uma conta no arquivo, quem decide é
-o SteamID64 do save que está sendo lido, porque pegar a primeira daria o
-apelido de outra pessoa numa máquina de família. O `AccountName`, que é o nome
-de login, não é lido em momento nenhum. Sem Steam identificada não há apelido, e
-aí a linha some inteira e o cabeçalho fica só com o título — um "player"
-genérico ocuparia o mesmo espaço dizendo nada.
+O **nome no cabeçalho** pode ser escolhido na própria página, no computador
+que roda o serviço: um clique na linha abaixo do título a transforma em campo
+de texto, e o nome escolhido fica em `jogador.json`. É o caminho que funciona
+sem Steam, e, quando ela existe, o nome escolhido continua mandando, por ser
+uma decisão de quem usa. Sem escolha, vale o `PersonaName` do
+`config/loginusers.vdf`, o apelido público da conta. Quando há mais de uma conta
+no arquivo, quem decide é o SteamID64 do save que está sendo lido, porque pegar
+a primeira daria o apelido de outra pessoa numa máquina de família. O
+`AccountName`, que é o nome de login, não é lido em momento nenhum. Sem nome
+escolhido e sem Steam, o link público mostra só o título, e a página local
+mostra um convite discreto para dar o nome.
 
 O **tempo de jogo** tem duas fontes que medem coisas diferentes e por isso não
 se substituem em silêncio. A Steam grava relógio de parede, com menu, pausa e
@@ -424,10 +428,75 @@ se essa relação se inverter, uma das duas leituras está errada. A suíte cobr
 essa desigualdade a cada execução, que é o modo de usar a Steam como gabarito
 enquanto ela está por perto.
 
-As **conquistas** são lidas do cache local do Steam, em KeyValues binário, sem
-chave de API e sem depender de o perfil ser público. Numa máquina sem Steam elas
-simplesmente não existem, e o bloco se comporta como qualquer outro dado
-ausente: fica `—`, não fica zero.
+As **conquistas** saem do save. O jogo concede cada uma por uma instrução
+`AwardAchievement(N)` nos próprios scripts de evento, e junto com a concessão
+grava no save algo que a prova. Para os chefes e para os quatro finais há uma
+flag da faixa 68xx, a mesma que o `common.emevd` consulta para conceder o Man
+Without Equal, e os finais ocupam 6830 a 6833. A primeira ressurreição liga a
+flag 8250, e a Ashina Traveler corresponde às visitas que o evento 130 registra.
+As demais são de inventário: as dez próteses e suas trinta melhorias, as de
+lazulita, os três ninjutsu, as 48 habilidades e o mistério de cada estilo, a
+cabaça com dez cargas e os dez colares. As regras estão em
+`sync/conquistasave.js`, com a fonte de cada uma. Duas conquistas não deixam
+prova confiável no save: o Memorial Mob, que depende de diálogo, e a Great
+Serpent, cuja víscera é consumível. Sem Steam, essas duas aparecem marcadas
+como impossíveis de provar pelo save, em vez de figurarem como não obtidas.
+
+Quando a Steam existe, o cache local dela (KeyValues binário, lido sem chave de
+API e sem exigir perfil público) confere o que o save diz. Uma conquista vale se
+qualquer dos dois a tiver, porque a Steam registra o que a conta obteve em
+qualquer save e em qualquer ciclo, enquanto o save conhece apenas o personagem
+atual. Onde os dois discordam, a página indica o desencontro na própria linha da
+conquista.
+
+A **detecção de que o jogo foi desinstalado**, que leva à hibernação, também
+tem caminho sem Steam. A varredura de jogos registra a pasta em que o Sekiro
+foi encontrado; se essa pasta deixa de existir e a varredura seguinte não o
+encontra em outro lugar, o jogo é dado como removido. Sem nunca ter visto a
+pasta, a resposta permanece "não sei", e "não sei" jamais aciona a hibernação.
+
+## A tela de jogos
+
+Antes da página de progresso há uma tela com os jogos desta máquina. Cada jogo
+aparece com dois pinos: instalado neste computador e vigiado, isto é, capaz de
+acender a aplicação na bandeja quando abre. Os jogos que o tracker sabe ler por
+inteiro, hoje só o Sekiro, levam à página de progresso; os demais servem para a
+detecção de abertura. O botão "All games" leva à lista completa, dividida entre
+o que está no computador e o que está na biblioteca da Steam. No computador que
+roda o serviço, tocar no pino de vigia liga e desliga a vigia daquele jogo, e
+"Search again" pede uma nova varredura.
+
+A lista vem de `sync/biblioteca.js`, que consulta três fontes de nomes: a
+biblioteca da Steam da pessoa, quando existe (os `appmanifest` de cada
+biblioteca e o que a conta já jogou, segundo o `localconfig.vdf`); o catálogo
+geral da Steam, obtido da lista pública de aplicativos e guardado por uma
+semana; e os jogos mais jogados do momento, que se atualizam diariamente e
+somam-se a uma lista fixa em `sync/populares.json`. Essa lista fixa cobre os
+títulos que nem estão na Steam, como Valorant, League of Legends, Fortnite e
+Minecraft, e garante reconhecimento mesmo sem rede.
+
+Com esses nomes, a varredura percorre as pastas onde jogos costumam ser
+instalados em cada disco, os programas registrados no Windows e os manifestos
+da Epic. Pastas dedicadas a jogos (Games, XboxGames, Epic Games, GOG,
+`steamapps\common`) aceitam qualquer nome do catálogo; pastas genéricas como
+Program Files aceitam apenas jogos da biblioteca da pessoa e populares, para
+que um programa vendido também na Steam não seja tomado por jogo. De cada jogo
+instalado, o executável é o maior `.exe` da pasta que não seja instalador,
+atualizador, anti-cheat ou relatório de erro. A varredura roda um pouco depois
+de o serviço subir e, daí em diante, uma vez por dia, sempre entre duas rodadas
+de verificação e nunca com um jogo aberto. O resultado fica em
+`biblioteca.json`, fora do git. Para rodá-la à mão, `npm run jogos`.
+
+## No celular, como aplicativo
+
+O link de progresso pode ser instalado como aplicativo no iPhone e no Android.
+No iPhone, pelo Safari: Compartilhar e depois "Adicionar à Tela de Início". No
+Android, pelo Chrome: o menu oferece "Instalar app". O trackeroao passa a abrir
+em tela cheia, com o ícone da chama do Ídolo. O service worker (`docs/sw.js`)
+busca sempre a leitura mais nova quando há rede e, sem rede, abre a última que
+recebeu, em vez de uma tela de erro. A instalação exige https, o que o link
+público oferece; pelo endereço da rede local, que é http, a página continua
+funcionando normalmente, apenas sem virar aplicativo.
 
 ## Descobrindo o que falta
 
@@ -499,6 +568,9 @@ trackeroao/
     index.html                cópia da página, gerada
     progress.json             progresso saneado, sem nada de máquina ou conta
     icones/                   arte dos chefes e dos Headless, baixada uma vez
+    manifest.webmanifest      o que faz o link virar aplicativo no celular
+    sw.js                     abre a última leitura quando falta rede
+    app/                      ícones do aplicativo
 
   sync/
     main.js                   poll do processo + watcher + servidor + publicação
@@ -514,10 +586,15 @@ trackeroao/
     deathsmem.js              contagem de mortes lida da memória do jogo
     deaths.js                 contagem por save, reserva do método acima
 
-    achievements.js           conquistas da Steam (KeyValues binário)
+    conquistasave.js          as 34 conquistas provadas pelo save
+    conquistas-lista.json     nomes e descrições das 34, sem depender da Steam
+    achievements.js           conquistas da Steam, que conferem as do save
     conquistas.js             ícones, descrição e dificuldade das conquistas
     tempo.js                  tempo de jogo: Steam, e o save quando não há Steam
-    jogador.js                de quem é o progresso (apelido do Steam)
+    jogador.js                de quem é o progresso (nome escolhido ou da Steam)
+    biblioteca.js             varre os jogos da máquina e da conta
+    populares.json            populares reconhecidos sem rede e sem Steam
+    jogos.js / jogos.json     jogos vigiados e o que cada um sabe ler
     efeitos.js                efeitos temporários acionados pela sessão
     bosskills.js              conta cada vez que um chefe cai
     icones.js                 baixa as artes uma vez
