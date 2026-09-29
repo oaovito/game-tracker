@@ -342,7 +342,7 @@
    */
   .deaths-chama {
     display: block;
-    width: 1.55rem; height: 2.1rem;
+    width: 2.1rem; height: 2.85rem;
     flex: 0 0 auto;
     align-self: center;
     /* O halo é do fogo, não do traço: envolve a silhueta inteira em vez de
@@ -424,37 +424,10 @@
     67%      { background-position: 50% 92%; }
   }
   /*
-   * A fumaça do incenso, no lugar da gota de sangue.
-   *
-   * Em velório japonês se oferece incenso ao morto, e a fumaça é o que se vê
-   * subindo o tempo todo. Ela sobe da base do número, desvia de um lado para o
-   * outro e some antes de chegar ao topo — nunca completa o trajeto, que é
-   * como fumaça se comporta.
+   * Nada sobe do número. A fumaça de incenso que saía dele lia como fantasma
+   * pairando sobre a contagem, e foi retirada a pedido; a chama do Ídolo, à
+   * esquerda, já carrega sozinha a ideia de morte e retorno.
    */
-  .deaths-count::after {
-    content: "";
-    position: absolute;
-    left: 62%;
-    top: 4%;
-    width: 3px;
-    height: 14px;
-    border-radius: 50%;
-    background: linear-gradient(180deg, rgba(232, 229, 220, 0), rgba(232, 229, 220, 0.5));
-    filter: blur(2.5px);
-    opacity: 0;
-    animation: incenso 7.6s ease-out infinite;
-  }
-  /* A fumaça sobe mais alto e abre mais: antes ela morria a 54px com opacidade
-     de 0.55 no pico, o que num bloco desta altura era quase nada. */
-  /* no jogo: a fumaça do incenso do Templo Dilapidado, onde o Escultor talha */
-  @keyframes incenso {
-    0%   { transform: translate(0, 8px)     scale(0.6); opacity: 0; }
-    14%  { transform: translate(-4px, -10px) scale(1);   opacity: 0.8; }
-    38%  { transform: translate(6px, -34px)  scale(1.7); opacity: 0.6; }
-    64%  { transform: translate(-8px, -60px) scale(2.5); opacity: 0.34; }
-    85%  { transform: translate(6px, -84px)  scale(3.2); opacity: 0.14; }
-    100% { transform: translate(-2px, -102px) scale(3.8); opacity: 0; }
-  }
   /* A vela: a luz não bate igual o tempo todo, e o intervalo entre as quedas
      não é regular — vela que oscila em compasso vira pisca-pisca. */
   /* A vela ficou de verdade. Antes a queda mais funda era de 18% de opacidade
@@ -578,7 +551,7 @@
   }
   .estado-rot {
     font-family: var(--font-display);
-    font-size: 0.56rem;
+    font-size: 0.68rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     white-space: nowrap;
@@ -586,7 +559,7 @@
   }
 
   /* ---------------------------------------------------------- o Sino Demoníaco */
-  .estado-sino svg { width: 1.55rem; height: 1.55rem; display: block; overflow: visible; }
+  .estado-sino svg { width: 2rem; height: 2rem; display: block; overflow: visible; }
   .estado-sino .sino-corpo {
     fill: none; stroke: currentColor; stroke-width: 1.3;
     stroke-linejoin: round;
@@ -657,7 +630,7 @@
   .rot-peca {
     position: relative;
     display: grid; place-items: center;
-    width: 2.6rem; height: 2.1rem;
+    width: 3.2rem; height: 2.6rem;
   }
   /*
    * O 竜 é o fundo, e o número é a peça.
@@ -671,7 +644,7 @@
     position: absolute; inset: 0;
     display: grid; place-items: center;
     font-family: var(--font-display);
-    font-size: 2rem;
+    font-size: 2.5rem;
     line-height: 1;
     transition: color 0.3s ease, opacity 0.3s ease;
   }
@@ -679,7 +652,7 @@
     position: relative; z-index: 2;
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
@@ -693,7 +666,7 @@
   .rot-mancha {
     position: absolute;
     left: 50%; top: 50%;
-    width: 2.9rem; height: 2.9rem;
+    width: 3.6rem; height: 3.6rem;
     transform: translate(-50%, -50%) scale(calc(0.6 + 0.4 * var(--rot, 0)));
     border-radius: 48% 52% 55% 45% / 52% 46% 54% 48%;
     background: radial-gradient(circle at 42% 38%,
@@ -712,7 +685,7 @@
    * dizendo de que assunto se trata, sem afirmar que ele está acontecendo.
    */
   .estado-rot-bt.off { opacity: 0.45; }
-  .estado-rot-bt.off .rot-kanji { font-size: 1.5rem; opacity: 0.85; }
+  .estado-rot-bt.off .rot-kanji { font-size: 1.9rem; opacity: 0.85; }
   .estado-rot-bt.off .rot-n { display: none; }
 
   /*
@@ -756,7 +729,7 @@
   .deaths-panel.unknown .deaths-count,
   /* Sem leitura, o fogo apaga: fica o traço cinza, sem halo. Uma chama acesa
      sobre um número desconhecido afirmaria que há o que contar. */
-  .deaths-panel.unknown .deaths-chama { filter: grayscale(1) opacity(0.4); }
+  .deaths-panel.unknown:not(.esperando) .deaths-chama { filter: grayscale(1) opacity(0.4); }
   .deaths-panel.unknown .therm-pin { opacity: 0.28; filter: grayscale(1); }
   .deaths-panel.unknown .therm-pin::after { background: var(--line); }
   /* Esperando a primeira morte não é leitura faltando: é zero ainda por
@@ -2517,7 +2490,7 @@
        da última fileira. */
     .topics .gaveta { flex: 0 0 auto; margin-left: auto; }
     .deaths-count { font-size: 2.3rem; }
-    .deaths-chama { width: 1.3rem; height: 1.75rem; }
+    .deaths-chama { width: 1.7rem; height: 2.3rem; }
     /* Pino menor e recuo menor: no celular a pista é curta e o rosto grande
        comeria boa parte dela. */
     .therm { padding: 0 18px; }
@@ -2866,7 +2839,7 @@
           <span class="rot-kanji" aria-hidden="true">竜</span>
           <span class="rot-n" id="rotN" aria-hidden="true"></span>
         </span>
-        <span class="estado-rot" id="rotRot">dragonrot</span>
+        <span class="estado-rot" id="rotRot">dragon rot</span>
       </button>
     </div>
 
@@ -4277,7 +4250,7 @@ function renderEstados() {
     const fracao = d.total ? Math.min(1, d.quantos / (d.total / 3)) : 0;
     rot.style.setProperty("--rot", d.ativo ? Math.max(0.35, fracao).toFixed(2) : "0");
     const rotulo = document.getElementById("rotRot");
-    if (rotulo) rotulo.textContent = "dragonrot";
+    if (rotulo) rotulo.textContent = "dragon rot";
     rot.title = d.ativo
       ? "Rot Essence held for " + d.quantos + " of " + d.total + " characters. Open for the names."
       : "No Rot Essence in the inventory.";

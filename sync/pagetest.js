@@ -866,8 +866,8 @@ async function rodar(log) {
     tamRot + 'rem contra ' + tamRotulo + 'rem do nome — o número manda no ícone');
   log(/id=\"rotN\"/.test(src), 'e ela tem elemento próprio',
     'separada do rótulo, para poder ter corpo e cor diferentes');
-  log(/>dragonrot</.test(src), 'e o nome dragonrot aparece no ícone',
-    'a grafia é a do jogo, uma palavra só');
+  log(/>dragon rot</.test(src), 'e o nome dragon rot aparece no ícone',
+    'em duas palavras, como foi pedido');
 
   /*
    * As duas figuras de cada um. O que se cobra é que o estado aceso
@@ -1034,8 +1034,8 @@ async function rodar(log) {
     'e não escorre como o de chefes', 'a animação de sangue saiu daqui');
   log(/\.deaths-count \{[^}]*animation: luto/.test(src),
     'o número respira em vez de pulsar', 'animação "luto", lenta');
-  log(/\.deaths-count::after \{[^}]*animation: incenso/.test(src),
-    'sobe fumaça de incenso no lugar da gota de sangue', 'animação "incenso"');
+  log(!/\.deaths-count::after \{/.test(src) && !/@keyframes incenso/.test(src),
+    'nada sobe do número', 'a fumaça que parecia fantasma saiu');
   log(/\.deaths-chama \{[^}]*animation: vela/.test(src),
     'e a chama do Ídolo oscila como vela', 'animação "vela"');
   // A escala também: morrer mais apaga, não esquenta.
@@ -1072,7 +1072,7 @@ async function rodar(log) {
     log(g === true, 'a animação "' + doBloco + '" é do bloco e espera o gatilho',
       g === null ? 'não achei a animação' : 'play-state ligado a --anim');
   }
-  for (const doConteudo of ['vela', 'luto', 'incenso', 'polir', 'escorrer-forte']) {
+  for (const doConteudo of ['vela', 'luto', 'polir', 'escorrer-forte']) {
     const g = gatilhada(doConteudo);
     log(g === false, 'a animação "' + doConteudo + '" é conteúdo e corre sempre',
       g === null ? 'não achei a animação' : 'sem gatilho, como deve ser');
