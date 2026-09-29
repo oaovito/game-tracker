@@ -150,6 +150,27 @@ jobs:
           if ($v.ProductName -ne 'Trackeroao') { throw 'o .exe saiu sem as propriedades do produto' }
           Write-Host 'a janela abriu, leu o protocolo e fechou com o codigo certo'
 
+      - name: A instalacao completa roda num Windows limpo
+        timeout-minutes: 15
+        shell: powershell
+        run: |
+          # O instalar.ps1 de verdade, pela janela, do comeco ao fim: baixa a
+          # ultima release, copia, registra o servico, o atalho e a porta, e
+          # roda a suite -- num Windows sem o jogo, que e o caso em que o
+          # parse.js reclama em stderr. Depois, o desinstalar.ps1 desfaz tudo.
+          $log = Join-Path $env:TEMP 'trackeroao-instalar.log'
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$PWD\instalador\instalar.ps1", '/fechar' -Wait -PassThru
+          Get-Content $log -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
+          if ($p.ExitCode -ne 0) { throw "a instalacao completa saiu com $($p.ExitCode)" }
+          $destino = Join-Path $env:LOCALAPPDATA 'trackeroao'
+          if (-not (Test-Path (Join-Path $destino 'sync\main.js'))) { throw "nada foi instalado em $destino" }
+          $logD = Join-Path $env:TEMP 'trackeroao-desinstalar.log'
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/desinstalar', "/ensaio=$PWD\instalador\desinstalar.ps1", "/destino=$destino", '/fechar' -Wait -PassThru
+          Get-Content $logD -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
+          if ($p.ExitCode -ne 0) { throw "a remocao saiu com $($p.ExitCode)" }
+          if (Test-Path (Join-Path $destino 'sync\main.js')) { throw "a pasta $destino continua la" }
+          Write-Host 'instalou e desinstalou pela janela, sem erro'
+
       - name: Publicar
         if: steps.versao.outputs.tag != ''
         shell: bash
