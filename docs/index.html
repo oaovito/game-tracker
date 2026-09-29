@@ -4234,16 +4234,30 @@ function renderSyncLine() {
     // Os números são de uma leitura boa anterior — o save ficou indisponível
     // depois dela. Melhor mostrar o progresso conhecido e avisar do que zerar.
     dot.classList.add("off");
-    const quando = new Date(sync.stale.leituraDe).toLocaleString();
-    text.textContent = "save unavailable — showing the reading from " + quando;
+    /*
+     * Aqui valia a mesma coisa: a hora da última leitura boa é a hora em que se
+     * jogou por outro nome. O aviso que importa é que o número é velho, e esse
+     * cabe sem data nenhuma.
+     */
+    text.textContent = "save unavailable — showing the last known reading";
     return;
   }
   dot.classList.add("on");
-  const when = sync.source && sync.source.saveModified
-    ? new Date(sync.source.saveModified).toLocaleString()
-    : "?";
+  /*
+   * A hora do último save saiu da linha, e não só da versão pública.
+   *
+   * Ela vinha de `source.saveModified`, que o publicador poda por dizer quando
+   * a pessoa jogou. O resultado era a linha dizer "saved at 28/09, 15:18" na
+   * máquina e "saved at ?" no link — a página passava a ter dois
+   * comportamentos, e o público era o pior dos dois.
+   *
+   * Isso contraria a função da aplicação: o link público não é uma versão
+   * reduzida da página, é a mesma página. Como o dado não pode ir para o ar,
+   * o que sai é o dado dos dois lados. O que a linha precisa dizer — que está
+   * sincronizado, e de qual slot — continua inteiro.
+   */
   const slot = sync.source ? sync.source.slot : "?";
-  text.textContent = "synced with the save · slot " + slot + " · saved at " + when;
+  text.textContent = "synced with the save · slot " + slot;
 }
 
 // O rótulo do botão acompanha o texto escondido. Envolver é o jeito certo:

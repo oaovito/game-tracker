@@ -1240,4 +1240,23 @@ async function rodar(log) {
     'nenhuma chave antiga sobrou no DATA', 'renome aplicado');
 }
 
-module.exports = { rodar, carregar };
+/**
+ * Desenha a página com um progresso qualquer e devolve o que ficou na tela.
+ *
+ * Serve ao teste do espelho: rodar isto com o progresso local e com o
+ * publicado tem de dar o mesmo texto. É a checagem mais direta possível da
+ * regra de que o link público não é uma versão reduzida da página — é a mesma
+ * página.
+ */
+async function desenhar(progress) {
+  const { nodes } = await carregar(progress, { hostname: 'localhost' });
+  const pedacos = [];
+  for (const id of Object.keys(nodes)) {
+    const n = nodes[id];
+    if (!n || typeof n.outerHTML !== 'string') continue;
+    pedacos.push(id + '::' + n.outerHTML.replace(/\s+/g, ' ').trim());
+  }
+  return pedacos.join(String.fromCharCode(10));
+}
+
+module.exports = { rodar, carregar, desenhar };

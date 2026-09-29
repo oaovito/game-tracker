@@ -989,6 +989,50 @@ check('nenhum modulo do sync esta quebrado', () => {
   return 'todos os modulos carregam';
 });
 
+/*
+ * 16. O link publico e a mesma pagina, nao uma versao reduzida dela.
+ *
+ * Esta e a funcao da aplicacao, e nao um detalhe de publicacao: o uso normal
+ * do projeto e pelo link publico. A instancia local e a que le o save; a
+ * publica e a que se olha. Entao tudo que a pagina sabe desenhar rodando na
+ * maquina que joga tem de desenhar igual servido pelo Pages.
+ *
+ * Aqui vai a metade das imagens; a metade do render mora no grupo 6, que e
+ * assincrono.
+ */
+check('as artes que a pagina usa estao todas dentro de docs/', () => {
+  /*
+   * O JSON pode estar completo e a pagina ainda sair diferente no ar, se uma
+   * imagem so existir na maquina: no local o servidor tem um atalho que cai na
+   * pasta do projeto, e o GitHub Pages so serve o que esta em docs/.
+   */
+  const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8');
+  const pastas = new Set();
+  for (const m of src.matchAll(/["'(](icones\/[^"')]*)["')]/g)) {
+    pastas.add(m[1].replace(/[^/]*$/, ''));
+  }
+  assert(pastas.size > 0, 'nenhum caminho de imagem achado na pagina: o teste parou de olhar o lugar certo');
+  const vazias = [];
+  for (const dir of pastas) {
+    const alvo = path.join(RAIZ_PROJETO, 'docs', dir);
+    if (!fs.existsSync(alvo) || fs.readdirSync(alvo).length === 0) vazias.push(dir);
+  }
+  assert(vazias.length === 0, 'a pagina pede imagem de ' + vazias.join(', ') + ', que nao existe em docs/');
+  /*
+   * A outra metade: os caminhos que a pagina nao escreve, recebe. O icone de
+   * cada conquista vem dentro do proprio JSON, entao nenhuma varredura do
+   * HTML o alcanca -- e foi exatamente esse campo que ja sumiu do site uma vez
+   * sem nada falhar.
+   */
+  const pub = JSON.parse(fs.readFileSync(path.join(RAIZ_PROJETO, "docs", "progress.json"), "utf8"));
+  const citados = ((pub.achievements && pub.achievements.lista) || [])
+    .map((c) => c.icone).filter(Boolean);
+  const semArquivo = citados.filter((rel) => !fs.existsSync(path.join(RAIZ_PROJETO, "docs", rel)));
+  assert(semArquivo.length === 0,
+    "o progresso publicado cita imagem que nao foi junto: " + semArquivo.slice(0, 3).join(", "));
+  return [...pastas].join(', ') + ' e ' + citados.length + ' icones de conquista — todos no que vai para o ar';
+});
+
 check('nenhum carimbo de hora sobra no arquivo publico', () => {
   const HORA = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/;
   const PERMITIDOS = new Set(['generatedAt']);
@@ -1338,5 +1382,59 @@ function resumo() {
     failures.push('render da página');
     console.log(`   FALHA render da página\n            ${err.message}`);
   }
+
+  /*
+   * O espelho: a pagina desenhada com o progresso cru e com o publicado tem de
+   * dar exatamente a mesma tela.
+   *
+   * Esta e a checagem mais direta da funcao da aplicacao. Se o publico desenhar
+   * diferente, alguma coisa so existe no local -- e nao adianta a pagina local
+   * estar perfeita, porque nao e ela que se usa.
+   *
+   * Ja pegou um caso real na primeira execucao: a linha do sync dizia
+   * "saved at <hora>" na maquina e "saved at ?" no link, porque o campo da hora
+   * e podado por dizer quando a pessoa jogou. A correcao nao foi publicar o
+   * campo: foi tira-lo dos dois lados, porque o que nao pode ir para o ar
+   * tambem nao pode criar um segundo comportamento.
+   *
+   * O que este teste NAO cobra e diferenca de dado. Se o sino nao foi tocado,
+   * os dois lados mostram o sino apagado, e isso esta certo. O que ele proibe e
+   * comportamento diferente com o mesmo dado.
+   */
+  console.log('\n  === 16. O link público é a mesma página ===');
+  try {
+    const cru = path.join(RAIZ_PROJETO, 'progress.json');
+    const publicado = path.join(RAIZ_PROJETO, 'docs', 'progress.json');
+    if (!fs.existsSync(cru) || !fs.existsSync(publicado)) {
+      console.log('   --    a página publicada desenha igual à local  -  sem as duas versões aqui');
+    } else {
+      const pagetest = require('./pagetest');
+      const local = await pagetest.desenhar(JSON.parse(fs.readFileSync(cru, 'utf8')));
+      const site = await pagetest.desenhar(JSON.parse(fs.readFileSync(publicado, 'utf8')));
+      if (local === site) {
+        pass++;
+        console.log('   ok    a página publicada desenha igual à local  -  as duas telas são idênticas, caractere a caractere');
+      } else {
+        const a = local.split(String.fromCharCode(10));
+        const b = site.split(String.fromCharCode(10));
+        const difs = [];
+        for (let i = 0; i < Math.max(a.length, b.length); i++) {
+          if (a[i] === b[i]) continue;
+          difs.push(String(a[i] || b[i]).split('::')[0] + ': local "'
+            + String(a[i] || '').slice(0, 80) + '" / público "'
+            + String(b[i] || '').slice(0, 80) + '"');
+        }
+        fail++;
+        failures.push('a página publicada desenha igual à local');
+        console.log('   FALHA a página publicada desenha igual à local\n            '
+          + difs.length + ' ponto(s) de diferença: ' + difs.slice(0, 3).join(' | '));
+      }
+    }
+  } catch (err) {
+    fail++;
+    failures.push('a página publicada desenha igual à local');
+    console.log('   FALHA a página publicada desenha igual à local\n            ' + err.message);
+  }
+
   resumo();
 })();
