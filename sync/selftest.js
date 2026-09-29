@@ -1528,8 +1528,10 @@ check('nada é resolvido para fora da pasta clonada', () => {
      * que não chamam executável nenhum.
      */
     // Trackeroao.exe e a janela do proprio projeto, que o instalador poe em
-    // app\; num clone ela nao existe, e quem a chama cai na pagina local.
-    const DA_MAQUINA = /^(node|csc|wscript|cscript|powershell|winget|explorer|schtasks|taskkill|Trackeroao)$/i;
+    // app\; num clone ela nao existe, e quem a chama cai na pagina local. O
+    // trackeroao-instalador.exe e o da propria release, que a atualizacao
+    // baixa para trocar a janela quando ela muda.
+    const DA_MAQUINA = /^(node|csc|wscript|cscript|powershell|winget|explorer|schtasks|taskkill|Trackeroao|trackeroao-instalador)$/i;
     const CAMINHO_EXE = /[\\/]([A-Za-z0-9_-]+)\.exe(?![A-Za-z])/g;
     for (const m of t.matchAll(CAMINHO_EXE)) {
       if (DA_MAQUINA.test(m[1])) continue;

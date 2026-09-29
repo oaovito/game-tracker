@@ -206,10 +206,18 @@ jobs:
           $segunda = Start-Process $janela -PassThru
           if (-not $segunda.WaitForExit(15000)) { throw 'a segunda abertura criou outra janela' }
           if (@(Get-Process -Name Trackeroao -ErrorAction SilentlyContinue).Count -ne 1) { throw 'mais de uma janela aberta' }
+          # A troca da janela pela atualizacao nao mexe numa janela aberta.
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -Wait -PassThru
+          if ($p.ExitCode -ne 3) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode), e nao 3" }
           [System.Threading.EventWaitHandle]$sinal = $null
           if (-not [System.Threading.EventWaitHandle]::TryOpenExisting('Local\TrackeroaoFechar', [ref]$sinal)) { throw 'a janela nao ouve o Fechar da bandeja' }
           [void]$sinal.Set()
           if (-not $j.WaitForExit(15000)) { throw 'o Fechar da bandeja nao fechou a janela' }
+          Remove-Item (Join-Path $destino 'app\versao.txt') -ErrorAction SilentlyContinue
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "/so-janela saiu com $($p.ExitCode)" }
+          if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw '/so-janela nao gravou a versao da janela' }
+          if (Test-Path (Join-Path $destino 'app-novo')) { throw '/so-janela deixou a pasta temporaria' }
           Write-Host 'a janela abriu, e unica e fecha pelo menu da bandeja'
 
           # "Forcar atualizacao": recem-instalada, a versao e a ultima.

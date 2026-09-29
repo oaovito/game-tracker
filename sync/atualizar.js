@@ -255,13 +255,51 @@ async function viaGit(raiz) {
 async function viaRelease(raiz) {
   const tag = await ultimaRelease();
   const estado = lerEstado(raiz);
-  if (estado && estado.tag === tag) return { atualizou: false };
+  if (estado && estado.tag === tag) {
+    const j = await trocarJanela(raiz, tag);
+    return j ? { atualizou: false, motivo: 'janela ' + j } : { atualizou: false };
+  }
   const b = await baixar(tag);
+  let r;
   try {
-    const r = aplicarPasta(b.pasta, tag, raiz);
-    return { atualizou: true, de: estado ? estado.tag : null, para: tag, removidos: r.removidos };
+    r = aplicarPasta(b.pasta, tag, raiz);
   } finally {
     b.limpar();
+  }
+  const j = await trocarJanela(raiz, tag);
+  return { atualizou: true, de: estado ? estado.tag : null, para: tag, removidos: r.removidos, janela: j };
+}
+
+/*
+ * A janela do Trackeroao (app\Trackeroao.exe) é binária e não vem no zip do
+ * código: ela mora dentro do instalador da release. Quando a versão dela
+ * (app\versao.txt) fica para trás, o instalador daquela release é baixado e
+ * chamado com /so-janela, que troca só a pasta app, sem janela nenhuma e sem
+ * rodar script. Com a janela aberta ele não troca nada, e a próxima
+ * conferência tenta de novo. Num clone não há janela, e nada disto roda.
+ */
+function numeroDaTag(tag) {
+  const m = /(\d+)\.(\d+)\.(\d+)/.exec(tag || '');
+  return m ? `${m[1]}.${m[2]}.${m[3]}.0` : null;
+}
+
+async function trocarJanela(raiz, tag) {
+  if (process.platform !== 'win32') return null;
+  if (!fs.existsSync(path.join(raiz, 'app', 'Trackeroao.exe'))) return null;
+  let atual = null;
+  try { atual = fs.readFileSync(path.join(raiz, 'app', 'versao.txt'), 'utf8').trim(); } catch (e) { /* anterior a versao.txt */ }
+  if (atual && atual === numeroDaTag(tag)) return null;
+  varrerTemporarios();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'trackeroao-'));
+  try {
+    const exe = path.join(tmp, 'trackeroao-instalador.exe');
+    await pedir(`https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/trackeroao-instalador.exe`, exe);
+    await rodar(exe, ['/so-janela', '/destino=' + raiz]);
+    return 'atualizada para ' + tag;
+  } catch (e) {
+    return 'adiada (' + e.message.split('\n')[0] + ')';
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* temp */ }
   }
 }
 

@@ -172,7 +172,7 @@ static class Programa {
     string proprio = Application.ExecutablePath;
     string pastaPropria = Path.GetDirectoryName(proprio);
     bool desinstalando = Path.GetFileName(proprio).ToLowerInvariant().Contains("desinstal");
-    bool elevado = false, semElevar = false, fechar = false;
+    bool elevado = false, semElevar = false, fechar = false, soJanela = false;
     string usuario = null, destino = null, exeOriginal = null, ensaio = null;
     StringBuilder repassar = new StringBuilder();
     foreach (string a in args) {
@@ -184,11 +184,13 @@ static class Programa {
       else if (a.StartsWith("/destino=")) destino = a.Substring(9);
       else if (a.StartsWith("/exe=")) exeOriginal = a.Substring(5);
       else if (a.StartsWith("/ensaio=")) ensaio = a.Substring(8);
+      else if (a == "/so-janela") soJanela = true;
       else repassar.Append(" ").Append(Aspas(a));
     }
     if (usuario == null) usuario = UsuarioAtual();
     if (exeOriginal == null) exeOriginal = proprio;
     Limpar(proprio);
+    if (soJanela) return TrocarJanela(destino);
     if (desinstalando && destino == null && File.Exists(Path.Combine(pastaPropria, "sync\\main.js"))) {
       destino = pastaPropria;
     }
@@ -269,6 +271,48 @@ static class Programa {
 
   [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
   static extern bool MoveFileEx(string de, string para, int opcoes);
+
+  /*
+   * /so-janela /destino=<instalacao>: troca so a janela do Trackeroao
+   * (<instalacao>\app) pela que vem dentro deste .exe, sem janela nenhuma e
+   * sem rodar script. E o que a atualizacao automatica chama quando a versao
+   * nova traz uma janela nova: o codigo ela copia do zip, e a janela, que e
+   * binaria, vem daqui. Com a janela aberta nada e trocado (sai com 3), para
+   * nao fecha-la debaixo de quem esta olhando; a proxima conferencia tenta
+   * de novo.
+   */
+  static int TrocarJanela(string destino) {
+    if (destino == null || !File.Exists(Path.Combine(destino, "sync\\main.js"))) return 2;
+    string app = Path.Combine(destino, "app");
+    foreach (Process p in Process.GetProcessesByName("Trackeroao")) {
+      try { if (p.MainModule.FileName.StartsWith(app, StringComparison.OrdinalIgnoreCase)) return 3; } catch { }
+    }
+    string novo = app + "-novo";
+    try {
+      if (Directory.Exists(novo)) Directory.Delete(novo, true);
+      if (!ExtrairJanela(novo)) return 4;
+      if (Directory.Exists(app)) Directory.Delete(app, true);
+      Directory.Move(novo, app);
+      return 0;
+    } catch {
+      try { Directory.Delete(novo, true); } catch { }
+      return 5;
+    }
+  }
+
+  // Os arquivos da janela, dos recursos deste .exe, mais a versao dela.
+  internal static bool ExtrairJanela(string pasta) {
+    bool algum = false;
+    Assembly eu = Assembly.GetExecutingAssembly();
+    foreach (string r in eu.GetManifestResourceNames()) {
+      if (!r.StartsWith("app/")) continue;
+      if (!algum) { Directory.CreateDirectory(pasta); algum = true; }
+      using (Stream de = eu.GetManifestResourceStream(r))
+      using (FileStream para = File.Create(Path.Combine(pasta, r.Substring(4)))) de.CopyTo(para);
+    }
+    if (algum) File.WriteAllText(Path.Combine(pasta, "versao.txt"), eu.GetName().Version.ToString());
+    return algum;
+  }
 
   /*
    * Nada se acumula entre uma execucao e outra. Sobras de execucoes que nao
@@ -447,14 +491,8 @@ class Janela : Form {
     string alvoPs = Path.Combine(pastaTemp, nome + ".ps1");
     File.WriteAllText(alvoPs, script, new UTF8Encoding(true));
     // A janela do Trackeroao vai junto, dentro deste .exe; o script a copia.
-    string pastaApp = null;
-    Assembly eu = Assembly.GetExecutingAssembly();
-    foreach (string r in eu.GetManifestResourceNames()) {
-      if (!r.StartsWith("app/")) continue;
-      if (pastaApp == null) { pastaApp = Path.Combine(pastaTemp, "app"); Directory.CreateDirectory(pastaApp); }
-      using (Stream de = eu.GetManifestResourceStream(r))
-      using (FileStream para = File.Create(Path.Combine(pastaApp, r.Substring(4)))) de.CopyTo(para);
-    }
+    string pastaApp = Path.Combine(pastaTemp, "app");
+    if (!Programa.ExtrairJanela(pastaApp)) pastaApp = null;
 
     ProcessStartInfo psi = new ProcessStartInfo("powershell.exe");
     psi.Arguments = "-NoProfile -NonInteractive -File \"" + alvoPs + "\"" + (desinstalando ? " -GuardarProgresso" : "") + resto;
