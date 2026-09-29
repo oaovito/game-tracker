@@ -44,7 +44,13 @@ param(
                     else { 'https://github.com/oaovito/trackeroao' }),
   # Para quem prefere abrir a porta a mao. O padrao e abrir, porque deixar
   # para depois e o motivo numero um de o celular nao achar a pagina.
-  [switch]$SemFirewall
+  [switch]$SemFirewall,
+  # Preenchidos pela propria instalacao quando ela se relanca elevada. Nao sao
+  # para uso manual: dizem quem pediu a instalacao, e nao quem a esta rodando.
+  # A diferenca importa quando a elevacao troca de conta -- ver o bloco logo
+  # abaixo.
+  [string]$UsuarioOriginal,
+  [switch]$JaElevado
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +64,63 @@ function Ruim($t)  { Write-Host "  $t" -ForegroundColor Red }
 # O que ficou por fazer, para o relatorio do fim. Instalacao que termina com
 # pendencia silenciosa e pior que instalacao que falha.
 $pendencias = @()
+
+<#
+  A instalacao inteira sobe elevada, e quem decide e a pessoa.
+
+  A versao anterior elevava so a regra de firewall, num processo separado, para
+  o resto continuar rodando como o usuario comum. O motivo era concreto: uma
+  tarefa agendada registrada dentro de um processo elevado com OUTRA conta
+  ficaria no usuario errado, e o servico nunca subiria no logon de quem joga.
+
+  Elevar tudo e a decisao do dono do projeto, e resolve o incomodo de ver dois
+  prompts. O cuidado que ela exige esta aqui: antes de elevar, a instalacao
+  anota QUEM pediu, e passa esse nome adiante. A tarefa agendada e registrada
+  para essa pessoa, e nao para quem o Windows devolveu depois do prompt.
+
+  Os dois casos, para o leitor futuro entender por que ha tanto cuidado com uma
+  linha so:
+
+    - a pessoa e administradora da propria maquina. O prompt e de consentimento
+      e a conta nao muda; anotar o usuario nao custa nada e nao muda nada.
+    - a pessoa NAO e administradora e alguem digita outra credencial. Aí o
+      processo elevado e de outro usuario, com outro perfil, outro
+      %LOCALAPPDATA% e outro %APPDATA%. Sem anotar quem pediu, a instalacao
+      inteira iria para a pasta da conta errada e o servico subiria para
+      alguem que nao joga.
+
+  Recusar o prompt nao cancela a instalacao: ela segue sem elevacao e faz tudo
+  que nao precisa de administrador, deixando a porta 8777 como pendencia escrita
+  no fim. Nao ter firewall aberto custa o acesso pelo celular; nao ter a
+  instalacao custa tudo.
+#>
+$souAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
+             ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $souAdmin -and -not $JaElevado -and -not $SemFirewall) {
+  $quemPediu = "$env:USERDOMAIN\$env:USERNAME"
+  Nota 'pedindo administrador para a instalacao inteira'
+  # Nao chamar de $args: e variavel automatica do PowerShell, e sobrescreve-la
+  # dentro de um script funciona mas confunde quem le.
+  $argsElevado = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"",
+            '-Destino', "`"$Destino`"", '-Repo', "`"$Repo`"",
+            '-UsuarioOriginal', "`"$quemPediu`"", '-JaElevado')
+  try {
+    $p = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList $argsElevado
+    exit $p.ExitCode
+  } catch {
+    Nota 'administrador recusado; seguindo sem ele'
+    Nota 'tudo que nao depende de administrador vai ser feito normalmente'
+    $SemFirewall = $true
+    $pendencias += 'liberar a porta 8777 no Firewall do Windows para redes privadas, senao o celular nao acha a pagina'
+  }
+}
+
+# Quem joga e quem pediu a instalacao, nao necessariamente quem a esta rodando.
+if (-not $UsuarioOriginal) { $UsuarioOriginal = "$env:USERDOMAIN\$env:USERNAME" }
+if ($JaElevado -and $UsuarioOriginal -ne "$env:USERDOMAIN\$env:USERNAME") {
+  Nota "elevado como $env:USERNAME, mas instalando para $UsuarioOriginal"
+}
 
 Write-Host "trackeroao - instalacao" -ForegroundColor White
 Nota "destino: $Destino"
@@ -187,7 +250,7 @@ Ok "projeto em $Destino  ($artes imagens)"
 # =============================================================== 3. servico
 Passo '3/5  Servico'
 $instalador = Join-Path $Destino 'install-sync-service.ps1'
-& $instalador -NodePath $node
+& $instalador -NodePath $node -Usuario $UsuarioOriginal
 
 # ================================================================== 4. rede
 Passo '4/5  Rede'
@@ -213,21 +276,14 @@ if ($SemFirewall) {
 
   if ($jaTem) {
     Ok 'a porta 8777 ja estava liberada para a rede local'
+  } elseif (-not $souAdmin -and -not $JaElevado) {
+    # So chega aqui quem recusou o prompt la em cima; a pendencia ja foi anotada.
+    Nota 'sem administrador: a porta 8777 continua fechada'
   } else {
-    $souAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
-                 ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    $cmd = "New-NetFirewallRule -DisplayName '$nomeRegra' -Direction Inbound -Protocol TCP " +
-           "-LocalPort 8777 -Action Allow -Profile Private " +
-           "-Description 'Pagina de progresso do trackeroao na rede local' | Out-Null"
     try {
-      if ($souAdmin) {
-        Invoke-Expression $cmd
-      } else {
-        Nota 'pedindo elevacao so para liberar a porta 8777 na rede local'
-        $p = Start-Process powershell -Verb RunAs -Wait -PassThru -WindowStyle Hidden `
-               -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $cmd
-        if ($p.ExitCode -ne 0) { throw "o processo elevado saiu com codigo $($p.ExitCode)" }
-      }
+      New-NetFirewallRule -DisplayName $nomeRegra -Direction Inbound -Protocol TCP `
+        -LocalPort 8777 -Action Allow -Profile Private `
+        -Description 'Pagina de progresso do trackeroao na rede local' | Out-Null
       Ok 'porta 8777 liberada para a rede local (perfil Private)'
     } catch {
       Nota "nao liberei a porta: $($_.Exception.Message)"
@@ -264,4 +320,12 @@ Nota "para remover: $Destino\uninstall-sync-service.ps1"
 if ($pendencias) {
   Write-Host "`nFicou para voce:" -ForegroundColor Yellow
   foreach ($p in $pendencias) { Write-Host "  - $p" -ForegroundColor Yellow }
+}
+
+# Rodando elevada, a janela e uma nova e fecha sozinha no fim, levando junto
+# tudo que foi escrito. Esperar uma tecla e o que permite ler o relatorio --
+# inclusive as pendencias, que sao a parte que mais importa ler.
+if ($JaElevado) {
+  Write-Host "`nTecle algo para fechar." -ForegroundColor DarkGray
+  [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }

@@ -14,7 +14,14 @@ para o usuario errado.
 # nem em Program Files. Sem receber o caminho, este script nao acharia o Node
 # que acabou de ser instalado e falharia no fim de uma instalacao bem
 # sucedida.
-param([string]$NodePath)
+param(
+    [string]$NodePath,
+    # Para quem registrar a tarefa. Quando a instalacao sobe elevada com OUTRA
+    # conta, o usuario do processo nao e o de quem joga -- e registrar para o
+    # processo deixaria o servico subindo no logon errado. Sem este parametro,
+    # vale o usuario atual, que e o caso comum.
+    [string]$Usuario
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -70,8 +77,10 @@ if (Test-Path $ocultoVbs) {
     Write-Host "janela : oculto.vbs nao encontrado, a janela do node vai aparecer" -ForegroundColor Yellow
 }
 
-$trigger   = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive
+if (-not $Usuario) { $Usuario = "$env:USERDOMAIN\$env:USERNAME" }
+Write-Host "usuario: $Usuario" -ForegroundColor DarkGray
+$trigger   = New-ScheduledTaskTrigger -AtLogOn -User $Usuario
+$principal = New-ScheduledTaskPrincipal -UserId $Usuario -LogonType Interactive
 $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
     -MultipleInstances IgnoreNew
