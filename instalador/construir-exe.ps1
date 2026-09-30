@@ -412,11 +412,16 @@ static class Programa {
     try {
       if (Directory.Exists(novo)) Directory.Delete(novo, true);
       if (!ExtrairJanela(novo)) return 4;
-      if (Directory.Exists(app)) Directory.Delete(app, true);
+      // Um arquivo recem-solto (o .exe que acabou de fechar) pode levar um
+      // instante para ser liberado pelo Windows.
+      for (int i = 0; ; i++) {
+        try { if (Directory.Exists(app)) Directory.Delete(app, true); break; }
+        catch { if (i >= 10) throw; System.Threading.Thread.Sleep(500); }
+      }
       Directory.Move(novo, app);
       // Pelo shell: a janela nao herda a saida de quem chamou o instalador,
       // e o servico nao fica esperando por ela.
-      AcertarAtalhos(app);
+      AcertarAtalhos(destino, app);
       if (estavaAberta) {
         try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = true }); } catch { }
       }
@@ -428,17 +433,30 @@ static class Programa {
   }
 
   /*
-   * Os atalhos da janela (area de trabalho e menu Iniciar) passam a usar o
-   * trackeroao.ico ao lado do .exe. O Windows guarda o icone de cada caminho
-   * em cache; apontar o atalho para o .exe trocado continuaria mostrando o
-   * icone antigo. Com o caminho novo e o aviso ao shell, ele le de novo.
+   * Os atalhos da janela (area de trabalho, menu Iniciar e barra de tarefas)
+   * passam a usar o trackeroao.ico na raiz da instalacao. O Windows guarda o
+   * icone de cada caminho em cache; apontar o atalho para o .exe trocado
+   * continuaria mostrando o icone antigo. Com o caminho novo e o aviso ao
+   * shell, ele le de novo. O arquivo fica fora de app de proposito: o
+   * Explorer segura o icone que esta mostrando, e isso travaria a proxima
+   * troca da pasta.
    */
+  static bool Iguais(string a, string b) {
+    if (!File.Exists(a) || !File.Exists(b)) return false;
+    byte[] x = File.ReadAllBytes(a), y = File.ReadAllBytes(b);
+    if (x.Length != y.Length) return false;
+    for (int i = 0; i < x.Length; i++) if (x[i] != y[i]) return false;
+    return true;
+  }
+
   [DllImport("shell32.dll")]
   static extern void SHChangeNotify(int evento, uint opcoes, IntPtr a, IntPtr b);
 
-  static void AcertarAtalhos(string app) {
-    string ico = Path.Combine(app, "trackeroao.ico");
+  static void AcertarAtalhos(string destino, string app) {
+    string ico = Path.Combine(destino, "trackeroao.ico");
     string exe = Path.Combine(app, "Trackeroao.exe");
+    string doApp = Path.Combine(app, "trackeroao.ico");
+    try { if (File.Exists(doApp) && !Iguais(doApp, ico)) File.Copy(doApp, ico, true); } catch { }
     if (!File.Exists(ico)) return;
     try {
       Type tipo = Type.GetTypeFromProgID("WScript.Shell");

@@ -480,7 +480,11 @@ if (-not (Test-Path $atalhoVbs)) {
       $atalho.TargetPath = $janela
       $atalho.Arguments = ''
       $atalho.WorkingDirectory = Split-Path $janela -Parent
-      $ico = Join-Path (Split-Path $janela -Parent) 'trackeroao.ico'
+      # O icone fica na raiz, fora de app: o Explorer segura o arquivo que
+      # esta mostrando, e dentro de app isso travaria a troca da janela.
+      $ico = Join-Path $Destino 'trackeroao.ico'
+      $doApp = Join-Path (Split-Path $janela -Parent) 'trackeroao.ico'
+      if (Test-Path $doApp) { Copy-Item $doApp $ico -Force -ErrorAction SilentlyContinue }
       $atalho.IconLocation = $(if (Test-Path $ico) { "$ico,0" } else { "$janela,0" })
     } else {
       $atalho.TargetPath = Join-Path $env:WINDIR 'System32\wscript.exe'
