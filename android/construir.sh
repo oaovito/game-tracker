@@ -49,7 +49,8 @@ command -v javac >/dev/null || { echo "erro: javac não encontrado (precisa de u
 command -v zip >/dev/null || { echo "erro: zip não encontrado" >&2; exit 1; }
 
 # A versão do aplicativo acompanha a do projeto (package.json na raiz).
-VERSAO="$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([0-9.]*\)".*/\1/p' "$AQUI/../package.json" | head -n 1)"
+# Na release, quem chama passa VERSAO (a da tag); sem ela, vale o package.json.
+VERSAO="${VERSAO:-$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([0-9.]*\)".*/\1/p' "$AQUI/../package.json" | head -n 1)}"
 VERSAO="${VERSAO:-1.0.0}"
 IFS=. read -r V_MAIOR V_MENOR V_CORR <<<"$VERSAO"
 CODIGO=$(( ${V_MAIOR:-1} * 10000 + ${V_MENOR:-0} * 100 + ${V_CORR:-0} ))

@@ -34,6 +34,7 @@ on:
       - 'instalador/**'
       - 'windows/**'
       - 'sync/*.ps1'
+      - 'android/**'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 
@@ -41,7 +42,37 @@ permissions:
   contents: write
 
 jobs:
+  # O aplicativo de Android, construido sem Gradle pelo android/construir.sh
+  # com as ferramentas do SDK que o runner ubuntu ja traz. Ele vai para dentro
+  # do instalador (em <instalacao>\app), e o computador o entrega ao celular
+  # pela rede de casa: a release continua tendo so o .exe.
+  #
+  # A chave de assinatura nasce na propria construcao e nao e guardada em
+  # lugar nenhum. O aplicativo e uma casca: o que ele mostra vem sempre do
+  # computador, entao ele quase nunca precisa ser trocado no celular. Quando
+  # precisar, a versao nova pede para desinstalar a anterior antes.
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Construir o aplicativo
+        shell: bash
+        run: |
+          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          VERSAO="$v" bash android/construir.sh
+          test -s android/build/trackeroao.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trackeroao-apk
+          path: android/build/trackeroao.apk
+          retention-days: 1
+
   publicar:
+    needs: android
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,10 +107,16 @@ jobs:
           case "$faltam" in *" "*) echo "mais de uma versao pendente: $faltam"; exit 1;; esac
           echo "tag=$faltam" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: trackeroao-apk
+          path: dist\apk
+
       - name: Construir o executavel
         shell: powershell
         run: |
           .\instalador\construir-janela.ps1 -Saida dist\app
+          Copy-Item dist\apk\trackeroao.apk dist\app\trackeroao.apk
           .\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}" -App dist\app
 
       # A janela do instalador, num Windows de verdade: abre, le o protocolo
@@ -192,6 +229,15 @@ jobs:
             try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:8777/progress.json' | Out-Null; $vivo = $true } catch { }
           }
           if (-not $vivo) { throw 'o servico deste commit nao subiu' }
+
+          # O aplicativo de Android veio no instalador e o computador o entrega.
+          if (-not (Test-Path (Join-Path $destino 'app\trackeroao.apk'))) { throw 'o aplicativo de Android nao foi instalado' }
+          $apk = Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 'http://127.0.0.1:8777/android.apk'
+          if ($apk.StatusCode -ne 200 -or $apk.RawContentLength -lt 10000) { throw 'o computador nao entrega o aplicativo de Android' }
+          $bloqueado = $false
+          try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 'http://127.0.0.1:8777/app/Trackeroao.exe' | Out-Null } catch { $bloqueado = $true }
+          if (-not $bloqueado) { throw 'o servidor entrega a janela do Windows pela rede' }
+          Write-Host 'o aplicativo de Android esta na instalacao e e entregue pela rede'
 
           # A janela do Trackeroao: abre e fica de pe, uma segunda abertura nao
           # cria outra, e o sinal do "Fechar" da bandeja a fecha.

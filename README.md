@@ -768,6 +768,15 @@ O aplicativo é compilado sem Gradle, por `android/construir.sh`, que usa
 apenas as ferramentas de linha de comando do SDK do Android: `aapt2`, `javac`,
 `d8`, `zipalign` e `apksigner`.
 
+Na release, ele é construído num runner Linux do GitHub e levado para dentro
+do instalador. A assinatura usa uma chave criada no momento da construção e
+descartada em seguida; nenhuma chave é guardada no repositório. A
+consequência prática é pequena, porque o aplicativo é apenas um invólucro e
+tudo o que ele exibe vem do computador: as atualizações da página chegam ao
+celular sem que o aplicativo mude. Nas raras vezes em que uma versão nova do
+aplicativo precisar ser instalada, o Android pedirá que a anterior seja
+desinstalada antes.
+
 ## Descobrindo o que falta
 
 Para mapear uma flag — um mini-chefe, um Ídolo — ou confirmar um material:
