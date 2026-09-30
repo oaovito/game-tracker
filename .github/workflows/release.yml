@@ -251,10 +251,16 @@ jobs:
           if ($j.HasExited) { throw "a janela fechou sozinha (codigo $($j.ExitCode))" }
           $segunda = Start-Process $janela -PassThru
           if (-not $segunda.WaitForExit(15000)) { throw 'a segunda abertura criou outra janela' }
+          # A bandeja e o mesmo .exe, filho do servico (node); a janela nao.
           function Trackeroaos([switch]$Bandeja) {
-            @(Get-CimInstance Win32_Process -Filter "Name='Trackeroao.exe'" | Where-Object { ($_.CommandLine -like '*/bandeja*') -eq [bool]$Bandeja })
+            $nodes = @(Get-CimInstance Win32_Process -Filter "Name='node.exe'" | ForEach-Object { $_.ProcessId })
+            @(Get-CimInstance Win32_Process -Filter "Name='Trackeroao.exe'" | Where-Object {
+              $eh = ($_.CommandLine -like '*/bandeja*') -or ($nodes -contains $_.ParentProcessId)
+              $eh -eq [bool]$Bandeja
+            })
           }
-          if ((Trackeroaos).Count -ne 1) { throw 'mais de uma janela aberta' }
+          Get-CimInstance Win32_Process -Filter "Name='Trackeroao.exe'" | ForEach-Object { Write-Host "  processo $($_.ProcessId) (pai $($_.ParentProcessId)): $($_.CommandLine)" }
+          if ((Trackeroaos).Count -ne 1) { throw "janelas abertas: $((Trackeroaos).Count), e nao 1" }
 
           # O icone da bandeja e o proprio Trackeroao.exe, que a abertura acende
           # pelo servico, e o Windows o lista com o nome do produto.
