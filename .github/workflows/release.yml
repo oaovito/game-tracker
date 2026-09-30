@@ -247,6 +247,8 @@ jobs:
           $lnk = Get-ChildItem ([Environment]::GetFolderPath('Desktop')) -Filter 'trackeroao*.lnk' | Select-Object -First 1
           $alvo = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk.FullName).TargetPath
           if ($alvo -ne $janela) { throw "o atalho aponta para $alvo, e nao para a janela" }
+          function IconeDoAtalho { (New-Object -ComObject WScript.Shell).CreateShortcut($lnk.FullName).IconLocation }
+          if ((IconeDoAtalho) -notlike '*\app\trackeroao.ico,0') { throw "o atalho usa o icone $(IconeDoAtalho)" }
           $j = Start-Process $janela -PassThru
           Start-Sleep -Seconds 12
           if ($j.HasExited) { throw "a janela fechou sozinha (codigo $($j.ExitCode))" }
@@ -300,6 +302,9 @@ jobs:
           if ($naPagina -ne 1) { throw "a pagina nao recebe o clique ($naPagina)" }
           # A troca da janela pela atualizacao, com a janela aberta: ela fecha,
           # a pasta e trocada e ela abre de novo, sem ninguem mexer em nada.
+          # Um atalho de versao antiga, com o icone no .exe: a troca o acerta.
+          $velho = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk.FullName)
+          $velho.IconLocation = "$janela,0"; $velho.Save()
           Remove-Item (Join-Path $destino 'app\versao.txt') -ErrorAction SilentlyContinue
           # So o instalador: -Wait esperaria tambem a janela que ele reabre.
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -PassThru
@@ -314,6 +319,8 @@ jobs:
           $j = Get-Process -Id $nova.ProcessId -ErrorAction SilentlyContinue
           if (-not $j) { throw 'a janela reaberta fechou sozinha' }
           Write-Host "troca com a janela aberta: fechou, trocou e reabriu (pid $($nova.ProcessId))"
+          if ((IconeDoAtalho) -notlike '*\app\trackeroao.ico,0') { throw "a troca nao acertou o icone do atalho: $(IconeDoAtalho)" }
+          Write-Host "atalho com o icone do Trackeroao: $(IconeDoAtalho)"
           [System.Threading.EventWaitHandle]$sinal = $null
           if (-not [System.Threading.EventWaitHandle]::TryOpenExisting('Local\TrackeroaoFechar', [ref]$sinal)) { throw 'a janela nao ouve o Fechar da bandeja' }
           [void]$sinal.Set()

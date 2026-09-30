@@ -466,7 +466,8 @@ if (-not (Test-Path $atalhoVbs)) {
       $atalho.TargetPath = $janela
       $atalho.Arguments = ''
       $atalho.WorkingDirectory = Split-Path $janela -Parent
-      $atalho.IconLocation = "$janela,0"
+      $ico = Join-Path (Split-Path $janela -Parent) 'trackeroao.ico'
+      $atalho.IconLocation = $(if (Test-Path $ico) { "$ico,0" } else { "$janela,0" })
     } else {
       $atalho.TargetPath = Join-Path $env:WINDIR 'System32\wscript.exe'
       $atalho.Arguments = "`"$atalhoVbs`""

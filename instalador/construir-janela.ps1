@@ -54,6 +54,9 @@ try {
   # O icone: o do Trackeroao, ja em .ico com todos os tamanhos (16 a 256).
   $icone = Join-Path $projeto 'instalador\icone\trackeroao.ico'
   if (-not (Test-Path $icone)) { throw "faltou o icone: $icone" }
+  # Uma copia ao lado do .exe, para os atalhos: um caminho proprio faz o
+  # Windows ler o icone de novo, em vez de mostrar o que guardou em cache.
+  Copy-Item $icone (Join-Path $Saida 'trackeroao.ico')
 
   $exe = Join-Path $Saida 'Trackeroao.exe'
   & $csc.FullName /nologo /target:winexe /platform:x86 /optimize+ "/out:$exe" "/win32icon:$icone" `

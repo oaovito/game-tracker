@@ -416,6 +416,7 @@ static class Programa {
       Directory.Move(novo, app);
       // Pelo shell: a janela nao herda a saida de quem chamou o instalador,
       // e o servico nao fica esperando por ela.
+      AcertarAtalhos(app);
       if (estavaAberta) {
         try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = true }); } catch { }
       }
@@ -424,6 +425,46 @@ static class Programa {
       try { Directory.Delete(novo, true); } catch { }
       return 5;
     }
+  }
+
+  /*
+   * Os atalhos da janela (area de trabalho e menu Iniciar) passam a usar o
+   * trackeroao.ico ao lado do .exe. O Windows guarda o icone de cada caminho
+   * em cache; apontar o atalho para o .exe trocado continuaria mostrando o
+   * icone antigo. Com o caminho novo e o aviso ao shell, ele le de novo.
+   */
+  [DllImport("shell32.dll")]
+  static extern void SHChangeNotify(int evento, uint opcoes, IntPtr a, IntPtr b);
+
+  static void AcertarAtalhos(string app) {
+    string ico = Path.Combine(app, "trackeroao.ico");
+    string exe = Path.Combine(app, "Trackeroao.exe");
+    if (!File.Exists(ico)) return;
+    try {
+      Type tipo = Type.GetTypeFromProgID("WScript.Shell");
+      object ws = Activator.CreateInstance(tipo);
+      string[] pastas = {
+        Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+        Environment.GetFolderPath(Environment.SpecialFolder.Programs),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+          "Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar"),
+      };
+      foreach (string pasta in pastas) {
+        if (String.IsNullOrEmpty(pasta) || !Directory.Exists(pasta)) continue;
+        foreach (string lnk in Directory.GetFiles(pasta, "Trackeroao*.lnk")) {
+          try {
+            object at = tipo.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, ws, new object[] { lnk });
+            Type t = at.GetType();
+            string alvo = (string)t.InvokeMember("TargetPath", BindingFlags.GetProperty, null, at, null);
+            if (!String.Equals(alvo, exe, StringComparison.OrdinalIgnoreCase)) continue;
+            t.InvokeMember("IconLocation", BindingFlags.SetProperty, null, at, new object[] { ico + ",0" });
+            t.InvokeMember("Save", BindingFlags.InvokeMethod, null, at, null);
+          } catch { }
+        }
+      }
+    } catch { }
+    // SHCNE_ASSOCCHANGED: o shell recarrega os icones.
+    try { SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero); } catch { }
   }
 
   // Os arquivos da janela, dos recursos deste .exe, mais a versao dela.
