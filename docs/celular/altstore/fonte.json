@@ -19,11 +19,11 @@
       "screenshots": [],
       "versions": [
         {
-          "version": "1.8.7",
-          "buildVersion": "1.8.7",
-          "date": "2026-09-30T21:25:05.157Z",
-          "localizedDescription": "Instalador do Trackeroao para Windows e aplicativo de Android. No computador,\r\nbaixe o `trackeroao-instalador.exe` e dê dois cliques; quem já está na v1.5.0 ou\r\nposterior recebe esta versão sozinho. No celular Android, baixe o\r\n`trackeroao.apk` e abra o arquivo para instalar.\r\n\r\n## O que mudou nesta versão\r\n\r\n**Passo a passo do iOS.** O código QR do iPhone abre uma tela no visual do\r\nTrackeroao, sem rolagem, com o passo a passo da instalação: um botão para\r\nbaixar o AltStore PAL e, no meio da tela, um botão pulsando que baixa o\r\nTrackeroao para iOS.\r\n\r\n## Requisitos\r\n\r\nWindows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio\r\ninstalador. No celular, Android 7 ou posterior; no iPhone e no iPad, iOS 15 ou\r\nposterior, com o AltStore.",
-          "downloadURL": "https://github.com/oaovito/trackeroao/releases/download/v1.8.7/trackeroao.ipa",
+          "version": "1.8.8",
+          "buildVersion": "1.8.8",
+          "date": "2026-09-30T21:43:09.870Z",
+          "localizedDescription": "Instalador do Trackeroao para Windows e aplicativo de Android. No computador,\r\nbaixe o `trackeroao-instalador.exe` e dê dois cliques; quem já está na v1.5.0 ou\r\nposterior recebe esta versão sozinho. No celular Android, baixe o\r\n`trackeroao.apk` e abra o arquivo para instalar.\r\n\r\n## O que mudou nesta versão\r\n\r\n**Tela inicial sem rolagem no celular.** Com o celular em pé, a tela inicial\r\ncabe inteira na tela, do aparelho pequeno ao grande: a arte do jogo em foco se\r\najusta à altura disponível, os pôsteres medem pela altura da tela e os\r\natalhos \"Meus jogos\" e \"Todos os jogos\" ficam lado a lado. As páginas dos\r\njogos continuam como estavam.\r\n\r\n**Imagens de preview do celular.** O README passa a mostrar também a tela\r\ninicial (em um aparelho grande e em um pequeno) e a lista de todos os jogos no\r\ncelular, refeitas a cada mudança estética.\r\n\r\n**Repositório organizado.** A raiz do repositório passa a ter oito itens. O\r\ninstalador foi para `windows/instalador`, os aplicativos de Android e de iOS e\r\na fonte do AltStore foram para `docs/celular`, e as notas de versão para\r\n`.github/releases`. Nenhum arquivo foi apagado. Na atualização, as pastas\r\nantigas, já vazias, são removidas da instalação.\r\n\r\n## Requisitos\r\n\r\nWindows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio\r\ninstalador. No celular, Android 7 ou posterior; no iPhone e no iPad, iOS 15 ou\r\nposterior, com o AltStore.",
+          "downloadURL": "https://github.com/oaovito/trackeroao/releases/download/v1.8.8/trackeroao.ipa",
           "size": 85092,
           "minOSVersion": "15.0"
         }
