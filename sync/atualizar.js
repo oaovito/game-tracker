@@ -307,6 +307,18 @@ function numeroDaTag(tag) {
   return m ? `${m[1]}.${m[2]}.${m[3]}.0` : null;
 }
 
+// Só troca a janela por uma versão mais nova: uma janela já à frente da
+// release (a que um instalador novo trouxe antes de a release sair) fica.
+function maisNova(a, b) {
+  const x = String(a || '').split('.').map(Number);
+  const y = String(b || '').split('.').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+
 // Quem precisa largar o .exe da janela antes da troca (o icone da bandeja).
 let envolverTroca = (trocar) => trocar();
 function aoTrocarJanela(fn) { if (typeof fn === 'function') envolverTroca = fn; }
@@ -316,7 +328,7 @@ async function trocarJanela(raiz, tag) {
   if (!fs.existsSync(path.join(raiz, 'app', 'Trackeroao.exe'))) return null;
   let atual = null;
   try { atual = fs.readFileSync(path.join(raiz, 'app', 'versao.txt'), 'utf8').trim(); } catch (e) { /* anterior a versao.txt */ }
-  if (atual && atual === numeroDaTag(tag)) return null;
+  if (atual && !maisNova(numeroDaTag(tag), atual)) return null;
   varrerTemporarios();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'trackeroao-'));
   try {
@@ -359,7 +371,7 @@ async function situacao(raiz) {
   return { instalada, ultima, atual: instalada === ultima };
 }
 
-module.exports = { verificar, situacao, aoTrocarJanela, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
+module.exports = { verificar, situacao, aoTrocarJanela, maisNova, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
 
 /*
  * Linha de comando.

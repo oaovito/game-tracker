@@ -199,6 +199,12 @@ jobs:
           # roda a suite -- num Windows sem o jogo, que e o caso em que o
           # parse.js reclama em stderr. Depois, o desinstalar.ps1 desfaz tudo.
           $log = Join-Path $env:TEMP 'trackeroao-instalar.log'
+          # O servico instalado aqui nao se atualiza sozinho durante o teste: a
+          # release publicada e anterior a esta versao, e a atualizacao trocaria
+          # a janela em teste pela antiga no meio das verificacoes. A troca e
+          # testada a parte, chamando o /so-janela direto.
+          [Environment]::SetEnvironmentVariable('TRACKEROAO_SEM_ATUALIZAR', '1', 'User')
+          $env:TRACKEROAO_SEM_ATUALIZAR = '1'
           # Duas vezes seguidas: a segunda e uma reinstalacao por cima, e nada
           # pode sair em dobro por causa dela.
           foreach ($vez in 1, 2) {
