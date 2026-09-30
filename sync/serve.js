@@ -150,6 +150,24 @@ function createServer(options) {
       return;
     }
 
+    /*
+     * O logotipo transparente de um jogo, para o menu da bandeja. Só da
+     * própria máquina, e só de jogo da lista.
+     */
+    if (urlPath === '/logo-bandeja') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina) { res.writeHead(403).end('forbidden'); return; }
+      const chave = new URL(req.url, 'http://x').searchParams.get('chave') || '';
+      let jogo = null;
+      try { jogo = (((require('./jogos').paraProgresso() || {}).lista) || []).find((g) => g.chave === chave); } catch (e) { jogo = null; }
+      Promise.resolve(jogo && jogo.appId ? require('./arte').logoDoJogo(jogo.appId) : null).then((arq) => {
+        if (!arq) { res.writeHead(404).end(); return; }
+        res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store' });
+        res.end(fs.readFileSync(arq));
+      }).catch(() => { res.writeHead(404).end(); });
+      return;
+    }
+
     // A busca de jogos pelo nome, em tudo o que o aplicativo conhece.
     if (urlPath === '/buscar.json') {
       let achados = [];

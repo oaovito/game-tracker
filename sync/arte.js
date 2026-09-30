@@ -152,4 +152,40 @@ async function resolver(jogos, opts) {
   return jogos;
 }
 
-module.exports = { daSteam, imagemDaPagina, resolver, CACHE };
+/*
+ * O logotipo de um jogo da Steam, recortado e de fundo transparente, para o
+ * menu da bandeja. Baixado uma vez e guardado em sync/cache/logos; sem rede,
+ * vale o que já houver. Devolve o caminho do .png, ou null.
+ */
+const LOGOS = path.join(__dirname, 'cache', 'logos');
+function baixar(url, max) {
+  return new Promise((ok) => {
+    const r = https.get(url, { timeout: 6000 }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); ok(null); return; }
+      const partes = [];
+      let total = 0;
+      res.on('data', (d) => { total += d.length; if (total > max) { r.destroy(); ok(null); } else partes.push(d); });
+      res.on('end', () => ok(total <= max ? Buffer.concat(partes) : null));
+    });
+    r.on('timeout', () => r.destroy());
+    r.on('error', () => ok(null));
+  });
+}
+async function logoDoJogo(appId) {
+  const id = String(appId || '').replace(/\D/g, '');
+  if (!id) return null;
+  const arq = path.join(LOGOS, id + '.png');
+  if (fs.existsSync(arq)) return fs.statSync(arq).size ? arq : null;
+  for (const url of daSteam(id).logo.reverse()) {
+    const png = await baixar(url, 2 * 1024 * 1024);
+    // Só um PNG de verdade: a assinatura dos oito primeiros bytes.
+    if (png && png.length > 8 && png.readUInt32BE(0) === 0x89504e47) {
+      fs.mkdirSync(LOGOS, { recursive: true });
+      fs.writeFileSync(arq, png);
+      return arq;
+    }
+  }
+  return null;
+}
+
+module.exports = { daSteam, imagemDaPagina, resolver, logoDoJogo, CACHE };

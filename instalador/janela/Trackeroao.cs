@@ -1038,6 +1038,15 @@ static class Bandeja {
     using (StreamReader sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd();
   }
 
+  static byte[] PegarBytes(string url) {
+    HttpWebRequest r = (HttpWebRequest)WebRequest.Create(url);
+    r.Timeout = 8000;
+    r.Proxy = null;
+    using (HttpWebResponse resp = (HttpWebResponse)r.GetResponse())
+    using (Stream s = resp.GetResponseStream())
+    using (MemoryStream m = new MemoryStream()) { s.CopyTo(m); return m.ToArray(); }
+  }
+
   static string Pegar(string url) {
     HttpWebRequest r = (HttpWebRequest)WebRequest.Create(url);
     r.Timeout = 3000;
@@ -1089,7 +1098,8 @@ static class Bandeja {
     menu.ForeColor = Tema.Texto;
     menu.ShowImageMargin = true;
     menu.ShowCheckMargin = false;
-    menu.ImageScalingSize = new Size(20, 20);
+    // A coluna das imagens e larga o bastante para o logotipo de cada jogo.
+    menu.ImageScalingSize = new Size(44, 22);
     menu.Padding = new Padding(6, 8, 6, 8);
     menu.Font = new Font("Segoe UI", 9.5f);
     Font negrito = new Font("Segoe UI Semibold", 10f);
@@ -1116,11 +1126,22 @@ static class Bandeja {
     System.Collections.Generic.List<ToolStripItem> itensDeJogo = new System.Collections.Generic.List<ToolStripItem>();
     string[] jogos = new string[0];
     object trava = new object();
+    // O logotipo oficial de cada jogo, de fundo transparente, pedido ao
+    // servico uma vez por jogo; sem logotipo, fica o selo com a inicial.
+    System.Collections.Generic.Dictionary<string, Bitmap> logos = new System.Collections.Generic.Dictionary<string, Bitmap>();
     Action lerJogos = delegate {
       ThreadPool.QueueUserWorkItem(delegate {
         try {
           string txt = Pegar(base_ + "bandeja.txt");
-          lock (trava) jogos = txt.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+          string[] lidos = txt.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+          lock (trava) jogos = lidos;
+          foreach (string linha in lidos) {
+            string chave = linha.Split('\t')[0];
+            lock (trava) { if (logos.ContainsKey(chave)) continue; }
+            Bitmap logo = null;
+            try { logo = Tema.Logo(PegarBytes(base_ + "logo-bandeja?chave=" + Uri.EscapeDataString(chave))); } catch { logo = null; }
+            lock (trava) logos[chave] = logo;
+          }
         } catch { }
       });
     };
@@ -1135,7 +1156,9 @@ static class Bandeja {
         if (c.Length < 3) continue;
         string chave = c[0], nomeJogo = c[1];
         bool temPagina = c[2] == "1";
-        ToolStripMenuItem j = item(nomeJogo, Tema.Selo(nomeJogo));
+        Bitmap logo = null;
+        lock (trava) logos.TryGetValue(chave, out logo);
+        ToolStripMenuItem j = item(nomeJogo, logo != null ? (Image)logo : Tema.Selo(nomeJogo));
         j.Click += delegate { abrir(temPagina ? "#" + chave : "#"); };
         menu.Items.Insert(onde++, j);
         itensDeJogo.Add(j);
@@ -1373,6 +1396,46 @@ class Tema : ToolStripProfessionalRenderer {
   }
 
   protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e) { }
+
+  // O logotipo de um jogo: o PNG transparente, sem a margem vazia em volta,
+  // encaixado sem deformar numa faixa de 44 x 22. Null se nao for imagem.
+  public static Bitmap Logo(byte[] png) {
+    if (png == null || png.Length < 8) return null;
+    using (MemoryStream m = new MemoryStream(png))
+    using (Bitmap orig = new Bitmap(m)) {
+      Bitmap src = new Bitmap(orig.Width, orig.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+      using (Graphics g = Graphics.FromImage(src)) g.DrawImage(orig, 0, 0, orig.Width, orig.Height);
+      int x0 = src.Width, y0 = src.Height, x1 = -1, y1 = -1;
+      System.Drawing.Imaging.BitmapData d = src.LockBits(new Rectangle(0, 0, src.Width, src.Height),
+        System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+      byte[] px = new byte[d.Stride * src.Height];
+      Marshal.Copy(d.Scan0, px, 0, px.Length);
+      src.UnlockBits(d);
+      for (int y = 0; y < src.Height; y++) {
+        for (int x = 0; x < src.Width; x++) {
+          if (px[y * d.Stride + x * 4 + 3] > 24) {
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+          }
+        }
+      }
+      if (x1 < 0) { src.Dispose(); return null; }
+      Rectangle corte = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+      float escala = Math.Min(44f / corte.Width, 22f / corte.Height);
+      int w = Math.Max(1, (int)Math.Round(corte.Width * escala)), h = Math.Max(1, (int)Math.Round(corte.Height * escala));
+      Bitmap bmp = new Bitmap(44, 22, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+      using (Graphics g = Graphics.FromImage(bmp)) {
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.DrawImage(src, new Rectangle((44 - w) / 2, (22 - h) / 2, w, h), corte, GraphicsUnit.Pixel);
+      }
+      src.Dispose();
+      return bmp;
+    }
+  }
 
   // O selo de um jogo: um quadrado arredondado na cor tirada do nome, com a inicial.
   public static Bitmap Selo(string nome) {

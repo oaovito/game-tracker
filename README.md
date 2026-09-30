@@ -216,8 +216,12 @@ estilo da aplicação, e não no do Windows: fundo escuro, texto claro, cantos
 arredondados no Windows 11 e o verde-limão como destaque do item sob o mouse
 (vermelho, no "Fechar"). A organização segue a do menu da Steam. No topo fica
 a linha com o ícone, o nome e a versão; abaixo dela, os jogos instalados ou
-vigiados, do jogado por último ao mais antigo, até cinco, cada um com um selo
-da cor dele e a inicial do nome. Um clique num jogo abre a janela na página de
+vigiados, do jogado por último ao mais antigo, até cinco, cada um com o
+logotipo oficial do jogo, o PNG de fundo transparente da Steam, sem a margem
+vazia em volta e encaixado numa faixa de 44 por 22 pixels. O serviço baixa o
+logotipo uma vez (rota local `/logo-bandeja`) e o guarda em
+`sync/cache/logos`; jogo sem logotipo conhecido fica com um selo da cor dele e
+a inicial do nome. Um clique num jogo abre a janela na página de
 progresso dele, ou na tela inicial para quem ainda não tem página. A lista
 vem da rota local `/bandeja.txt` e é lida em segundo plano, ao acender o ícone
 e a cada vez que o menu fecha, de modo que abrir o menu não espera nada.
