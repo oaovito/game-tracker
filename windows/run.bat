@@ -20,7 +20,7 @@ echo.
 echo   Iniciando... (Ctrl+C para parar)
 echo.
 
-node sync\main.js
+node sync\main.js --manual
 if errorlevel 1 (
   echo.
   echo   O processo terminou com erro. Rode "npm run selftest" para diagnosticar.

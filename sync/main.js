@@ -672,8 +672,10 @@ const PEDIDO = path.join(__dirname, 'abrir.pedido');
 const COM_WINDOWS = path.join(__dirname, 'iniciar-com-windows.flag');
 
 function podeSubir(reinicio) {
-  // No terminal é alguém rodando à mão, e fora do Windows não há tarefa.
-  if (process.platform !== 'win32' || process.stdout.isTTY) return true;
+  // Fora do Windows não há tarefa; `--manual` (o `npm start`) é alguém
+  // rodando à mão. O console não serve de sinal: a tarefa agendada também
+  // pode subir o node com um console próprio.
+  if (process.platform !== 'win32' || process.argv.includes('--manual')) return true;
   const idade = (f) => { try { return Date.now() - fs.statSync(f).mtimeMs; } catch (e) { return Infinity; } };
   // Vale o pedido recente e feito depois do último Fechar.
   if (idade(PEDIDO) < 2 * 60 * 1000 && idade(PEDIDO) < idade(FECHADO)) {

@@ -325,6 +325,11 @@ npm start
 Ou dois cliques em `windows\run.bat`. Pare o serviço antes, senão os dois disputam a
 porta 8777.
 
+Os dois passam `--manual` ao serviço. Sem essa marca, no Windows, o serviço só
+fica de pé quando foi aberto pela janela, pelo atalho, na volta de uma
+atualização ou com "Iniciar com o Windows" marcado; qualquer outro início sai
+na hora, e é isso que impede o Trackeroao de subir sozinho.
+
 Isso sobe duas coisas ao mesmo tempo. A primeira é o poll do processo, que a
 cada cinco segundos checa se o `sekiro.exe` está rodando; o watcher do save só
 existe enquanto o jogo está aberto, de modo que com o jogo fechado não há

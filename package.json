@@ -4,7 +4,7 @@
   "private": true,
   "description": "Le o save do jogo (somente leitura) e alimenta a pagina de progresso em HTML.",
   "scripts": {
-    "start": "node sync/main.js",
+    "start": "node sync/main.js --manual",
     "sync": "node sync/parse.js",
     "serve": "node sync/serve.js",
     "discover": "node sync/discover.js",
