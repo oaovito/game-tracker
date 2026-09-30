@@ -802,6 +802,10 @@ async function run() {
   vigiarInstalacao(hibernarAgora);
   vigiarJogosNovos();
 
+  // Pastas que uma atualização antiga esvaziou ao mudar arquivos de lugar.
+  const varridas = atualizar.varrerPastasVazias(null, atualizar.PASTAS_LEGADO);
+  if (varridas.length) console.log('  [atualizar] pastas vazias removidas: ' + varridas.join(', '));
+
   /*
    * O ciclo se reagenda no fim de cada volta, em vez de um setInterval: é o
    * que deixa a atualização caber entre duas voltas. A próxima só é marcada

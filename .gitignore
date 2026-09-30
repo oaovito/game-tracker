@@ -45,4 +45,4 @@ sync/abrir.pedido
 sync/iniciar-com-windows.flag
 # Se a janela está à vista ou escondida na bandeja, para a troca da atualização.
 sync/janela.estado
-ios/build/
+docs/celular/ios/build/

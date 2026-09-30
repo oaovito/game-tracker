@@ -62,7 +62,7 @@ param([string]$Saida = $PSScriptRoot, [string]$Versao = '', [string]$App = '')
 
 $ErrorActionPreference = 'Stop'
 $raiz = $PSScriptRoot
-$projeto = Split-Path $raiz -Parent
+$projeto = Split-Path (Split-Path $raiz -Parent) -Parent
 New-Item -ItemType Directory -Path $Saida -Force | Out-Null
 
 $csc = Get-ChildItem "$env:WINDIR\Microsoft.NET\Framework64" -Filter csc.exe -Recurse -ErrorAction SilentlyContinue |
@@ -91,11 +91,11 @@ $tmp = Join-Path $env:TEMP ("trackeroao-exe-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 
 <#
-  O icone: o do Trackeroao, ja pronto em instalador/icone/trackeroao.ico, com
+  O icone: o do Trackeroao, ja pronto em windows/instalador/icone/trackeroao.ico, com
   todos os tamanhos que o Windows pede (16 a 256). O desenho vive em SVG na
   mesma pasta; o .ico e so a forma que o compilador aceita.
 #>
-$icone = Join-Path $projeto 'instalador\icone\trackeroao.ico'
+$icone = Join-Path $projeto 'windows\instalador\icone\trackeroao.ico'
 if (-not (Test-Path $icone)) { throw "faltou o icone: $icone" }
 
 $manifesto = Join-Path $tmp 'trackeroao.manifest'
@@ -335,7 +335,7 @@ static class Programa {
       texto = File.ReadAllText(ensaio, Encoding.UTF8);
     } else if (desinstalando) {
       texto = null;
-      string local = destino == null ? null : Path.Combine(destino, "instalador\\desinstalar.ps1");
+      string local = destino == null ? null : Path.Combine(destino, "windows\\instalador\\desinstalar.ps1");
       // O desinstalar.ps1 da propria instalacao e o da versao instalada. So
       // serve se ja souber falar com esta janela; senao, o embutido.
       if (local != null && File.Exists(local)) {

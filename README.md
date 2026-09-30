@@ -36,7 +36,12 @@ lista fixa de jogos populares, para que as telas mostrem arte de verdade.
 
 ![A janela do código QR para levar o Trackeroao ao celular](docs/amostras/celular-qr.png)
 
-<img src="docs/amostras/celular.png" alt="A página de progresso do Sekiro no celular" width="320"> <img src="docs/amostras/ios.png" alt="O passo a passo para instalar o aplicativo de iOS" width="320">
+No celular, as mesmas telas em pé. A tela inicial cabe inteira, sem rolar, do
+aparelho pequeno ao grande:
+
+<img src="docs/amostras/celular-inicio.png" alt="A tela inicial no celular" width="240"> <img src="docs/amostras/celular-inicio-pequeno.png" alt="A tela inicial num celular de tela pequena" width="240"> <img src="docs/amostras/celular-todos.png" alt="A lista completa de jogos no celular" width="240">
+
+<img src="docs/amostras/celular.png" alt="A página de progresso do Sekiro no celular" width="240"> <img src="docs/amostras/ios.png" alt="O passo a passo para instalar o aplicativo de iOS" width="240">
 
 ## Instalando
 
@@ -58,18 +63,18 @@ instala o Node via winget se não houver, baixa o código da release mais recent
 sem exigir git, registra o serviço e roda a suíte no fim para provar que
 funcionou naquela máquina. Ele atualiza uma instalação existente em vez de
 zerá-la, preservando os arquivos de estado. O executável é gerado por
-`instalador/construir-exe.ps1` a partir de `instalador/instalar.ps1` e
-`instalador/desinstalar.ps1`, e não fica versionado: nasce a cada release.
+`windows/instalador/construir-exe.ps1` a partir de `windows/instalador/instalar.ps1` e
+`windows/instalador/desinstalar.ps1`, e não fica versionado: nasce a cada release.
 
 Dentro do instalador vai também a janela do Trackeroao, descrita adiante, que
 é um programa compilado e por isso não viaja com o código. Ela é gerada antes,
-por `instalador/construir-janela.ps1`, e seus arquivos entram no `.exe` como
+por `windows/instalador/construir-janela.ps1`, e seus arquivos entram no `.exe` como
 recursos; na instalação, são postos em `<instalação>\app`. A mesma pasta
 recebe o aplicativo de Android, que o computador entrega ao celular. A release
 traz dois arquivos: o instalador do Windows, `trackeroao-instalador.exe`, e o
 aplicativo de Android, `trackeroao.apk`.
 
-Toda release sai sozinha. Basta o arquivo de notas `releases/vX.Y.Z.md`
+Toda release sai sozinha. Basta o arquivo de notas `.github/releases/vX.Y.Z.md`
 chegar à `main`: `.github/workflows/release.yml` valida a sintaxe de todos os
 scripts do PowerShell, gera a janela e compila o `.exe` num runner Windows a
 partir dos arquivos daquela mesma versão, confere num Windows de verdade que o
@@ -105,7 +110,7 @@ mesmo para a pasta temporária e entrega a execução à cópia.
 
 As duas caixas falam os mesmos doze idiomas da página. O script não escreve
 frases: manda à caixa um identificador de texto, e é a classe `Textos`, dentro
-de `instalador/construir-exe.ps1`, que o converte na frase do idioma em uso.
+de `windows/instalador/construir-exe.ps1`, que o converte na frase do idioma em uso.
 Esse idioma é o escolhido na página, quando uma instalação anterior guardou a
 escolha, e, na falta dela, o do Windows. O nome Trackeroao nunca é traduzido.
 
@@ -129,7 +134,7 @@ arquivos do próprio usuário e escuta numa porta alta.
 No Windows, o progresso é visto numa janela própria, e não numa aba do
 navegador: sem barra de endereço, sem abas e sem link à vista. O programa é
 `<instalação>\app\Trackeroao.exe`, compilado a partir de
-`instalador/janela/Trackeroao.cs`. Por dentro, a janela é o WebView2, o
+`windows/instalador/janela/Trackeroao.cs`. Por dentro, a janela é o WebView2, o
 componente de página que o Windows 10 e o 11 já trazem, com o mesmo motor do
 Edge; ela mostra a página que o serviço serve no próprio computador, num
 endereço interno que nunca aparece. Links para fora, como a loja de um jogo,
@@ -192,7 +197,7 @@ bandeja, sem abrir a janela.
 Num Windows 10 antigo, sem o componente WebView2 instalado, a página abre numa
 janela de aplicativo do Edge, igualmente sem barra de endereço.
 
-`instalador/construir-janela.ps1` gera a janela a cada release. Para compilar
+`windows/instalador/construir-janela.ps1` gera a janela a cada release. Para compilar
 e rodar, ela precisa de três arquivos do SDK público do WebView2, distribuído
 pela Microsoft no NuGet sob licença BSD. O pacote é baixado numa versão fixa e
 conferido pelo SHA-256 antes de qualquer uso, de modo que um pacote diferente
@@ -221,7 +226,7 @@ fundo: o anel ocupa o quadro inteiro, e o que fica fora dele é transparente,
 tanto na bandeja quanto no atalho da área de trabalho. Um aro escuro fino em
 volta do anel e do T mantém o desenho legível também na barra de tarefas clara.
 Os tamanhos pequenos (16, 20 e 24 pixels) são desenhados à parte, alinhados ao
-pixel, em `instalador/icone/`. O anel
+pixel, em `windows/instalador/icone/`. O anel
 aberto em arco fica reservado para um único estado: enquanto uma atualização
 pedida pela bandeja está em andamento, o arco gira no lugar do anel, e o ícone
 volta ao normal quando ela termina (ou em até três minutos, se o serviço não
@@ -1046,22 +1051,22 @@ O endereço varia de pessoa para pessoa e de rede para rede, e o código é
 montado pelo serviço a cada vez que o botão é tocado; basta apontar a câmera
 do telefone para ele.
 
-**No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em `ios/`,
+**No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em `docs/celular/ios/`,
 instalado pelo AltStore, e não pela App Store. O código QR do botão "iOS" abre,
 no telefone, uma página servida pelo próprio computador (`/ios`, a partir de
 `sync/ios.html`) com o passo a passo, que cabe inteiro na tela, sem rolagem, no
 visual do aplicativo: o primeiro passo tem o botão para baixar o AltStore PAL,
 e no meio da tela um botão verde-limão, pulsando devagar, baixa o Trackeroao
-para iOS, abrindo no AltStore PAL a fonte do Trackeroao (`altstore/fonte.json`,
+para iOS, abrindo no AltStore PAL a fonte do Trackeroao (`docs/celular/altstore/fonte.json`,
 lida pelo endereço bruto do GitHub). Se o AltStore PAL não estiver no aparelho,
 o botão tenta o AltStore comum. As versões novas chegam pelo próprio AltStore, porque a fonte é
 atualizada a cada release. O aplicativo funciona como o de Android: toda a
-página passa por uma ponte (`ios/src/Ponte.swift`, no esquema `trackeroao://`)
+página passa por uma ponte (`docs/celular/ios/src/Ponte.swift`, no esquema `trackeroao://`)
 que busca cada arquivo no computador por `trackeroao.local`, guarda a última
 cópia de cada um e a entrega quando o computador está fora do alcance. Links
 para outros sites abrem no Safari, e o aplicativo só lê, como o de Android.
 
-O `.ipa` é construído num Mac do GitHub por `ios/construir.sh`, sem projeto do
+O `.ipa` é construído num Mac do GitHub por `docs/celular/ios/construir.sh`, sem projeto do
 Xcode: o `swiftc` compila, o `actool` monta o ícone e o pacote é zipado. Ele
 sai sem assinatura, e o AltStore o assina no próprio aparelho, com a conta
 Apple de quem instala. A distribuição pelo AltStore PAL, a loja alternativa
@@ -1085,7 +1090,7 @@ sem conexão com o computador; a cópia é exibida quando a página já está
 carregada e perde o contato com ele.
 
 **No Android**, o Trackeroao é um aplicativo nativo, cujo código está em
-`android/`. Ele encontra o computador sozinho, perguntando por
+`docs/celular/android/`. Ele encontra o computador sozinho, perguntando por
 `trackeroao.local` por mDNS na rede de casa, sem que ninguém precise digitar
 endereço algum, e guarda o último endereço que funcionou para responder mais
 depressa da próxima vez. Tudo o que a página pede passa por ele: cada resposta
@@ -1114,7 +1119,7 @@ o mesmo `trackeroao.apk` fica ao lado do instalador do Windows. Usa-se o IP, e n
 `.local`, porque nem todo navegador de Android resolve esse nome; o
 aplicativo, depois de instalado, resolve.
 
-O aplicativo é compilado sem Gradle, por `android/construir.sh`, que usa
+O aplicativo é compilado sem Gradle, por `docs/celular/android/construir.sh`, que usa
 apenas as ferramentas de linha de comando do SDK do Android: `aapt2`, `javac`,
 `d8`, `zipalign` e `apksigner`.
 
@@ -1181,33 +1186,27 @@ trackeroao/
   trackeroao.html             a página (abra pelo servidor, não por file://)
   package.json                scripts npm (sem dependências)
 
-  instalador/                 o que vira o .exe da release
-    instalar.ps1              instalação do zero, ou por cima de uma existente
-    desinstalar.ps1           o oposto exato do instalar.ps1
-    construir-exe.ps1         compila os dois num .exe só, com a janela dentro
-                              e os textos das caixas em doze idiomas (Textos)
-    construir-janela.ps1      compila a janela do Windows; baixa o SDK do
-                              WebView2 do NuGet, em versão fixa e conferida
-                              pelo SHA-256
-    janela/
-      Trackeroao.cs           a janela do Trackeroao (vira app\Trackeroao.exe)
-
-  android/                    o aplicativo de Android
-    construir.sh              gera o .apk sem Gradle (aapt2, javac, d8,
-                              zipalign, apksigner)
-    AndroidManifest.xml       só permissões de rede e de Wi-Fi
-    src/                      a tela, a busca do computador por mDNS e a
-                              cópia local das leituras
-    res/                      ícones e tema
-
   windows/                    atalhos para quem roda a partir de um clone
     run.bat                   execução manual
     install-sync-service.ps1  registra a tarefa agendada (não precisa de admin)
     uninstall-sync-service.ps1  remove a tarefa e encerra o serviço
     reativar.ps1              volta do arquivamento, se o jogo for reinstalado
     liberar-porta.ps1         abre a porta 8777 na rede local (pede administrador)
+    instalador/               o que vira o .exe da release
+      instalar.ps1            instalação do zero, ou por cima de uma existente
+      desinstalar.ps1         o oposto exato do instalar.ps1
+      construir-exe.ps1       compila os dois num .exe só, com a janela dentro
+                              e os textos das caixas em doze idiomas (Textos)
+      construir-janela.ps1    compila a janela do Windows; baixa o SDK do
+                              WebView2 do NuGet, em versão fixa e conferida
+                              pelo SHA-256
+      icone/                  o ícone do Trackeroao, em cada tamanho
+      janela/
+        Trackeroao.cs         a janela do Trackeroao (vira app\Trackeroao.exe)
 
-  releases/                   uma nota por versão; cada uma vira uma release
+  .github/
+    releases/                 uma nota por versão; cada uma vira uma release
+    workflows/                release, catálogo de jogos, iOS e imagens de preview
 
   docs/                       arquivos estáticos da página, servidos localmente
     icones/                   arte dos chefes, dos Headless e das conquistas
@@ -1216,6 +1215,18 @@ trackeroao/
     app/                      ícones do aplicativo (tela inicial e janela)
     index.html                cópia da página, remanescente do antigo site
     progress.json             progresso saneado, remanescente do antigo site
+    amostras/                 as imagens de preview deste README
+    celular/                  os aplicativos de celular
+      android/                o aplicativo de Android
+        construir.sh          gera o .apk sem Gradle (aapt2, javac, d8,
+                              zipalign, apksigner)
+        AndroidManifest.xml   só permissões de rede e de Wi-Fi
+        src/                  a tela, a busca do computador por mDNS e a
+                              cópia local das leituras
+        res/                  ícones e tema
+      ios/                    o aplicativo de iOS (Swift, construído num Mac
+                              do GitHub por construir.sh)
+      altstore/               fonte.json, a fonte do AltStore PAL
 
   sync/
     main.js                   poll do processo + watcher + servidor + mDNS
@@ -1288,7 +1299,7 @@ máquina: o `progress.json` cru, com o caminho do save; os arquivos de estado do
 contadores, que carregam carimbo de hora; o log; os despejos de memória; as
 cópias de hibernação, que contêm o save e portanto o Steam ID; o idioma
 escolhido (`sync/idioma.json`); a marca de "Fechar" (`sync/fechado.flag`); e o
-que o `android/construir.sh` gera, em `android/build/`.
+que o `docs/celular/android/construir.sh` gera, em `docs/celular/android/build/`.
 
 ## Se der problema
 

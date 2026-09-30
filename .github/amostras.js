@@ -35,6 +35,10 @@ async function main() {
     { arq: 'inicio.png', hash: '', w: 1320, h: 860 },
     { arq: 'sekiro.png', hash: 'sekiro', w: 1320, h: 860 },
     { arq: 'todos.png', hash: 'all', w: 1320, h: 860 },
+    // As mesmas telas no celular, em pé: um aparelho grande e um pequeno.
+    { arq: 'celular-inicio.png', hash: '', w: 390, h: 844, escala: 2 },
+    { arq: 'celular-inicio-pequeno.png', hash: '', w: 375, h: 667, escala: 2 },
+    { arq: 'celular-todos.png', hash: 'all', w: 390, h: 844, escala: 2 },
     { arq: 'celular.png', hash: 'sekiro', w: 390, h: 844, escala: 2 },
     { arq: 'celular-qr.png', hash: '', w: 1320, h: 860, qr: true },
   ];

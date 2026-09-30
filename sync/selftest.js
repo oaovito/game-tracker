@@ -941,7 +941,7 @@ check('quem clonar recebe as artes dos Headless tambem', () => {
  * e o erro nao vai dizer o motivo.
  */
 check('o instalador nao usa os padroes que o antivirus derruba', () => {
-  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'construir-exe.ps1'), 'utf8');
   const gerado = /\$cs = @"([\s\S]*?)"@/.exec(construir);
   assert(gerado, 'nao achei o C# embutido no construir-exe.ps1');
   /*
@@ -986,15 +986,15 @@ check('o executavel nasce na release, dos scripts desta versao', () => {
   // A release carrega um arquivo so: o desinstalador e o mesmo .exe.
   assert(!/desinstalador\.exe/.test(wf.split('gh release create')[1] || ''),
     'a release anexa um desinstalador separado; ele e o proprio instalador, copiado na instalacao');
-  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'construir-exe.ps1'), 'utf8');
   assert(/Embutir 'instalar\.ps1'/.test(construir) && /Embutir 'desinstalar\.ps1'/.test(construir),
     'o .exe nao carrega os dois scripts');
   return 'gerado no runner Windows, um .exe que instala e desinstala';
 });
 
 check('existe o desinstalador, e ele desfaz o que o instalador fez', () => {
-  const des = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'desinstalar.ps1'), 'utf8');
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
+  const des = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'desinstalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'instalar.ps1'), 'utf8');
   assert(/Unregister-ScheduledTask/.test(des) && /SekiroProgressSync/.test(des), 'nao tira a tarefa (nem a de nome antigo)');
   assert(/trackeroao\.lnk/.test(des), 'nao tira o atalho');
   assert(/Remove-NetFirewallRule/.test(des), 'nao tira a regra de firewall');
@@ -1018,7 +1018,7 @@ check('existe o desinstalador, e ele desfaz o que o instalador fez', () => {
 check('pela janela, os scripts nao perguntam nem abrem outra janela', () => {
   const problemas = [];
   for (const nome of ['instalar.ps1', 'desinstalar.ps1']) {
-    const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', nome), 'utf8');
+    const src = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', nome), 'utf8');
     if (!/TRACKEROAO_GUI/.test(src)) problemas.push(nome + ' nao conhece a janela');
     if (!/if \(-not \$gui -and -not \$souAdmin/.test(src)) problemas.push(nome + ' pede administrador por conta propria');
     const leTecla = src.split('\n').filter((l) => /ReadKey/.test(l));
@@ -1030,7 +1030,7 @@ check('pela janela, os scripts nao perguntam nem abrem outra janela', () => {
     if (soltos.length) problemas.push(nome + ' chama programa de fora sem Nativo: ' + soltos[0].trim());
   }
   assert(problemas.length === 0, problemas.join('; '));
-  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'construir-exe.ps1'), 'utf8');
+  const construir = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'construir-exe.ps1'), 'utf8');
   assert(/\/target:winexe/.test(construir), 'o .exe voltou a ser de console');
   assert(/CreateNoWindow = true/.test(construir), 'o PowerShell apareceria numa janela de console');
   return 'sem console, sem pergunta, um pedido de administrador so, feito pelo .exe';
@@ -1188,7 +1188,7 @@ check('existe o atalho, e ele nao e um link de internet', () => {
   assert(/url & "abrir"/.test(src), 'o atalho nao acende a bandeja');
   assert(/shell\.Run url/.test(src), 'o atalho nao abre a pagina');
 
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'instalar.ps1'), 'utf8');
   assert(/CreateShortcut/.test(inst), 'o instalador nao cria atalho nenhum');
   assert(/abrir\.vbs/.test(inst), 'o atalho do instalador nao aponta para o abrir.vbs');
   assert(/UsuarioOriginal/.test(inst.slice(inst.indexOf('4/6  Atalho'), inst.indexOf('5/6  Rede'))),
@@ -1585,7 +1585,7 @@ check('a porta da rede local e liberada pelo perfil em uso, nao no escuro', () =
     'a existencia da regra e conferida por texto traduzivel: quebra em Windows de outro idioma');
 
   // E o instalador delega, em vez de manter uma segunda copia da logica.
-  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'instalador', 'instalar.ps1'), 'utf8');
+  const inst = fs.readFileSync(path.join(RAIZ_PROJETO, 'windows', 'instalador', 'instalar.ps1'), 'utf8');
   assert(/liberar-porta\.ps1/.test(inst), 'o instalador nao chama o script da porta');
   assert(!/New-NetFirewallRule/.test(inst),
     'o instalador tem a sua propria copia da regra: duas copias divergem');
@@ -1936,7 +1936,7 @@ function resumo() {
    *
    * "Atualiza sempre no Releases" é regra, e regra que depende de lembrança
    * quebra em silêncio. O .exe agora nasce na própria release, então o que
-   * sobra conferir é que a última nota escrita em releases/ virou release
+   * sobra conferir é que a última nota escrita em .github/releases/ virou release
    * publicada: é dela que as instalações se atualizam sozinhas, e uma nota que
    * ficou sem release deixa todo mundo na versão anterior.
    *
@@ -1950,11 +1950,11 @@ function resumo() {
    * offline não é defeito do projeto.
    */
   console.log('\n  === 17. A release publicada ===');
-  const NOME_17 = 'a última versão de releases/ está publicada, com o instalador';
+  const NOME_17 = 'a última versão de .github/releases/ está publicada, com o instalador';
   try {
     const versao = (t) => t.replace(/^v/, '').split('.').map(Number);
     const maior = (a, b) => { const x = versao(a), y = versao(b); for (let k = 0; k < 3; k++) if (x[k] !== y[k]) return x[k] > y[k] ? a : b; return a; };
-    const notas = fs.readdirSync(path.join(RAIZ_PROJETO, 'releases'))
+    const notas = fs.readdirSync(path.join(RAIZ_PROJETO, '.github', 'releases'))
       .filter((n) => /^v\d+\.\d+\.\d+\.md$/.test(n)).map((n) => n.slice(0, -3));
     const esperada = notas.reduce((a, b) => maior(a, b), notas[0]);
 
@@ -1979,7 +1979,7 @@ function resumo() {
     const falha = (msg) => { fail++; failures.push(NOME_17); console.log('   FALHA ' + NOME_17 + '\n            ' + msg); };
 
     if (!esperada) {
-      console.log('   --    ' + NOME_17 + '  -  nenhuma nota em releases/');
+      console.log('   --    ' + NOME_17 + '  -  nenhuma nota em .github/releases/');
     } else if (!release) {
       console.log('   --    ' + NOME_17 + '  -  sem alcançar a API do GitHub');
     } else if (maior(release.tag_name, esperada) !== release.tag_name) {

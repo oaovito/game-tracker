@@ -402,7 +402,7 @@ if ($Exe -and (Test-Path $Exe)) {
     Nota "nao registrei o desinstalador: $($_.Exception.Message)"
   }
 } else {
-  Nota 'rodando sem o .exe: sem desinstalador; para remover, instalador\desinstalar.ps1'
+  Nota 'rodando sem o .exe: sem desinstalador; para remover, windows\instalador\desinstalar.ps1'
 }
 
 # =============================================================== 3. servico

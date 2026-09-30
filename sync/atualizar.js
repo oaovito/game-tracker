@@ -59,6 +59,40 @@ const LEGADO = [
   'trackeroao-instalador.exe',
 ];
 
+/*
+ * Pastas que a 1.8.8 levou para dentro de outras (windows\instalador,
+ * docs\celular e .github\releases). A cópia só apaga arquivos; sem esta
+ * varredura a pasta antiga, já vazia, ficaria na instalação ao lado da nova.
+ */
+const PASTAS_LEGADO = ['instalador', 'android', 'ios', 'altstore', 'releases'];
+
+/** Verdadeiro se não há arquivo nenhum abaixo de `d`, só pastas. */
+function soPastas(d) {
+  for (const n of fs.readdirSync(d)) {
+    const c = path.join(d, n);
+    if (!fs.statSync(c).isDirectory() || !soPastas(c)) return false;
+  }
+  return true;
+}
+
+/** Remove, das pastas em `rels`, as que não guardam arquivo nenhum. */
+function varrerPastasVazias(raiz, rels) {
+  raiz = raiz || RAIZ;
+  const removidas = [];
+  const ordem = [...new Set(rels)].sort((a, b) => b.split('/').length - a.split('/').length);
+  for (const rel of ordem) {
+    const alvo = dentro(raiz, rel);
+    if (!alvo) continue;
+    try {
+      if (fs.statSync(alvo).isDirectory() && soPastas(alvo)) {
+        fs.rmSync(alvo, { recursive: true });
+        removidas.push(rel);
+      }
+    } catch (e) { /* não existe, ou em uso: fica para a próxima */ }
+  }
+  return removidas;
+}
+
 function lerEstado(raiz) {
   try { return JSON.parse(fs.readFileSync(path.join(raiz, NOME_ESTADO), 'utf8')); } catch (e) { return null; }
 }
@@ -127,6 +161,13 @@ function aplicarPasta(fonte, tag, raiz) {
     if (!alvo || !fs.existsSync(alvo)) continue;
     try { fs.unlinkSync(alvo); removidos.push(rel); } catch (e) { /* em uso: sai na próxima */ }
   }
+
+  // As pastas que esvaziaram junto, da mais funda para a raiz.
+  const pastas = [...PASTAS_LEGADO];
+  for (const rel of removidos) {
+    for (let d = path.posix.dirname(rel); d && d !== '.'; d = path.posix.dirname(d)) pastas.push(d);
+  }
+  varrerPastasVazias(raiz, pastas);
 
   gravarEstado(raiz, { tag, arquivos: novos, em: new Date().toISOString() });
   return { copiados: novos.length, removidos };
@@ -391,7 +432,7 @@ async function situacao(raiz) {
   return { instalada, ultima, atual: instalada === ultima };
 }
 
-module.exports = { verificar, situacao, aoTrocarJanela, maisNova, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
+module.exports = { verificar, situacao, aoTrocarJanela, maisNova, aplicarPasta, listar, lerEstado, varrerPastasVazias, EXIGIDOS, LEGADO, PASTAS_LEGADO, PRESERVAR, NOME_ESTADO };
 
 /*
  * Linha de comando.

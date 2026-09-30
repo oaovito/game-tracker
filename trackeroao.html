@@ -3261,6 +3261,42 @@
     .vista-hub .made-by { flex: none; margin-top: clamp(8px, 1.6vh, 64px); padding: clamp(8px, 1.4vh, 22px) 0 0; }
   }
 
+  /* No celular em pé a tela inicial também cabe inteira, sem rolar. A arte do
+     palco encolhe com a altura que sobra (nunca passa do 16:9 de antes), os
+     pôsteres medem pela altura da tela e os dois atalhos ficam lado a lado.
+     O trilho continua deslizando para o lado, como antes. */
+  @media (max-width: 640px) {
+    .vista-hub .wrap {
+      height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      display: flex; flex-direction: column; padding-block: 0.6rem 0.4rem;
+    }
+    .vista-hub .topbar { flex: none; }
+    .vista-hub #hub { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .vista-hub .hub-topo { flex: none; margin-bottom: clamp(6px, 1.6dvh, 18px); }
+    .vista-hub .palco { flex: 1 1 auto; min-height: 0; justify-content: flex-end; }
+    .vista-hub .palco-arte { flex: 1 1 0; min-height: 2.5rem; max-height: 56.25vw; aspect-ratio: auto; }
+    .vista-hub .palco-info { flex: none; gap: clamp(6px, 1.2dvh, 14px); padding-bottom: clamp(4px, 1.2dvh, 20px); }
+    .vista-hub .palco-logo { max-height: min(5rem, 9dvh); }
+    .vista-hub .palco-nome { font-size: clamp(1.3rem, 3.6dvh, 1.6rem); }
+    .vista-hub .palco-abre { padding: clamp(8px, 1.3dvh, 12px) 22px; }
+    .vista-hub .trilho-cabeca { flex: none; margin: clamp(6px, 1.6dvh, 30px) 0 0; }
+    .vista-hub .trilho {
+      flex: none; padding-block: clamp(8px, 1.4dvh, 16px) clamp(6px, 1.4dvh, 20px);
+      grid-auto-columns: min(38vw, 14.5dvh);
+    }
+    .vista-hub .jogo-card-nome { margin-top: 6px; }
+    .vista-hub .hub-nota { flex: none; margin-top: 0; }
+    .vista-hub .hub-nota:empty { display: none; }
+    .vista-hub .hub-atalhos {
+      flex: none; margin: clamp(4px, 1.2dvh, 22px) 0 0;
+      display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: center; gap: 10px;
+    }
+    .vista-hub .hub-atalhos .hub-bt { min-width: 0; flex: 1 1 0; white-space: nowrap; letter-spacing: 0.04em; padding-inline: 8px; font-size: min(0.72rem, 3.3vw); }
+    .vista-hub .hub-titulo { font-size: min(1.75rem, 8.4vw); }
+    .vista-hub .made-by { flex: none; margin-top: clamp(6px, 1.4dvh, 64px); padding: clamp(6px, 1.2dvh, 22px) 0 0; }
+  }
+
   /*
    * O que abre alguma coisa leva um "+" no canto, o mesmo em todos os blocos
    * que abrem lista (chefes, Headless, conquistas e a podridão). É fino, como
@@ -9566,7 +9602,7 @@ if (typeof window !== "undefined") {
 
 (function ligarGestos() {
   if (typeof window === "undefined" || typeof document === "undefined" || !window.addEventListener) return;
-  // O aplicativo de iOS (ios/) também pede os gestos à página.
+  // O aplicativo de iOS (docs/celular/ios/) também pede os gestos à página.
   const semSafari = (window.navigator && window.navigator.standalone === true) || window.TRACKEROAO_GESTOS === true;
   if (!semSafari) return;
   const BORDA = 24, MINIMO = 70;

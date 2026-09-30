@@ -61,7 +61,7 @@ static class Programa {
   internal static Icon Icone(Size tamanho) {
     try {
       string raiz = Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath));
-      string ico = Path.Combine(Path.Combine(Path.Combine(raiz, "instalador"), "icone"), "trackeroao.ico");
+      string ico = Path.Combine(raiz, "windows\\instalador\\icone\\trackeroao.ico");
       if (File.Exists(ico)) return new Icon(ico, tamanho);
     } catch { }
     try { return new Icon(Icon.ExtractAssociatedIcon(Application.ExecutablePath), tamanho); } catch { }
@@ -145,7 +145,7 @@ class Janela : Form {
     BackColor = Fundo;
     // O icone da barra de tarefas: o do .exe, que traz todos os tamanhos.
     try {
-      string ico = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "instalador\\icone\\trackeroao.ico");
+      string ico = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath)), "windows\\instalador\\icone\\trackeroao.ico");
       Icon = File.Exists(ico) ? new Icon(ico) : Icon.ExtractAssociatedIcon(Application.ExecutablePath);
     } catch { }
     AutoScaleMode = AutoScaleMode.Dpi;

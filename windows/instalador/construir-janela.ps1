@@ -1,6 +1,6 @@
 <#
 Gera a janela do Trackeroao (app\Trackeroao.exe) a partir de
-instalador\janela\Trackeroao.cs.
+windows\instalador\janela\Trackeroao.cs.
 
 Roda no Windows, a cada release, antes do construir-exe.ps1: o instalador leva
 a janela dentro dele e a poe em <instalacao>\app. A release continua tendo um
@@ -21,7 +21,7 @@ param([string]$Saida = (Join-Path $PSScriptRoot 'app'))
 
 $ErrorActionPreference = 'Stop'
 $raiz = $PSScriptRoot
-$projeto = Split-Path $raiz -Parent
+$projeto = Split-Path (Split-Path $raiz -Parent) -Parent
 
 $versaoSdk = '1.0.4258.31'
 $shaSdk = '56f7f4b8bf9aee4b8efefbbdd4f67d5f74ebd1b100ed0806da71bf76af481aa9'
@@ -52,7 +52,7 @@ try {
   Copy-Item (Join-Path $sdk 'LICENSE.txt') (Join-Path $Saida 'LICENSE-WebView2.txt')
 
   # O icone: o do Trackeroao, ja em .ico com todos os tamanhos (16 a 256).
-  $icone = Join-Path $projeto 'instalador\icone\trackeroao.ico'
+  $icone = Join-Path $projeto 'windows\instalador\icone\trackeroao.ico'
   if (-not (Test-Path $icone)) { throw "faltou o icone: $icone" }
   # Uma copia ao lado do .exe, para os atalhos: um caminho proprio faz o
   # Windows ler o icone de novo, em vez de mostrar o que guardou em cache.

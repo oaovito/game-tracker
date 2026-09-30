@@ -11,7 +11,7 @@ projeto nao tem dependencia nenhuma e nao vai ganhar uma por causa de um
 icone. O NotifyIcon do System.Windows.Forms ja vem no Windows desde sempre e
 faz exatamente isto.
 
-O icone e o do Trackeroao: o mesmo instalador\icone\trackeroao.ico que vai
+O icone e o do Trackeroao: o mesmo windows\instalador\icone\trackeroao.ico que vai
 na janela e no instalador, para quem ve um reconhecer o outro. Se o arquivo
 faltar, o mesmo desenho (anel de progresso e um T) e feito aqui em memoria --
 icone nenhum na bandeja seria pior que um icone desenhado a mao.
@@ -39,7 +39,7 @@ Add-Type -AssemblyName System.Drawing
 #>
 function Novo-Icone {
   $tam = [System.Windows.Forms.SystemInformation]::SmallIconSize
-  $arquivo = Join-Path (Split-Path $PSScriptRoot -Parent) 'instalador\icone\trackeroao.ico'
+  $arquivo = Join-Path (Split-Path $PSScriptRoot -Parent) 'windows\instalador\icone\trackeroao.ico'
   if (Test-Path $arquivo) {
     try { return (New-Object System.Drawing.Icon -ArgumentList $arquivo, $tam.Width, $tam.Height) } catch { }
   }

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Constroi o aplicativo de iOS (ios/build/trackeroao.ipa) num Mac com o Xcode,
+# Constroi o aplicativo de iOS (docs/celular/ios/build/trackeroao.ipa) num Mac com o Xcode,
 # sem projeto do Xcode: swiftc compila, actool monta o icone, e o .ipa e o
 # pacote Payload/Trackeroao.app zipado. O .ipa sai sem assinatura; quem
 # instala (AltStore, SideStore) assina no proprio aparelho.
 #
-#   VERSAO=1.8.6 bash ios/construir.sh
+#   VERSAO=1.8.6 bash docs/celular/ios/construir.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 VERSAO="${VERSAO:-0.0.0}"
@@ -33,4 +33,4 @@ plutil -lint "$APP/Info.plist"
 
 (cd build && zip -qry trackeroao.ipa Payload)
 test -s build/trackeroao.ipa
-echo "ios/build/trackeroao.ipa: $(wc -c < build/trackeroao.ipa) bytes"
+echo "docs/celular/ios/build/trackeroao.ipa: $(wc -c < build/trackeroao.ipa) bytes"

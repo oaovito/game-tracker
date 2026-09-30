@@ -2,7 +2,7 @@
 #
 # Toda release ja refaz a base (ver o job "catalogo" de release.yml). Quando
 # nenhuma release sai por quinze dias, esta rotina diaria abre uma so para a
-# base: refaz sync/catalogo-jogos.json.gz, escreve releases/vX.Y.Z.md com a
+# base: refaz sync/catalogo-jogos.json.gz, escreve .github/releases/vX.Y.Z.md com a
 # versao seguinte e dispara a publicacao, que passa pelo mesmo teste num
 # Windows limpo de qualquer outra release. As instalacoes recebem a versao
 # nova sozinhas, como sempre.
@@ -33,7 +33,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for f in releases/v*.md; do
+          for f in .github/releases/v*.md; do
             t="$(basename "$f" .md)"
             gh release view "$t" >/dev/null 2>&1 || { echo "a $t ainda vai sair, e leva a base junto"; exit 0; }
           done
@@ -42,7 +42,7 @@ jobs:
           echo "ultima release ha $dias dia(s)"
           [ "$dias" -ge 15 ] || exit 0
           node sync/gerar-catalogo.js
-          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          v="$(ls .github/releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
           nova="${v%.*}.$(( ${v##*.} + 1 ))"
           total="$(node -e "console.log(Object.keys(require('./sync/gerar-catalogo').ler().jogos).length.toLocaleString('pt-BR'))")"
           {
@@ -64,8 +64,8 @@ jobs:
             echo "Windows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio"
             echo "instalador. No celular, Android 7 ou posterior; no iPhone e no iPad, iOS 15 ou"
             echo "posterior, com o AltStore."
-          } > "releases/v$nova.md"
-          git add sync/catalogo-jogos.json.gz "releases/v$nova.md"
+          } > ".github/releases/v$nova.md"
+          git add sync/catalogo-jogos.json.gz ".github/releases/v$nova.md"
           git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Base de jogos atualizada; release $nova"
           git push -q origin HEAD:main
           # O push feito por esta rotina nao dispara outra; a publicacao e chamada aqui.

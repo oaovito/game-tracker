@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ios/**'
+      - 'docs/celular/ios/**'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
 
@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Construir o aplicativo
-        run: VERSAO=0.0.0 bash ios/construir.sh
+        run: VERSAO=0.0.0 bash docs/celular/ios/construir.sh
       - uses: actions/upload-artifact@v4
         with:
           name: trackeroao-ipa
-          path: ios/build/trackeroao.ipa
+          path: docs/celular/ios/build/trackeroao.ipa
           retention-days: 3

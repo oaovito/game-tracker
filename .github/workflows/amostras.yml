@@ -13,8 +13,8 @@ on:
       - trackeroao.html
       - docs/progress.json
       - sync/ios.html
-      - instalador/icone/**
-      - ios/Assets.xcassets/**
+      - windows/instalador/icone/**
+      - docs/celular/ios/Assets.xcassets/**
       - .github/amostras.js
       - .github/workflows/amostras.yml
   workflow_dispatch:

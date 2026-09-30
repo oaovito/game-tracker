@@ -7,13 +7,13 @@
 # se atualizam sozinhas para a release mais nova (sync/atualizar.js); uma
 # release atrasada entrega codigo velho sem aviso nenhum.
 #
-# O gatilho e o arquivo releases/vX.Y.Z.md aparecer na main: o nome do
+# O gatilho e o arquivo .github/releases/vX.Y.Z.md aparecer na main: o nome do
 # arquivo e a tag, e o resto depois da primeira linha e o corpo. O titulo e
 # sempre so o nome do aplicativo e a versao ("Trackeroao 1.6.9"), e toda
 # release antiga e acertada para o mesmo formato a cada execucao. A tag e criada pela propria publicacao. Release sem nota nao diz o que
 # mudou, entao sem o arquivo nada sai.
 #
-# Publica toda versao de releases/ que ainda nao tem release, e nao so a do
+# Publica toda versao de .github/releases/ que ainda nao tem release, e nao so a do
 # ultimo push: se uma execucao falhar, a seguinte recupera, e corrigir o texto
 # de uma release que ja existe nao gera outra.
 #
@@ -31,12 +31,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'releases/v*.md'
-      - 'instalador/**'
+      - '.github/releases/v*.md'
+      - 'windows/instalador/**'
       - 'windows/**'
       - 'sync/*.ps1'
-      - 'android/**'
-      - 'ios/**'
+      - 'docs/celular/android/**'
+      - 'docs/celular/ios/**'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 
@@ -66,7 +66,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           pendente=""
-          for f in releases/v*.md; do
+          for f in .github/releases/v*.md; do
             t="$(basename "$f" .md)"
             gh release view "$t" >/dev/null 2>&1 || pendente="$t"
           done
@@ -85,7 +85,7 @@ jobs:
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-  # O aplicativo de Android, construido sem Gradle pelo android/construir.sh
+  # O aplicativo de Android, construido sem Gradle pelo docs/celular/android/construir.sh
   # com as ferramentas do SDK que o runner ubuntu ja traz. Ele vai para dentro
   # do instalador (em <instalacao>\app), e o computador o entrega ao celular
   # pela rede de casa: a release continua tendo so o .exe.
@@ -108,17 +108,17 @@ jobs:
       - name: Construir o aplicativo
         shell: bash
         run: |
-          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
-          VERSAO="$v" bash android/construir.sh
-          test -s android/build/trackeroao.apk
+          v="$(ls .github/releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          VERSAO="$v" bash docs/celular/android/construir.sh
+          test -s docs/celular/android/build/trackeroao.apk
       - uses: actions/upload-artifact@v4
         with:
           name: trackeroao-apk
-          path: android/build/trackeroao.apk
+          path: docs/celular/android/build/trackeroao.apk
           retention-days: 1
 
   # O aplicativo de iOS, num Mac do GitHub: um .ipa sem assinatura, que o
-  # AltStore assina no proprio aparelho (ver ios/construir.sh).
+  # AltStore assina no proprio aparelho (ver docs/celular/ios/construir.sh).
   ios:
     needs: catalogo
     runs-on: macos-latest
@@ -129,12 +129,12 @@ jobs:
       - name: Construir o aplicativo
         shell: bash
         run: |
-          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
-          VERSAO="$v" bash ios/construir.sh
+          v="$(ls .github/releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          VERSAO="$v" bash docs/celular/ios/construir.sh
       - uses: actions/upload-artifact@v4
         with:
           name: trackeroao-ipa
-          path: ios/build/trackeroao.ipa
+          path: docs/celular/ios/build/trackeroao.ipa
           retention-days: 1
 
   publicar:
@@ -164,7 +164,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           faltam=""
-          for f in releases/v*.md; do
+          for f in .github/releases/v*.md; do
             [ -e "$f" ] || continue
             t="$(basename "$f" .md)"
             gh release view "$t" >/dev/null 2>&1 || faltam="$faltam $t"
@@ -188,9 +188,9 @@ jobs:
       - name: Construir o executavel
         shell: powershell
         run: |
-          .\instalador\construir-janela.ps1 -Saida dist\app
+          .\windows\instalador\construir-janela.ps1 -Saida dist\app
           Copy-Item dist\apk\trackeroao.apk dist\app\trackeroao.apk
-          .\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}" -App dist\app
+          .\windows\instalador\construir-exe.ps1 -Saida dist -Versao "${{ steps.versao.outputs.tag }}" -App dist\app
 
       # A janela do instalador, num Windows de verdade: abre, le o protocolo
       # @@ do script, termina com 0 quando ele termina bem e com 1 quando ele
@@ -237,7 +237,7 @@ jobs:
           if (-not (Select-String -Path $log -SimpleMatch 'nao-existe-trackeroao')) { throw 'o erro do PowerShell nao chegou ao registro' }
           # node escrevendo em stderr, com 'Stop', pela janela: sem Nativo a
           # instalacao morre (era o que parava em 84%); com Nativo ela segue.
-          $nativo = [regex]::Match((Get-Content instalador\instalar.ps1 -Raw -Encoding UTF8), '(?s)function Nativo.*?\n\}').Value
+          $nativo = [regex]::Match((Get-Content windows\instalador\instalar.ps1 -Raw -Encoding UTF8), '(?s)function Nativo.*?\n\}').Value
           if (-not $nativo) { throw 'nao achei a funcao Nativo no instalar.ps1' }
           $semNativo = Join-Path $env:RUNNER_TEMP 'ensaio-sem-nativo.ps1'
           $comNativo = Join-Path $env:RUNNER_TEMP 'ensaio-com-nativo.ps1'
@@ -280,7 +280,7 @@ jobs:
           # Duas vezes seguidas: a segunda e uma reinstalacao por cima, e nada
           # pode sair em dobro por causa dela.
           foreach ($vez in 1, 2) {
-            $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$PWD\instalador\instalar.ps1", '/fechar' -Wait -PassThru
+            $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList "/ensaio=$PWD\windows\instalador\instalar.ps1", '/fechar' -Wait -PassThru
             Get-Content $log -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
             if ($p.ExitCode -ne 0) { throw "a instalacao completa ($vez) saiu com $($p.ExitCode)" }
           }
@@ -504,7 +504,7 @@ jobs:
           [void]$j.WaitForExit(15000)
           Write-Host 'fechar desliga tudo, e so a abertura manual religa'
           $logD = Join-Path $env:TEMP 'trackeroao-desinstalar.log'
-          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/desinstalar', "/ensaio=$PWD\instalador\desinstalar.ps1", "/destino=$destino", '/fechar' -Wait -PassThru
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/desinstalar', "/ensaio=$PWD\windows\instalador\desinstalar.ps1", "/destino=$destino", '/fechar' -Wait -PassThru
           Get-Content $logD -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  | $_" }
           if ($p.ExitCode -ne 0) { throw "a remocao saiu com $($p.ExitCode)" }
           if (Test-Path (Join-Path $destino 'sync\main.js')) { throw "a pasta $destino continua la" }
@@ -525,7 +525,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.versao.outputs.tag }}
         run: |
-          notas="releases/${TAG}.md"
+          notas=".github/releases/${TAG}.md"
           tail -n +3 "$notas" > corpo.md
           # O instalador do Windows e o aplicativo de Android, o mesmo que o
           # computador entrega ao celular pela rede de casa.
@@ -534,7 +534,7 @@ jobs:
           gh release create "$TAG" dist/trackeroao-instalador.exe dist/trackeroao.apk dist/trackeroao.ipa \
             --target "${{ needs.catalogo.outputs.sha }}" --title "Trackeroao ${TAG#v}" --notes-file corpo.md
 
-      # A fonte do AltStore (altstore/fonte.json) passa a apontar para o .ipa
+      # A fonte do AltStore (docs/celular/altstore/fonte.json) passa a apontar para o .ipa
       # desta release, e e por ela que o aplicativo de iOS se atualiza.
       - name: Fonte do AltStore
         if: steps.versao.outputs.tag != ''
@@ -543,12 +543,12 @@ jobs:
           TAG: ${{ steps.versao.outputs.tag }}
         run: |
           tamanho=$(wc -c < dist/trackeroao.ipa | tr -d ' ')
-          notas="releases/${TAG}.md"
+          notas=".github/releases/${TAG}.md"
           for tentativa in 1 2 3; do
             git fetch -q origin main && git checkout -q -B fonte origin/main
             node -e '
               const fs = require("fs");
-              const f = "altstore/fonte.json";
+              const f = "docs/celular/altstore/fonte.json";
               const j = JSON.parse(fs.readFileSync(f, "utf8"));
               const v = process.env.TAG.replace(/^v/, "");
               const app = j.apps[0];
@@ -561,7 +561,7 @@ jobs:
               }];
               fs.writeFileSync(f, JSON.stringify(j, null, 2) + "\n");
             ' "$notas" "$tamanho"
-            git add altstore/fonte.json
+            git add docs/celular/altstore/fonte.json
             git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Fonte do AltStore na ${TAG#v}" || exit 0
             git push -q origin HEAD:main && exit 0
             sleep 5
