@@ -47,18 +47,21 @@ zerá-la, preservando os arquivos de estado. O executável é gerado por
 Dentro do instalador vai também a janela do Trackeroao, descrita adiante, que
 é um programa compilado e por isso não viaja com o código. Ela é gerada antes,
 por `instalador/construir-janela.ps1`, e seus arquivos entram no `.exe` como
-recursos; na instalação, são postos em `<instalação>\app`. A mesma pasta foi
-pensada para receber, numa versão próxima, o aplicativo de Android, que o
-computador passará a entregar ao celular. A release, porém, continua a ter um
-único arquivo: o instalador.
+recursos; na instalação, são postos em `<instalação>\app`. A mesma pasta
+recebe o aplicativo de Android, que o computador entrega ao celular. A release
+traz dois arquivos: o instalador do Windows, `trackeroao-instalador.exe`, e o
+aplicativo de Android, `trackeroao.apk`.
 
 Toda release sai sozinha. Basta o arquivo de notas `releases/vX.Y.Z.md`
 chegar à `main`: `.github/workflows/release.yml` valida a sintaxe de todos os
 scripts do PowerShell, gera a janela e compila o `.exe` num runner Windows a
 partir dos arquivos daquela mesma versão, confere num Windows de verdade que o
 instalador abre, instala e deixa a janela de pé, e publica a release `vX.Y.Z`
-com o executável anexado. A primeira linha do arquivo de notas é o título, e o
-resto é o corpo.
+com os dois arquivos anexados. O título de toda release é apenas o nome do
+aplicativo e a versão, como "Trackeroao 1.6.9"; o texto do arquivo de notas,
+da terceira linha em diante, é o corpo. A cada execução, o fluxo também
+acerta para esse formato o título de qualquer release antiga que esteja
+diferente.
 
 ### A janela do instalador
 
@@ -755,7 +758,7 @@ telefone precisa estar no mesmo Wi-Fi que o computador, o que se faz uma
 
 **No iPhone**, abre-se `http://trackeroao.local:8777` no Safari, toca-se em
 Compartilhar e depois em "Adicionar à Tela de Início". O Trackeroao passa a
-abrir como um aplicativo à parte, com o ícone da chama do Ídolo e sem a barra
+abrir como um aplicativo à parte, com o ícone do Trackeroao e sem a barra
 do navegador. Em casa, ele mostra a leitura corrente, atualizada a cada cinco
 segundos.
 
@@ -780,10 +783,11 @@ abre com a última leitura. Links para outros sites abrem no navegador do
 telefone. O aplicativo apenas lê: não envia nenhum pedido que altere o
 computador, e não pede outra permissão além das de rede e Wi-Fi.
 
-O aplicativo de Android é distribuído pelo próprio computador, e não por uma
-loja nem por um link na internet. Quando a instalação o contém, o passo a
-passo da janela mostra o endereço de onde baixá-lo, na forma
-`http://<IP do computador>:8777/android.apk`. Usa-se o IP, e não o nome
+O aplicativo de Android chega ao celular por dois caminhos, nenhum deles uma
+loja: pelo próprio computador, cujo painel do celular, ao lado do globo da
+tela inicial, mostra o endereço de onde baixá-lo, na forma
+`http://<IP do computador>:8777/android.apk`; ou pela página da release, onde
+o mesmo `trackeroao.apk` fica ao lado do instalador do Windows. Usa-se o IP, e não o nome
 `.local`, porque nem todo navegador de Android resolve esse nome; o
 aplicativo, depois de instalado, resolve.
 
@@ -792,7 +796,7 @@ apenas as ferramentas de linha de comando do SDK do Android: `aapt2`, `javac`,
 `d8`, `zipalign` e `apksigner`.
 
 Na release, ele é construído num runner Linux do GitHub e levado para dentro
-do instalador. A assinatura usa uma chave criada no momento da construção e
+do instalador e anexado à release. A assinatura usa uma chave criada no momento da construção e
 descartada em seguida; nenhuma chave é guardada no repositório. A
 consequência prática é pequena, porque o aplicativo é apenas um invólucro e
 tudo o que ele exibe vem do computador: as atualizações da página chegam ao

@@ -8,8 +8,9 @@
 # release atrasada entrega codigo velho sem aviso nenhum.
 #
 # O gatilho e o arquivo releases/vX.Y.Z.md aparecer na main: o nome do
-# arquivo e a tag, a primeira linha e o titulo (depois do "# ") e o resto e o
-# corpo. A tag e criada pela propria publicacao. Release sem nota nao diz o que
+# arquivo e a tag, e o resto depois da primeira linha e o corpo. O titulo e
+# sempre so o nome do aplicativo e a versao ("Trackeroao 1.6.9"), e toda
+# release antiga e acertada para o mesmo formato a cada execucao. A tag e criada pela propria publicacao. Release sem nota nao diz o que
 # mudou, entao sem o arquivo nada sai.
 #
 # Publica toda versao de releases/ que ainda nao tem release, e nao so a do
@@ -371,7 +372,21 @@ jobs:
           TAG: ${{ steps.versao.outputs.tag }}
         run: |
           notas="releases/${TAG}.md"
-          titulo="$(head -n 1 "$notas" | sed 's/^# //')"
           tail -n +3 "$notas" > corpo.md
-          gh release create "$TAG" dist/trackeroao-instalador.exe \
-            --target "$GITHUB_SHA" --title "$titulo" --notes-file corpo.md
+          # O instalador do Windows e o aplicativo de Android, o mesmo que o
+          # computador entrega ao celular pela rede de casa.
+          cp dist/app/trackeroao.apk dist/trackeroao.apk
+          gh release create "$TAG" dist/trackeroao-instalador.exe dist/trackeroao.apk \
+            --target "$GITHUB_SHA" --title "Trackeroao ${TAG#v}" --notes-file corpo.md
+
+      - name: Titulos das releases so com nome e versao
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 200 --json tagName,name --jq '.[] | [.tagName, .name] | @tsv' |
+          while IFS=$'\t' read -r tag nome; do
+            certo="Trackeroao ${tag#v}"
+            [ "$nome" = "$certo" ] || gh release edit "$tag" --title "$certo" >/dev/null
+          done
+          echo 'titulos conferidos'
