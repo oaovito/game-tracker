@@ -170,7 +170,7 @@ Windows.
 ### Atualização
 
 A instalação se mantém atual sem intervenção. O serviço confere se há release
-nova vinte segundos depois de subir e, a partir daí, a cada seis horas; uma
+nova vinte segundos depois de subir e, a partir daí, a cada hora; uma
 falha de rede adia a próxima tentativa para dez minutos depois. A conferência
 acontece sempre entre duas rodadas de verificação do jogo, nunca no meio de
 uma, e nunca com o jogo aberto: enquanto se joga, ela simplesmente espera. Há
@@ -186,9 +186,11 @@ instalador daquela mesma release e o chama no modo `/so-janela` (a função
 `trocarJanela` de `sync/atualizar.js`). Nesse modo o instalador não mostra
 janela nem roda script: extrai a janela nova para uma pasta ao lado e a põe no
 lugar de `<instalação>\app`, que é substituída inteira. Nada fica duplicado, e
-nenhuma cópia antiga sobra ao lado da nova. Com a janela aberta, nada é
-trocado, para não fechá-la diante de quem está olhando, e a conferência
-seguinte tenta de novo. Reinstalar pelo `.exe` segue a mesma regra: a pasta
+nenhuma cópia antiga sobra ao lado da nova. Com a janela aberta, ela é
+fechada, a pasta é trocada e a janela abre de novo já na versão nova, de modo
+que a atualização não depende de ninguém fechar nada; se ela não fechar a
+tempo, nada é trocado e a conferência seguinte tenta de novo. O ícone da
+bandeja, que é o mesmo `.exe`, sai durante a troca e volta em seguida. Reinstalar pelo `.exe` segue a mesma regra: a pasta
 `app` é trocada no lugar, depois de fechada uma janela que estivesse aberta.
 
 Num clone do repositório, a mesma rotina só avança a `main` por fast-forward,

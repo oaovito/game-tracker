@@ -291,9 +291,20 @@ jobs:
           if ($naBarra -ne 2) { throw "a barra propria nao arrasta a janela ($naBarra)" }
           if ($noX -ne 1) { throw "o botao de fechar nao e do aplicativo ($noX)" }
           if ($naPagina -ne 1) { throw "a pagina nao recebe o clique ($naPagina)" }
-          # A troca da janela pela atualizacao nao mexe numa janela aberta.
+          # A troca da janela pela atualizacao, com a janela aberta: ela fecha,
+          # a pasta e trocada e ela abre de novo, sem ninguem mexer em nada.
+          Remove-Item (Join-Path $destino 'app\versao.txt') -ErrorAction SilentlyContinue
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -Wait -PassThru
-          if ($p.ExitCode -ne 3) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode), e nao 3" }
+          if ($p.ExitCode -ne 0) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode)" }
+          if (-not $j.WaitForExit(1000)) { throw 'a janela antiga continuou aberta depois da troca' }
+          if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw 'a troca com a janela aberta nao gravou a versao' }
+          $nova = $null
+          for ($i = 0; $i -lt 20 -and -not $nova; $i++) { Start-Sleep -Milliseconds 500; $nova = (Trackeroaos) | Select-Object -First 1 }
+          if (-not $nova) { throw 'a janela nao abriu de novo depois da troca' }
+          Start-Sleep -Seconds 8
+          $j = Get-Process -Id $nova.ProcessId -ErrorAction SilentlyContinue
+          if (-not $j) { throw 'a janela reaberta fechou sozinha' }
+          Write-Host "troca com a janela aberta: fechou, trocou e reabriu (pid $($nova.ProcessId))"
           [System.Threading.EventWaitHandle]$sinal = $null
           if (-not [System.Threading.EventWaitHandle]::TryOpenExisting('Local\TrackeroaoFechar', [ref]$sinal)) { throw 'a janela nao ouve o Fechar da bandeja' }
           [void]$sinal.Set()

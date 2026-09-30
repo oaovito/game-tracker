@@ -549,7 +549,7 @@ async function pollOnce() {
 // Primeira conferência pouco depois de subir: no logon a rede costuma chegar
 // segundos depois do serviço, e perguntar antes disso só produziria um erro.
 const ATUALIZAR_PRIMEIRA_MS = 20 * 1000;
-const ATUALIZAR_MS = 6 * 60 * 60 * 1000;
+const ATUALIZAR_MS = 60 * 60 * 1000;
 const ATUALIZAR_ERRO_MS = 10 * 60 * 1000;
 let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
 // Pedida à mão, pelo menu da bandeja: roda na próxima folga entre rodadas,

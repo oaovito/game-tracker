@@ -377,12 +377,30 @@ static class Programa {
    * nao fecha-la debaixo de quem esta olhando; a proxima conferencia tenta
    * de novo.
    */
+  static bool JanelaAberta() {
+    System.Threading.Mutex m;
+    if (!System.Threading.Mutex.TryOpenExisting("Local\\TrackeroaoJanela", out m)) return false;
+    m.Close();
+    return true;
+  }
+
   static int TrocarJanela(string destino) {
     if (destino == null || !File.Exists(Path.Combine(destino, "sync\\main.js"))) return 2;
     string app = Path.Combine(destino, "app");
-    // Janela aberta: nao troca, e a proxima conferencia tenta de novo.
-    System.Threading.Mutex aberta;
-    if (System.Threading.Mutex.TryOpenExisting("Local\\TrackeroaoJanela", out aberta)) { aberta.Close(); return 3; }
+    /*
+     * Janela aberta: ela e fechada pelo mesmo sinal do "Fechar" da bandeja,
+     * a pasta e trocada, e ela abre de novo, ja na versao nova. Assim a
+     * atualizacao nao depende de ninguem fechar nada. Se nao fechar a tempo,
+     * nada e trocado e a proxima conferencia tenta de novo.
+     */
+    bool estavaAberta = JanelaAberta();
+    if (estavaAberta) {
+      System.Threading.EventWaitHandle sinal;
+      if (System.Threading.EventWaitHandle.TryOpenExisting("Local\\TrackeroaoFechar", out sinal)) { sinal.Set(); sinal.Close(); }
+      for (int i = 0; i < 40 && JanelaAberta(); i++) System.Threading.Thread.Sleep(500);
+      if (JanelaAberta()) return 3;
+      System.Threading.Thread.Sleep(1000);
+    }
     // O resto do mesmo .exe e o icone da bandeja, que o servico acende de
     // novo depois da troca: sai agora para largar o arquivo.
     foreach (Process p in Process.GetProcessesByName("Trackeroao")) {
@@ -396,6 +414,9 @@ static class Programa {
       if (!ExtrairJanela(novo)) return 4;
       if (Directory.Exists(app)) Directory.Delete(app, true);
       Directory.Move(novo, app);
+      if (estavaAberta) {
+        try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = false }); } catch { }
+      }
       return 0;
     } catch {
       try { Directory.Delete(novo, true); } catch { }
