@@ -393,7 +393,6 @@ class Barra : Control {
   Color Texto { get { return Claro ? Color.FromArgb(18, 20, 26) : Color.FromArgb(236, 238, 242); } }
   Color Apagado { get { return Claro ? Color.FromArgb(84, 88, 98) : Color.FromArgb(150, 154, 164); } }
   Color Limao { get { return Claro ? Color.FromArgb(108, 140, 0) : Color.FromArgb(216, 255, 60); } }
-  Color Linha { get { return Misturar(fundo, Claro ? Color.Black : Color.White, 0.07); } }
 
   readonly Form dona;
   readonly Icon icone;
@@ -462,7 +461,7 @@ class Barra : Control {
     Graphics g = e.Graphics;
     g.Clear(fundo);
     float k = Height / 36f;
-    using (Pen p = new Pen(Linha)) g.DrawLine(p, 0, Height - 1, Width, Height - 1);
+    // Sem linha embaixo: a barra continua na pagina, que desce dela em degrade.
 
     int x = (int)(12 * k);
     if (icone != null) {

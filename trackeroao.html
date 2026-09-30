@@ -2680,6 +2680,13 @@
     content: ""; position: absolute; inset: 0;
     background: linear-gradient(180deg, var(--j-veu-topo), var(--j-veu-pe) 70%);
   }
+  /* Na janela do Windows, a barra de cima tem a cor do fundo da página; a
+     arte desfocada chega até ela num degradê, e não num degrau de cor. */
+  html.na-janela .ambiente::after {
+    background:
+      linear-gradient(180deg, var(--j-bg) 0, rgba(0, 0, 0, 0) 6rem),
+      linear-gradient(180deg, var(--j-veu-topo), var(--j-veu-pe) 70%);
+  }
 
   .hub, .bibli { padding-top: 2px; }
   .hub-topo {
@@ -9094,6 +9101,7 @@ function pintarBarra() {
   try { ponte.postMessage("cor:" + cor); } catch (e) { /* a janela fechou */ }
 }
 if (window.chrome && window.chrome.webview) {
+  if (document.documentElement && document.documentElement.classList) document.documentElement.classList.add("na-janela");
   pintarBarra();
   setInterval(() => { if (!document.hidden) pintarBarra(); }, 250);
 }

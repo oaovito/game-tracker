@@ -125,7 +125,10 @@ pontas da tela, e o contorno da janela a acompanha. Quando a página muda, por
 exemplo da tela inicial para a do Sekiro ou do tema escuro para o claro, a
 página informa a nova cor à janela, e a barra passa de uma cor para a outra
 em cerca de um terço de segundo. Sobre um fundo claro, o texto e os botões da
-barra escurecem para continuar legíveis.
+barra escurecem para continuar legíveis. A barra não tem linha de divisão embaixo: na tela
+inicial e na biblioteca, a arte desfocada do fundo começa na cor exata da barra
+e clareia num degradê ao longo dos primeiros 6 rem, de modo que a barra e a
+página se leem como uma superfície só.
 
 Ela abre por dois caminhos, e só por eles: dois cliques no atalho "Trackeroao"
 da área de trabalho, ou dois cliques no ícone da bandeja. Nenhuma outra coisa
