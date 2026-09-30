@@ -414,8 +414,10 @@ static class Programa {
       if (!ExtrairJanela(novo)) return 4;
       if (Directory.Exists(app)) Directory.Delete(app, true);
       Directory.Move(novo, app);
+      // Pelo shell: a janela nao herda a saida de quem chamou o instalador,
+      // e o servico nao fica esperando por ela.
       if (estavaAberta) {
-        try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = false }); } catch { }
+        try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = true }); } catch { }
       }
       return 0;
     } catch {

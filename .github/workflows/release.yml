@@ -300,7 +300,9 @@ jobs:
           # A troca da janela pela atualizacao, com a janela aberta: ela fecha,
           # a pasta e trocada e ela abre de novo, sem ninguem mexer em nada.
           Remove-Item (Join-Path $destino 'app\versao.txt') -ErrorAction SilentlyContinue
-          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -Wait -PassThru
+          # So o instalador: -Wait esperaria tambem a janela que ele reabre.
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -PassThru
+          if (-not $p.WaitForExit(120000)) { throw 'com a janela aberta, /so-janela nao terminou' }
           if ($p.ExitCode -ne 0) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode)" }
           if (-not $j.WaitForExit(1000)) { throw 'a janela antiga continuou aberta depois da troca' }
           if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw 'a troca com a janela aberta nao gravou a versao' }
