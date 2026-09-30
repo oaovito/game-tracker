@@ -1045,11 +1045,29 @@ O endereço varia de pessoa para pessoa e de rede para rede, e o código é
 montado pelo serviço a cada vez que o botão é tocado; basta apontar a câmera
 do telefone para ele.
 
-**No iPhone**, lê-se o código com a câmera, abre-se o endereço no Safari, toca-se em
-Compartilhar e depois em "Adicionar à Tela de Início". O Trackeroao passa a
-abrir como um aplicativo à parte, com o ícone do Trackeroao e sem a barra
-do navegador. Em casa, ele mostra a leitura corrente, atualizada a cada cinco
-segundos.
+**No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em `ios/`,
+instalado pelo AltStore, e não pela App Store. O código QR do botão "iOS" abre,
+no telefone, uma página servida pelo próprio computador (`/ios`, a partir de
+`sync/ios.html`) com o passo a passo: instalar o AltStore, adicionar a fonte do
+Trackeroao (`altstore/fonte.json`, lida pelo endereço bruto do GitHub) e tocar
+em Instalar. As versões novas chegam pelo próprio AltStore, porque a fonte é
+atualizada a cada release. O aplicativo funciona como o de Android: toda a
+página passa por uma ponte (`ios/src/Ponte.swift`, no esquema `trackeroao://`)
+que busca cada arquivo no computador por `trackeroao.local`, guarda a última
+cópia de cada um e a entrega quando o computador está fora do alcance. Links
+para outros sites abrem no Safari, e o aplicativo só lê, como o de Android.
+
+O `.ipa` é construído num Mac do GitHub por `ios/construir.sh`, sem projeto do
+Xcode: o `swiftc` compila, o `actool` monta o ícone e o pacote é zipado. Ele
+sai sem assinatura, e o AltStore o assina no próprio aparelho, com a conta
+Apple de quem instala. A distribuição pelo AltStore PAL, a loja alternativa
+reconhecida pela Apple, exige ainda que o aplicativo seja registrado e
+autenticado pela Apple com uma conta de desenvolvedor, o que depende do dono
+do projeto; até lá, vale o AltStore comum.
+
+Quem já tinha adicionado a página à Tela de Início continua podendo usá-la:
+ela abre sem o Safari em volta e mostra a leitura corrente, atualizada a cada
+cinco segundos.
 
 Cada leitura bem-sucedida fica guardada no próprio aparelho, no armazenamento
 local do navegador, sob a chave `ultima-leitura` (a constante `COPIA_CHAVE`,

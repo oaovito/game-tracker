@@ -237,9 +237,20 @@ function createServer(options) {
       const host = addrs.length ? addrs[0].address : 'trackeroao.local';
       const base = 'http://' + host + ':' + (req.socket.localPort || 8777);
       const para = new URL(req.url, 'http://x').searchParams.get('para');
-      const alvo = para === 'android' ? base + '/android.apk' : base + '/';
+      // O iPhone vai para o passo a passo do aplicativo pelo AltStore (/ios).
+      const alvo = para === 'android' ? base + '/android.apk' : base + '/ios';
       res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' });
       res.end(require('./qr').svg(alvo));
+      return;
+    }
+
+    // O passo a passo do aplicativo de iOS, que o código QR do iPhone abre.
+    if (urlPath === '/ios') {
+      fs.readFile(path.join(__dirname, 'ios.html'), (err, corpo) => {
+        if (err) { res.writeHead(404).end('404'); return; }
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+        res.end(corpo);
+      });
       return;
     }
 

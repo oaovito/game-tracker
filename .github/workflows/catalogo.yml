@@ -62,8 +62,8 @@ jobs:
             echo "## Requisitos"
             echo
             echo "Windows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio"
-            echo "instalador. No celular, Android 7 ou posterior; no iPhone, a página aberta no"
-            echo "Safari e adicionada à Tela de Início."
+            echo "instalador. No celular, Android 7 ou posterior; no iPhone e no iPad, iOS 15 ou"
+            echo "posterior, com o AltStore."
           } > "releases/v$nova.md"
           git add sync/catalogo-jogos.json.gz "releases/v$nova.md"
           git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Base de jogos atualizada; release $nova"

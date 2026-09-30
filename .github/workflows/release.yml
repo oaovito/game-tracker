@@ -36,6 +36,7 @@ on:
       - 'windows/**'
       - 'sync/*.ps1'
       - 'android/**'
+      - 'ios/**'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 
@@ -116,8 +117,28 @@ jobs:
           path: android/build/trackeroao.apk
           retention-days: 1
 
+  # O aplicativo de iOS, num Mac do GitHub: um .ipa sem assinatura, que o
+  # AltStore assina no proprio aparelho (ver ios/construir.sh).
+  ios:
+    needs: catalogo
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.catalogo.outputs.sha }}
+      - name: Construir o aplicativo
+        shell: bash
+        run: |
+          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          VERSAO="$v" bash ios/construir.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trackeroao-ipa
+          path: ios/build/trackeroao.ipa
+          retention-days: 1
+
   publicar:
-    needs: [catalogo, android]
+    needs: [catalogo, android, ios]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -158,6 +179,11 @@ jobs:
         with:
           name: trackeroao-apk
           path: dist\apk
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: trackeroao-ipa
+          path: dist\ipa
 
       - name: Construir o executavel
         shell: powershell
@@ -504,8 +530,43 @@ jobs:
           # O instalador do Windows e o aplicativo de Android, o mesmo que o
           # computador entrega ao celular pela rede de casa.
           cp dist/app/trackeroao.apk dist/trackeroao.apk
-          gh release create "$TAG" dist/trackeroao-instalador.exe dist/trackeroao.apk \
+          cp dist/ipa/trackeroao.ipa dist/trackeroao.ipa
+          gh release create "$TAG" dist/trackeroao-instalador.exe dist/trackeroao.apk dist/trackeroao.ipa \
             --target "${{ needs.catalogo.outputs.sha }}" --title "Trackeroao ${TAG#v}" --notes-file corpo.md
+
+      # A fonte do AltStore (altstore/fonte.json) passa a apontar para o .ipa
+      # desta release, e e por ela que o aplicativo de iOS se atualiza.
+      - name: Fonte do AltStore
+        if: steps.versao.outputs.tag != ''
+        shell: bash
+        env:
+          TAG: ${{ steps.versao.outputs.tag }}
+        run: |
+          tamanho=$(wc -c < dist/trackeroao.ipa | tr -d ' ')
+          notas="releases/${TAG}.md"
+          for tentativa in 1 2 3; do
+            git fetch -q origin main && git checkout -q -B fonte origin/main
+            node -e '
+              const fs = require("fs");
+              const f = "altstore/fonte.json";
+              const j = JSON.parse(fs.readFileSync(f, "utf8"));
+              const v = process.env.TAG.replace(/^v/, "");
+              const app = j.apps[0];
+              const notas = fs.readFileSync(process.argv[1], "utf8").split("\n").slice(2).join("\n").trim();
+              app.versions = [{
+                version: v, buildVersion: v, date: new Date().toISOString(),
+                localizedDescription: notas.slice(0, 4000),
+                downloadURL: "https://github.com/oaovito/trackeroao/releases/download/" + process.env.TAG + "/trackeroao.ipa",
+                size: Number(process.argv[2]), minOSVersion: "15.0",
+              }];
+              fs.writeFileSync(f, JSON.stringify(j, null, 2) + "\n");
+            ' "$notas" "$tamanho"
+            git add altstore/fonte.json
+            git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Fonte do AltStore na ${TAG#v}" || exit 0
+            git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
 
       - name: Titulos das releases so com nome e versao
         shell: bash
