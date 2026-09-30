@@ -13,7 +13,13 @@ Nada é escrito no jogo. O save é aberto somente para leitura e o handle do
 processo é pedido sem permissão de escrita (`PROCESS_VM_READ` e
 `PROCESS_QUERY_INFORMATION`, nada além disso).
 
-Site publicado: https://oaovito.github.io/trackeroao/
+Também nada é publicado. O progresso não sai do computador que joga: ele é
+visto na janela do Trackeroao, nesse mesmo computador, e nos celulares da
+casa, pela rede local. Não existe site nem link público, e o serviço não envia
+o progresso a lugar nenhum. O que o serviço busca na internet é o que ele
+precisa para funcionar — a versão mais nova do próprio programa, a arte dos
+jogos e os catálogos de nomes descritos adiante —, e nenhum desses pedidos
+leva dado do save.
 
 ## Instalando
 
@@ -38,11 +44,21 @@ zerá-la, preservando os arquivos de estado. O executável é gerado por
 `instalador/construir-exe.ps1` a partir de `instalador/instalar.ps1` e
 `instalador/desinstalar.ps1`, e não fica versionado: nasce a cada release.
 
+Dentro do instalador vai também a janela do Trackeroao, descrita adiante, que
+é um programa compilado e por isso não viaja com o código. Ela é gerada antes,
+por `instalador/construir-janela.ps1`, e seus arquivos entram no `.exe` como
+recursos; na instalação, são postos em `<instalação>\app`. A mesma pasta foi
+pensada para receber, numa versão próxima, o aplicativo de Android, que o
+computador passará a entregar ao celular. A release, porém, continua a ter um
+único arquivo: o instalador.
+
 Toda release sai sozinha. Basta o arquivo de notas `releases/vX.Y.Z.md`
 chegar à `main`: `.github/workflows/release.yml` valida a sintaxe de todos os
-scripts do PowerShell, compila o `.exe` num runner Windows a partir dos
-scripts daquela mesma versão e publica a release `vX.Y.Z` com ele anexado. A
-primeira linha do arquivo é o título, e o resto é o corpo.
+scripts do PowerShell, gera a janela e compila o `.exe` num runner Windows a
+partir dos arquivos daquela mesma versão, confere num Windows de verdade que o
+instalador abre, instala e deixa a janela de pé, e publica a release `vX.Y.Z`
+com o executável anexado. A primeira linha do arquivo de notas é o título, e o
+resto é o corpo.
 
 ### A janela do instalador
 
@@ -60,11 +76,18 @@ execução interrompida são removidas na execução seguinte. O pedido de
 administrador é feito uma única vez pelo próprio executável, antes de o script
 começar. Se for recusado, a instalação prossegue e a liberação da porta 8777
 passa a constar como pendência no fim. Ao terminar, a caixa oferece "Abrir o
-Trackeroao" e "Fechar"; em caso de erro, mostra o motivo e oferece o registro.
+Trackeroao", que abre a janela do programa, e "Fechar"; em caso de erro,
+mostra o motivo e oferece o registro.
 
 O desinstalador usa a mesma caixa, com o mesmo desenho, e também não abre
 nenhuma outra janela. Como ele reside na pasta que precisa apagar, copia a si
 mesmo para a pasta temporária e entrega a execução à cópia.
+
+As duas caixas falam os mesmos doze idiomas da página. O script não escreve
+frases: manda à caixa um identificador de texto, e é a classe `Textos`, dentro
+de `instalador/construir-exe.ps1`, que o converte na frase do idioma em uso.
+Esse idioma é o escolhido na página, quando uma instalação anterior guardou a
+escolha, e, na falta dela, o do Windows. O nome Trackeroao nunca é traduzido.
 
 Para que o Windows Defender reconheça o arquivo como um instalador comum, o
 executável leva um manifesto (execução como o usuário, versões do Windows
@@ -76,10 +99,73 @@ a todo executável baixado sem assinatura digital de código e só desaparece co
 um certificado de assinatura, o que não se resolve no código.
 
 Em qualquer dos dois caminhos, o que se registra é uma tarefa agendada que sobe
-oculta no login. Depois disso não é preciso abrir mais nada: a página fica no ar
-o tempo todo e a leitura do save liga sozinha quando o jogo abre. Não é preciso
-administrador — o programa só lê arquivos do próprio usuário e escuta numa
-porta alta.
+oculta no login. Depois disso não é preciso abrir mais nada: o serviço fica de
+pé o tempo todo, servindo a página na rede de casa, e a leitura do save liga
+sozinha quando o jogo abre. Não é preciso administrador — o programa só lê
+arquivos do próprio usuário e escuta numa porta alta.
+
+### A janela do Trackeroao
+
+No Windows, o progresso é visto numa janela própria, e não numa aba do
+navegador: sem barra de endereço, sem abas e sem link à vista. O programa é
+`<instalação>\app\Trackeroao.exe`, compilado a partir de
+`instalador/janela/Trackeroao.cs`. Por dentro, a janela é o WebView2, o
+componente de página que o Windows 10 e o 11 já trazem, com o mesmo motor do
+Edge; ela mostra a página que o serviço serve no próprio computador, num
+endereço interno que nunca aparece. Links para fora, como a loja de um jogo,
+abrem no navegador da pessoa, e dentro da janela fica somente o Trackeroao.
+
+Ela abre por dois caminhos, e só por eles: dois cliques no atalho "Trackeroao"
+da área de trabalho, ou dois cliques no ícone da bandeja. Nenhuma outra coisa
+a abre, nem o jogo, nem a atualização, nem o logon. Existe uma única janela de
+cada vez: abrir de novo apenas traz à frente a que já estava aberta.
+
+Abrir a janela também põe o serviço de pé. Se ele foi encerrado, a janela o
+inicia pela tarefa agendada, que roda com o usuário e a pasta certos, espera
+que responda e só então carrega a página; enquanto isso, mostra uma tela de
+espera, sem texto além do nome. É também a abertura manual que desfaz o
+"Fechar" da bandeja, descrito adiante: ao abrir, a janela apaga a marca que
+impedia o serviço de subir sozinho.
+
+Num Windows 10 antigo, sem o componente WebView2 instalado, a página abre numa
+janela de aplicativo do Edge, igualmente sem barra de endereço.
+
+`instalador/construir-janela.ps1` gera a janela a cada release. Para compilar
+e rodar, ela precisa de três arquivos do SDK público do WebView2, distribuído
+pela Microsoft no NuGet sob licença BSD. O pacote é baixado numa versão fixa e
+conferido pelo SHA-256 antes de qualquer uso, de modo que um pacote diferente
+do esperado interrompe a construção; e, como a licença permite redistribuir
+desde que o seu texto acompanhe os arquivos, ele segue junto, em
+`app\LICENSE-WebView2.txt`. O executável é de 32 bits de propósito, para
+rodar igual em Windows de 32 e de 64 bits com um único carregador.
+
+Num clone do repositório, ou numa instalação feita rodando o `instalar.ps1`
+pela linha de comando, a janela não existe, porque não é versionada e só o
+`.exe` a carrega. Nesses casos, o atalho, quando há, aponta para
+`sync\abrir.vbs`, que põe o serviço de pé e abre a página local no navegador
+padrão, e os dois cliques na bandeja fazem o mesmo.
+
+### O ícone da bandeja
+
+O ícone na área de notificação, a chama azul do Ídolo, é o sinal de que a
+aplicação está aberta. Ele aparece sozinho quando um jogo vigiado começa, e
+também quando a janela é aberta; com o jogo fechado, sai depois da última
+leitura da sessão. Dois cliques nele abrem a janela. O clique com o botão
+direito oferece duas ações:
+
+- **Forçar atualização** pede ao serviço, pela rota `POST /atualizar`, que
+  confira a release mais nova naquele instante, sem esperar a próxima rodada e
+  mesmo com o jogo aberto, já que foi a pessoa quem pediu. Havendo versão nova,
+  ela é aplicada em silêncio, e o serviço se reinicia com a chama junto. Se a
+  instalação já está na última versão, um aviso pequeno aparece ao lado do
+  ícone, dizendo qual é a versão instalada, e some sozinho.
+- **Fechar** encerra tudo de verdade: a janela, o ícone e o serviço. Antes de
+  sair, grava `sync/fechado.flag`, e enquanto esse arquivo existir o serviço
+  não volta por conta própria, nem no logon nem com o jogo. Ele só volta
+  quando a pessoa abre o Trackeroao à mão, pelo atalho, o que apaga a marca.
+
+Os textos do menu seguem o idioma escolhido na página ou, sem escolha, o do
+Windows.
 
 ### Atualização
 
@@ -90,9 +176,24 @@ acontece sempre entre duas rodadas de verificação do jogo, nunca no meio de
 uma, e nunca com o jogo aberto: enquanto se joga, ela simplesmente espera. Há
 versão nova, o código da tag é baixado, copiado por cima da instalação e o
 serviço se reinicia sozinho, sem janela, sem aviso e sem tocar nos arquivos de
-estado. O que aconteceu fica apenas no log. Num clone do repositório, a mesma
-rotina só avança a `main` por fast-forward, e só com a árvore limpa. A
-variável de ambiente `TRACKEROAO_SEM_ATUALIZAR` desliga tudo isso.
+estado. O que aconteceu fica apenas no log. A única exceção à espera é o
+"Forçar atualização" da bandeja, que roda na folga seguinte mesmo com o jogo
+aberto.
+
+A janela do Trackeroao não vem no pacote de código, porque é binária. Quando a
+versão dela, registrada em `app\versao.txt`, fica para trás, o serviço baixa o
+instalador daquela mesma release e o chama no modo `/so-janela` (a função
+`trocarJanela` de `sync/atualizar.js`). Nesse modo o instalador não mostra
+janela nem roda script: extrai a janela nova para uma pasta ao lado e a põe no
+lugar de `<instalação>\app`, que é substituída inteira. Nada fica duplicado, e
+nenhuma cópia antiga sobra ao lado da nova. Com a janela aberta, nada é
+trocado, para não fechá-la diante de quem está olhando, e a conferência
+seguinte tenta de novo. Reinstalar pelo `.exe` segue a mesma regra: a pasta
+`app` é trocada no lugar, depois de fechada uma janela que estivesse aberta.
+
+Num clone do repositório, a mesma rotina só avança a `main` por fast-forward,
+e só com a árvore limpa. A variável de ambiente `TRACKEROAO_SEM_ATUALIZAR`
+desliga tudo isso.
 
 Instalações anteriores à v1.5.0 não têm essa rotina e precisam de uma única
 reinstalação com o instalador da v1.5.0 ou posterior; dali em diante, elas se
@@ -103,8 +204,9 @@ atualizam sozinhas.
 O instalador deixa uma cópia de si mesmo na pasta da instalação, com o nome
 `trackeroao-desinstalador.exe`, e registra o trackeroao em "Aplicativos
 instalados" do Windows. Remover por lá, ou rodar esse executável, desfaz na
-ordem inversa tudo o que o instalador fez: a tarefa agendada, os processos e o
-ícone da bandeja, o atalho, a regra de firewall e a pasta. Antes de apagar, ele
+ordem inversa tudo o que o instalador fez: a tarefa agendada, os processos, a
+janela e o ícone da bandeja, o atalho, a regra de firewall e a pasta, com a
+janela do Trackeroao dentro dela. Antes de apagar, ele
 guarda uma cópia do progresso nos Documentos; pela linha de comando, o script
 pergunta antes. O Node.js e o
 save do jogo ficam como estão. Num clone, `.\windows\uninstall-sync-service.ps1`
@@ -124,7 +226,8 @@ cada cinco segundos checa se o `sekiro.exe` está rodando; o watcher do save só
 existe enquanto o jogo está aberto, de modo que com o jogo fechado não há
 handle aberto no arquivo nem leitura de 11 MB acontecendo à toa. A segunda é o
 servidor, que escuta em `0.0.0.0:8777` e por isso também responde ao celular —
-ao subir, ele imprime o endereço da máquina na rede local.
+ao subir, ele imprime o endereço da máquina na rede local e o nome pelo qual
+ela atende, `http://trackeroao.local`.
 
 Os outros comandos:
 
@@ -134,8 +237,14 @@ npm run sync        # lê o save uma vez e escreve progress.json
 npm run serve       # só o servidor, sem o watcher
 npm run deaths      # a contagem de mortes, lida da memória
 npm run discover    # descoberta de offsets por diff (adiante)
-npm run auditoria   # relatório do que o link público entrega
+npm run jogos       # varre os jogos instalados nesta máquina
+npm run auditoria   # relatório do que o repositório público expõe
 ```
+
+O `auditoria` é anterior ao fim do site: ele monta, num arquivo de texto fora
+do git, o inventário do que o repositório e o antigo endereço do site
+entregam a quem os visita. Hoje não há progresso publicado, e o relatório
+serve apenas para conferir o que o próprio repositório expõe.
 
 O instalador já libera a porta 8777 na rede local. Se o celular não abrir a
 página — porque a instalação foi feita à mão, ou porque o pedido de
@@ -151,10 +260,16 @@ parte é o que torna aceitável a regra valer também no perfil Public: alcança
 celular na mesma casa e não a rede inteira de um lugar público. Rodar duas
 vezes não faz nada na segunda.
 
-Vale lembrar que o link do celular usa o endereço da máquina na rede, e o
-roteador pode trocar esse endereço num reinício por causa do DHCP — quando isso
-acontece, o link salvo para de funcionar. A solução definitiva é reservar o
-endereço da máquina no próprio roteador, e aí ele nunca mais muda.
+Na rede de casa, o computador atende pelo nome `trackeroao.local`, anunciado
+por mDNS (a lista está em `NOMES_REDE`, em `sync/main.js`; os demais nomes
+dela ficam para quem já usava os antigos). É por esse nome que o iPhone chega
+à página e o aplicativo de Android encontra o computador, de modo que a troca
+de endereço que o roteador faz num reinício, por causa do DHCP, não quebra
+nada. Dois endereços do servidor existem por causa do celular: `/rede`
+responde o IP e a porta da máquina, que o passo a passo da página mostra, e
+`/android.apk` entrega o aplicativo de Android guardado em
+`<instalação>\app\trackeroao.apk`. O restante da pasta `app`, que é a janela
+do Windows, não é servido.
 
 ### Diagnóstico
 
@@ -167,7 +282,10 @@ jogo:
   [watch] monitorando C:\Users\...\S0000.sl2
 ```
 
-Para conferir se a tarefa está de pé, `Get-ScheduledTask TrackeroaoSync`.
+Para conferir se a tarefa está de pé, `Get-ScheduledTask TrackeroaoSync`. Se
+o serviço não sobe no logon e o log não registra tentativa nenhuma, vale ver se
+existe `sync\fechado.flag`: é a marca deixada pelo "Fechar" da bandeja, e ela
+some quando o Trackeroao é aberto pelo atalho.
 
 ## Quanto a aplicação consome
 
@@ -182,7 +300,8 @@ o texto diz.
 
 ### Com o jogo fechado
 
-Resta um único processo `node`, que ocupa algo entre 50 e 60 MB de memória
+Sem a janela aberta e sem ícone na bandeja, resta um único processo `node`,
+que ocupa algo entre 50 e 60 MB de memória
 (medido) e mantém o uso de CPU praticamente em zero. Ele faz quatro coisas, e
 nenhuma delas é contínua:
 
@@ -205,6 +324,19 @@ nenhuma delas é contínua:
 Com o jogo fechado, nenhum handle fica aberto sobre o arquivo do save. O
 observador do arquivo só existe enquanto o jogo está rodando.
 
+### Com a janela aberta
+
+A janela do Trackeroao só existe enquanto está aberta, e só abre quando a
+pessoa a abre. Enquanto isso, somam-se o processo `Trackeroao.exe` e os
+processos auxiliares do WebView2 (`msedgewebview2`), que o componente cria
+como qualquer vista baseada no Edge. O consumo é o de uma página aberta num
+navegador moderno, e a página pede o `progress.json` ao serviço a cada cinco
+segundos. Ao fechar a janela, todos esses processos terminam; a pasta de
+dados do componente é uma só, sempre a mesma, e não cresce de uma abertura
+para a outra. Abrir a janela também acende o ícone da bandeja, descrito a
+seguir, que continua lá depois de a janela fechar e só se apaga quando uma
+sessão de jogo termina ou quando a pessoa escolhe "Fechar".
+
 ### Com o jogo aberto
 
 Ao processo `node` somam-se três coisas.
@@ -213,7 +345,8 @@ Ao processo `node` somam-se três coisas.
   estimativa é de 60 a 90 MB de memória, com CPU quase nula. O único trabalho
   periódico dele é conferir, a cada dois segundos, se o serviço que o abriu
   continua vivo, para não deixar na bandeja um ícone que não leva a lugar
-  nenhum.
+  nenhum. Ele não abre a janela sozinho; a janela só aparece com dois cliques
+  nele ou no atalho.
 - **A leitura do save**, a cada gravação feita pelo jogo. Gravações próximas
   são reunidas numa só, com uma espera de 0,9 s, porque o Sekiro costuma gravar
   várias vezes em sequência. Cada leitura percorre os cerca de 11 MB do arquivo,
@@ -229,16 +362,17 @@ Ao processo `node` somam-se três coisas.
   são síncronas: enquanto duram, o servidor espera, e uma página aberta naquele
   instante recebe a resposta com esse atraso.
 
-Por fim, quando há algo novo, o progresso é publicado no GitHub Pages por meio
-do `git`, **no máximo uma vez a cada três minutos**. O intervalo existe para
-não encher o histórico de commits enquanto se joga.
+Cada leitura termina gravando o `progress.json` no disco, e é só isso. Não há
+publicação, `git` nem envio de nada para fora do computador depois de uma
+leitura.
 
 ### O que não acontece
 
 A aplicação não escreve nada no jogo, não mantém o save aberto fora das
-leituras e não baixa nada em tempo de execução. Também não abre janela nem
-navegador por conta própria: quando o jogo começa, o único sinal visível é o
-ícone na bandeja.
+leituras, não baixa dependência em tempo de execução e não publica o progresso
+em lugar nenhum. Também não abre janela nem navegador por conta própria:
+quando o jogo começa, o único sinal visível é o ícone na bandeja, e a janela
+do Trackeroao só aparece quando a pessoa a abre.
 
 ## O que a página lê do save
 
@@ -445,8 +579,9 @@ uma decisão de quem usa. Sem escolha, vale o `PersonaName` do
 no arquivo, quem decide é o SteamID64 do save que está sendo lido, porque pegar
 a primeira daria o apelido de outra pessoa numa máquina de família. O
 `AccountName`, que é o nome de login, não é lido em momento nenhum. Sem nome
-escolhido e sem Steam, o link público mostra só o título, e a página local
-mostra um convite discreto para dar o nome.
+escolhido e sem Steam, a janela do computador mostra um convite discreto para
+dar o nome, e no celular aparece só o título, já que o nome não se escolhe de
+lá.
 
 O **tempo de jogo** tem duas fontes que medem coisas diferentes e por isso não
 se substituem em silêncio. A Steam grava relógio de parede, com menu, pausa e
@@ -504,6 +639,16 @@ registra cada troca de tela; início leva à tela de jogos, ou ao progresso
 quando não há lista de jogos. Nos navegadores que informam se há para onde ir,
 o botão sem destino aparece apagado.
 
+Ao lado do relógio da tela inicial ficam dois ícones pequenos, de traço fino.
+O globo escolhe o idioma, como descrito na seção seguinte. O celular, visível
+apenas na janela do próprio computador, abre o passo a passo para levar o
+Trackeroao ao telefone, descrito mais adiante.
+
+No pé de todas as páginas há a mesma assinatura, "made by oaovito", que não
+muda com o idioma. Na tela inicial ela aparece com destaque, separada por um
+fio e na tipografia dos títulos; nas demais, fica pequena e apagada, quase
+imperceptível.
+
 Essa tela tem identidade visual própria, deliberadamente distinta da página do
 Sekiro: por ser a porta de entrada para qualquer jogo, ela não herda o papel, o
 vermelho e o dourado daquela página. O modelo é a tela inicial de um console. O
@@ -552,16 +697,76 @@ de o serviço subir e, daí em diante, uma vez por dia, sempre entre duas rodada
 de verificação e nunca com um jogo aberto. O resultado fica em
 `biblioteca.json`, fora do git. Para rodá-la à mão, `npm run jogos`.
 
+## Idiomas
+
+A página fala doze idiomas: inglês, português do Brasil, espanhol, francês,
+alemão, italiano, russo, polonês, turco, japonês, coreano e chinês
+simplificado (a lista é `IDIOMAS`, em `trackeroao.html`). Por padrão, ela
+segue o idioma do sistema, tal como o navegador o informa, e cai no inglês
+quando o do sistema não está entre os doze. O globo da tela inicial abre a
+lista, com cada idioma escrito no próprio nome, e a escolha feita ali passa a
+valer no lugar da do sistema; a primeira opção da lista volta a seguir o
+sistema.
+
+A escolha é guardada em dois lugares. No navegador, para que aquele aparelho a
+lembre; e no serviço, pela rota `/idioma`, que a grava em `sync/idioma.json`
+por meio de `sync/idioma.js`. É desse arquivo que o menu da bandeja e as
+caixas do instalador e do desinstalador tiram o idioma, de modo que todas as
+partes do programa falam a mesma língua. Consultar o idioma guardado vale de
+qualquer aparelho da rede, e um navegador sem escolha própria adota o que o
+serviço guardou; mudá-lo, porém, só é aceito a partir do próprio computador.
+
+O que não se traduz, e isso é deliberado: o nome da página, a assinatura do
+rodapé, o nome de cada jogo e tudo o que o Sekiro batiza — chefes, itens,
+áreas, conquistas, estados como Sinister Burden. São títulos, e aparecem como
+o jogo os escreve. Um texto que falte num idioma cai no inglês, em vez de
+sumir da tela.
+
 ## No celular, como aplicativo
 
-O link de progresso pode ser instalado como aplicativo no iPhone e no Android.
-No iPhone, pelo Safari: Compartilhar e depois "Adicionar à Tela de Início". No
-Android, pelo Chrome: o menu oferece "Instalar app". O trackeroao passa a abrir
-em tela cheia, com o ícone da chama do Ídolo. O service worker (`docs/sw.js`)
-busca sempre a leitura mais nova quando há rede e, sem rede, abre a última que
-recebeu, em vez de uma tela de erro. A instalação exige https, o que o link
-público oferece; pelo endereço da rede local, que é http, a página continua
-funcionando normalmente, apenas sem virar aplicativo.
+O progresso chega ao celular pela rede de casa, a partir do próprio
+computador, e não por um site. Na janela do computador, o ícone de celular ao
+lado do globo mostra o passo a passo, que começa sempre pelo mesmo ponto: o
+telefone precisa estar no mesmo Wi-Fi que o computador, o que se faz uma
+única vez.
+
+**No iPhone**, abre-se `http://trackeroao.local:8777` no Safari, toca-se em
+Compartilhar e depois em "Adicionar à Tela de Início". O Trackeroao passa a
+abrir como um aplicativo à parte, com o ícone da chama do Ídolo e sem a barra
+do navegador. Em casa, ele mostra a leitura corrente, atualizada a cada cinco
+segundos.
+
+Cada leitura bem-sucedida fica guardada no próprio aparelho, no armazenamento
+local do navegador, sob a chave `ultima-leitura` (a constante `COPIA_CHAVE`,
+em `trackeroao.html`). Quando o computador deixa de responder — o celular
+longe de casa, o PC desligado —, a página exibe essa cópia, com um aviso de
+que se trata da última leitura guardada, em vez de uma tela vazia. Há um
+limite, que convém declarar: o endereço da rede de casa é `http`, e o Safari
+só registra o service worker (`docs/sw.js`) em `https` ou no próprio
+computador. Assim, o iPhone não guarda a página em si para abri-la do zero
+sem conexão com o computador; a cópia é exibida quando a página já está
+carregada e perde o contato com ele.
+
+**No Android**, o Trackeroao é um aplicativo nativo, cujo código está em
+`android/`. Ele encontra o computador sozinho, perguntando por
+`trackeroao.local` por mDNS na rede de casa, sem que ninguém precise digitar
+endereço algum, e guarda o último endereço que funcionou para responder mais
+depressa da próxima vez. Tudo o que a página pede passa por ele: cada resposta
+bem-sucedida vira uma cópia local, de modo que, longe de casa, o aplicativo
+abre com a última leitura. Links para outros sites abrem no navegador do
+telefone. O aplicativo apenas lê: não envia nenhum pedido que altere o
+computador, e não pede outra permissão além das de rede e Wi-Fi.
+
+O aplicativo de Android é distribuído pelo próprio computador, e não por uma
+loja nem por um link na internet. Quando a instalação o contém, o passo a
+passo da janela mostra o endereço de onde baixá-lo, na forma
+`http://<IP do computador>:8777/android.apk`. Usa-se o IP, e não o nome
+`.local`, porque nem todo navegador de Android resolve esse nome; o
+aplicativo, depois de instalado, resolve.
+
+O aplicativo é compilado sem Gradle, por `android/construir.sh`, que usa
+apenas as ferramentas de linha de comando do SDK do Android: `aapt2`, `javac`,
+`d8`, `zipalign` e `apksigner`.
 
 ## Descobrindo o que falta
 
@@ -606,9 +811,11 @@ diz no terminal que foi chute. Para fixar, basta pôr `"slot": 1` no
 
 ## Arquivos
 
-O repositório é o projeto: clonar e rodar basta, e `docs/` é a saída dele, a
-mesma pasta que o GitHub Pages serve. Nada é resolvido fora desta pasta, e há
-teste na suíte cobrando isso.
+O repositório é o projeto: clonar e rodar basta. Nada é resolvido fora desta
+pasta, e há teste na suíte cobrando isso. `docs/` guarda os arquivos
+estáticos que acompanham a página — ícones, artes, o manifesto e os ícones do
+aplicativo —, e é o `sync/serve.js` que os serve, no próprio computador e na
+rede de casa. Nenhum site é montado a partir dela.
 
 ```
 trackeroao/
@@ -618,7 +825,21 @@ trackeroao/
   instalador/                 o que vira o .exe da release
     instalar.ps1              instalação do zero, ou por cima de uma existente
     desinstalar.ps1           o oposto exato do instalar.ps1
-    construir-exe.ps1         compila os dois num .exe só
+    construir-exe.ps1         compila os dois num .exe só, com a janela dentro
+                              e os textos das caixas em doze idiomas (Textos)
+    construir-janela.ps1      compila a janela do Windows; baixa o SDK do
+                              WebView2 do NuGet, em versão fixa e conferida
+                              pelo SHA-256
+    janela/
+      Trackeroao.cs           a janela do Trackeroao (vira app\Trackeroao.exe)
+
+  android/                    o aplicativo de Android
+    construir.sh              gera o .apk sem Gradle (aapt2, javac, d8,
+                              zipalign, apksigner)
+    AndroidManifest.xml       só permissões de rede e de Wi-Fi
+    src/                      a tela, a busca do computador por mDNS e a
+                              cópia local das leituras
+    res/                      ícones e tema
 
   windows/                    atalhos para quem roda a partir de um clone
     run.bat                   execução manual
@@ -629,16 +850,16 @@ trackeroao/
 
   releases/                   uma nota por versão; cada uma vira uma release
 
-  docs/                       o que vai para o ar (GitHub Pages)
-    index.html                cópia da página, gerada
-    progress.json             progresso saneado, sem nada de máquina ou conta
-    icones/                   arte dos chefes e dos Headless, baixada uma vez
-    manifest.webmanifest      o que faz o link virar aplicativo no celular
+  docs/                       arquivos estáticos da página, servidos localmente
+    icones/                   arte dos chefes, dos Headless e das conquistas
+    manifest.webmanifest      nome, cores e ícones do aplicativo de tela inicial
     sw.js                     abre a última leitura quando falta rede
-    app/                      ícones do aplicativo
+    app/                      ícones do aplicativo (tela inicial e janela)
+    index.html                cópia da página, remanescente do antigo site
+    progress.json             progresso saneado, remanescente do antigo site
 
   sync/
-    main.js                   poll do processo + watcher + servidor + publicação
+    main.js                   poll do processo + watcher + servidor + mDNS
     parse.js                  junta tudo e monta o progress.json
 
     sl2.js                    container BND4, MD5, acha o save
@@ -653,6 +874,7 @@ trackeroao/
 
     conquistasave.js          as 34 conquistas provadas pelo save
     conquistas-lista.json     nomes e descrições das 34, sem depender da Steam
+    conquistas.json           ícone, raridade e dificuldade de cada conquista
     achievements.js           conquistas da Steam, que conferem as do save
     conquistas.js             ícones, descrição e dificuldade das conquistas
     tempo.js                  tempo de jogo: Steam, e o save quando não há Steam
@@ -665,39 +887,68 @@ trackeroao/
     bosskills.js              conta cada vez que um chefe cai
     icones.js                 baixa as artes uma vez
 
-    publish.js                monta docs/ e barra o que identificaria a máquina
-    serve.js                  servidor estático + endereço na LAN
+    serve.js                  servidor estático + endereço na LAN + rotas
+                              locais (/rede, /idioma, /android.apk, ...)
     mdns.js                   nome .local na rede, sem dependência
+    idioma.js                 o idioma escolhido no globo, para todas as partes
+    publish.js                saneamento do progresso e detector de vazamentos,
+                              hoje usado só pela suíte
 
+    bandeja.ps1               o ícone da bandeja e o seu menu
+    abrir.vbs                 abertura pelo navegador, onde não há a janela
     oculto.vbs                sobe o serviço sem janela, via wscript do Windows
 
     instalacao.js             detecta se o jogo foi desinstalado
     hibernar.js               arquiva tudo e remove a tarefa agendada
-    atualizar.js              atualização silenciosa para a release mais nova
+    atualizar.js              atualização silenciosa para a release mais nova,
+                              janela incluída
     discover.js               descoberta de offsets por diff
-    auditoria.js              relatório do que está público
+    auditoria.js              relatório do que o repositório expõe
 
     selftest.js               a suíte inteira
     pagetest.js               roda a página num DOM de brinquedo
     domshim.js                esse DOM de brinquedo
 ```
 
+Numa instalação feita pelo `.exe`, soma-se a esta árvore a pasta `app\`, com a
+janela do Trackeroao, as bibliotecas do WebView2, o texto da licença delas e
+o registro da versão da janela. Ela não existe no repositório.
+
+Dois arquivos de `docs/` são sobras do tempo em que havia um site. O
+`index.html` é uma cópia da página que o atualizador ainda exige no pacote
+de cada release, como sinal de que o download veio inteiro; o `progress.json`
+é uma versão saneada do progresso, sem nada que identifique máquina ou conta,
+que a suíte usa como amostra quando um clone ainda não leu nenhum save. Nenhum
+dos dois é gerado ou atualizado pelo serviço. Do mesmo tempo vem o
+`publish.js`: ele já não publica nada, mas as suas funções de saneamento e de
+detecção de dados da máquina continuam a servir à suíte, que as aplica ao
+código e aos arquivos de `docs/`.
+
 Ficam fora do git, porque nascem em tempo de execução e carregam dados da
 máquina: o `progress.json` cru, com o caminho do save; os arquivos de estado dos
-contadores, que carregam carimbo de hora; o log; os despejos de memória; e as
-cópias de hibernação, que contêm o save e portanto o Steam ID.
+contadores, que carregam carimbo de hora; o log; os despejos de memória; as
+cópias de hibernação, que contêm o save e portanto o Steam ID; o idioma
+escolhido (`sync/idioma.json`); a marca de "Fechar" (`sync/fechado.flag`); e o
+que o `android/construir.sh` gera, em `android/build/`.
 
 ## Se der problema
 
 Quando a mensagem é **"não achou o save"**, o caminho é `npm run selftest`. Se o
 jogo nunca rodou nesta máquina, a pasta simplesmente não existe.
 
-Quando a página diz **"sem sincronização"**, ela não está falando com o serviço.
-As causas, da mais comum para a menos: o computador está desligado ou dormindo;
-o serviço caiu, e aí `sync/trackeroao.log` e `Get-ScheduledTask TrackeroaoSync`
-dizem o que houve; ou o arquivo HTML foi aberto direto por `file://`, caso em
-que o `fetch('progress.json')` não funciona e é preciso usar o endereço do
-servidor.
+Quando a página diz **"sem sincronizar"**, ou quando o celular mostra a
+última leitura guardada, ela não está falando com o serviço. As causas, da
+mais comum para a menos: o celular não está no Wi-Fi de casa; o computador
+está desligado ou dormindo; o Trackeroao foi fechado pelo menu da bandeja, e
+só volta quando aberto pelo atalho; o serviço caiu, e aí
+`sync/trackeroao.log` e `Get-ScheduledTask TrackeroaoSync` dizem o que houve;
+ou o arquivo HTML foi aberto direto por `file://`, caso em que o
+`fetch('progress.json')` não funciona e é preciso usar o endereço do servidor.
+
+Quando o **iPhone não encontra `trackeroao.local`**, os dois aparelhos quase
+sempre estão em redes diferentes (a rede de convidados do roteador, por
+exemplo), ou a porta 8777 não foi liberada no firewall; o `liberar-porta.ps1`,
+descrito acima, resolve o segundo caso.
 
 Quando os **números parecem errados**, o suspeito quase sempre é o slot. Vale
 ver qual o terminal escolheu e fixá-lo com `"slot": N` no `offsets.json`.
