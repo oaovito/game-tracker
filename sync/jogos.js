@@ -63,6 +63,12 @@ function catalogo() {
       arte: a.arte || null,
     });
   }
+  // Um jogo que o tracker viu abrir nesta maquina esta instalado nela, mesmo
+  // quando a varredura nao achou a pasta (instalado fora da Steam, num disco
+  // que ela nao le).
+  let abertos = {};
+  try { abertos = JSON.parse(fs.readFileSync(RECENTES, 'utf8')) || {}; } catch (e) { abertos = {}; }
+  for (const g of lista) if (!g.instalado && abertos[g.chave]) g.instalado = true;
   return lista;
 }
 

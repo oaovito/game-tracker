@@ -3012,6 +3012,34 @@
     .jogo-card.ativo .jogo-capa, .jogo-card:hover .jogo-capa { transform: none; }
   }
 
+  /* A tela inicial cabe inteira na janela, sem rolar: o palco fica com a
+     altura que sobra, e os pôsteres medem pela altura da janela também. No
+     celular a tela continua rolando como antes. */
+  @media (min-width: 641px) and (min-height: 480px) {
+    .vista-hub .wrap {
+      height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+      padding-block: 0.9rem 0.6rem;
+    }
+    .vista-hub .topbar { flex: none; padding-bottom: 4px; }
+    .vista-hub #hub { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .vista-hub .hub-topo { flex: none; margin: 2px 0 clamp(8px, 1.8vh, 22px); }
+    .vista-hub .palco { flex: 1 1 auto; min-height: 7.5rem; }
+    .vista-hub .palco-info { gap: clamp(8px, 1.4vh, 14px); padding: clamp(14px, 2.6vh, 36px) clamp(20px, 3vw, 36px); }
+    .vista-hub .palco-marca { min-height: 0; }
+    .vista-hub .palco-logo { max-height: min(7.5rem, 11vh); }
+    .vista-hub .palco-nome { font-size: clamp(1.3rem, min(3.4vw, 4.6vh), 2.6rem); }
+    .vista-hub .trilho-cabeca { flex: none; margin: clamp(10px, 2vh, 30px) 0 0; }
+    .vista-hub .trilho {
+      flex: none; padding-block: clamp(8px, 1.6vh, 16px) clamp(8px, 1.6vh, 20px);
+      grid-auto-columns: clamp(5rem, min(13vw, 19vh), 11.5rem);
+    }
+    .vista-hub .jogo-card-nome { margin-top: 7px; -webkit-line-clamp: 1; }
+    .vista-hub .hub-nota { flex: none; margin-top: 0; }
+    .vista-hub .hub-nota:empty { display: none; }
+    .vista-hub .hub-atalhos { flex: none; margin: clamp(6px, 1.4vh, 22px) 0 0; }
+    .vista-hub .made-by { flex: none; margin-top: clamp(8px, 1.6vh, 64px); padding: clamp(8px, 1.4vh, 22px) 0 0; }
+  }
+
   a, button, input { -webkit-tap-highlight-color: transparent; }
   ::selection { background: var(--blood); color: var(--paper); }
 </style>
@@ -9086,6 +9114,37 @@ setInterval(pollProgress, NA_REDE_LOCAL ? 5000 : 60000);
  */
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+/*
+ * A barra da janela do Trackeroao no Windows toma a cor do fundo da página,
+ * que é a cor das pontas da tela. A janela recebe só a cor, e faz ela mesma a
+ * passagem suave de uma para a outra quando a página troca. No navegador e no
+ * celular não existe essa ponte, e nada disto roda.
+ */
+function corDasPontas() {
+  const opaca = (el) => {
+    if (!el || typeof getComputedStyle !== "function") return null;
+    const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+%?))?/.exec(getComputedStyle(el).backgroundColor || "");
+    if (!m) return null;
+    const a = m[4] === undefined ? 1 : (/%$/.test(m[4]) ? parseFloat(m[4]) / 100 : parseFloat(m[4]));
+    if (a < 0.5) return null;
+    return "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("");
+  };
+  return opaca(document.body) || opaca(document.documentElement);
+}
+let corDaBarra = null;
+function pintarBarra() {
+  const ponte = window.chrome && window.chrome.webview;
+  if (!ponte || typeof ponte.postMessage !== "function") return;
+  const cor = corDasPontas();
+  if (!cor || cor === corDaBarra) return;
+  corDaBarra = cor;
+  try { ponte.postMessage("cor:" + cor); } catch (e) { /* a janela fechou */ }
+}
+if (window.chrome && window.chrome.webview) {
+  pintarBarra();
+  setInterval(pintarBarra, 250);
 }
 </script>
 </body>

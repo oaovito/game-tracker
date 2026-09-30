@@ -148,6 +148,12 @@ class Janela : Form {
       SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0027);
     };
     Resize += delegate { barra.Invalidate(); };
+    // O contorno da janela acompanha a barra enquanto ela troca de cor.
+    barra.Mudou += delegate(Color c) {
+      if (!IsHandleCreated) return;
+      int v = c.R | (c.G << 8) | (c.B << 16);
+      try { DwmSetWindowAttribute(Handle, 34, ref v, 4); } catch { }
+    };
     Shown += async delegate { await Abrir(); };
     Vigiar(mostrar, delegate {
       if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
@@ -233,6 +239,14 @@ class Janela : Form {
       Fora(e.Uri);
     };
     web.CoreWebView2.DocumentTitleChanged += delegate { Text = "Trackeroao"; };
+    // A pagina manda a cor das pontas dela ("cor:#rrggbb"), e a barra passa
+    // para essa cor devagar.
+    web.CoreWebView2.WebMessageReceived += delegate(object o, CoreWebView2WebMessageReceivedEventArgs e) {
+      string m = null;
+      try { m = e.TryGetWebMessageAsString(); } catch { }
+      Match c = Regex.Match(m ?? "", "^cor:#([0-9a-fA-F]{6})$");
+      if (c.Success) barra.Tingir(Color.FromArgb(Convert.ToInt32(c.Groups[1].Value, 16) | unchecked((int)0xFF000000)));
+    };
 
     web.NavigateToString(Espera());
     bool vivo = await Task.Run(new Func<bool>(GarantirServico));
@@ -324,12 +338,44 @@ class Janela : Form {
  * o clique como barra de titulo (ver WndProc da Janela).
  */
 class Barra : Control {
-  static readonly Color Fundo = Color.FromArgb(10, 11, 15);
-  static readonly Color Linha = Color.FromArgb(26, 28, 34);
-  static readonly Color Texto = Color.FromArgb(236, 238, 242);
-  static readonly Color Apagado = Color.FromArgb(150, 154, 164);
-  static readonly Color Limao = Color.FromArgb(216, 255, 60);
+  static readonly Color Inicial = Color.FromArgb(10, 11, 15);
   static readonly Color Fechar = Color.FromArgb(232, 17, 35);
+
+  // A cor da barra e a das pontas da pagina, e muda com ela em ~0,35 s.
+  Color fundo = Inicial, de = Inicial, para = Inicial;
+  DateTime desde;
+  readonly System.Windows.Forms.Timer passo = new System.Windows.Forms.Timer();
+  public event Action<Color> Mudou;
+
+  public void Tingir(Color alvo) {
+    if (alvo.ToArgb() == para.ToArgb()) return;
+    de = fundo; para = alvo; desde = DateTime.UtcNow;
+    passo.Start();
+  }
+
+  void Andar() {
+    double t = Math.Min(1.0, (DateTime.UtcNow - desde).TotalMilliseconds / 350.0);
+    double e = 1 - Math.Pow(1 - t, 3);
+    fundo = Misturar(de, para, e);
+    if (t >= 1) { fundo = para; passo.Stop(); }
+    BackColor = fundo;
+    Invalidate();
+    if (Mudou != null) Mudou(fundo);
+  }
+
+  static Color Misturar(Color a, Color b, double k) {
+    return Color.FromArgb(
+      (int)Math.Round(a.R + (b.R - a.R) * k),
+      (int)Math.Round(a.G + (b.G - a.G) * k),
+      (int)Math.Round(a.B + (b.B - a.B) * k));
+  }
+
+  // Num fundo claro (o tema claro da pagina) o texto e os botoes escurecem.
+  bool Claro { get { return (0.2126 * fundo.R + 0.7152 * fundo.G + 0.0722 * fundo.B) / 255.0 > 0.55; } }
+  Color Texto { get { return Claro ? Color.FromArgb(18, 20, 26) : Color.FromArgb(236, 238, 242); } }
+  Color Apagado { get { return Claro ? Color.FromArgb(84, 88, 98) : Color.FromArgb(150, 154, 164); } }
+  Color Limao { get { return Claro ? Color.FromArgb(108, 140, 0) : Color.FromArgb(216, 255, 60); } }
+  Color Linha { get { return Misturar(fundo, Claro ? Color.Black : Color.White, 0.07); } }
 
   readonly Form dona;
   readonly Icon icone;
@@ -341,7 +387,9 @@ class Barra : Control {
     Dock = DockStyle.Top;
     SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
              ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-    BackColor = Fundo;
+    BackColor = Inicial;
+    passo.Interval = 15;
+    passo.Tick += delegate { Andar(); };
     float escala = 1f;
     try { using (Graphics g = CreateGraphics()) escala = g.DpiX / 96f; } catch { }
     Height = (int)Math.Round(36 * escala);
@@ -394,7 +442,7 @@ class Barra : Control {
 
   protected override void OnPaint(PaintEventArgs e) {
     Graphics g = e.Graphics;
-    g.Clear(Fundo);
+    g.Clear(fundo);
     float k = Height / 36f;
     using (Pen p = new Pen(Linha)) g.DrawLine(p, 0, Height - 1, Width, Height - 1);
 
@@ -420,8 +468,8 @@ class Barra : Control {
       Rectangle b = Botao(i);
       Color cor = Apagado;
       if (i == sob) {
-        Color fundo = i == 2 ? Fechar : Color.FromArgb(apertado == i ? 44 : 30, 255, 255, 255);
-        using (SolidBrush br = new SolidBrush(fundo)) g.FillRectangle(br, b);
+        Color realce = i == 2 ? Fechar : (Claro ? Color.FromArgb(apertado == i ? 36 : 22, 0, 0, 0) : Color.FromArgb(apertado == i ? 44 : 30, 255, 255, 255));
+        using (SolidBrush br = new SolidBrush(realce)) g.FillRectangle(br, b);
         cor = i == 2 ? Color.White : Texto;
       }
       int cx = b.X + b.Width / 2, cy = b.Y + b.Height / 2, m = (int)Math.Round(5 * k);

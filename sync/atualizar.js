@@ -176,9 +176,33 @@ function rodar(cmd, args, opts) {
 }
 
 async function ultimaRelease() {
-  const r = await pedir(`https://api.github.com/repos/${REPO}/releases/latest`);
-  if (!r || !r.tag_name) throw new Error('a API não devolveu release nenhuma');
-  return r.tag_name;
+  try {
+    const r = await pedir(`https://api.github.com/repos/${REPO}/releases/latest`);
+    if (r && r.tag_name) return r.tag_name;
+    throw new Error('a API não devolveu release nenhuma');
+  } catch (e) {
+    // A API tem cota por endereço, e uma rede compartilhada a gasta sem culpa
+    // de ninguém. A página da release não tem essa cota: ela redireciona para
+    // a tag, e o nome vem no endereço.
+    const tag = await tagPeloSite().catch(() => null);
+    if (tag) return tag;
+    throw e;
+  }
+}
+
+function tagPeloSite() {
+  return new Promise((resolve, reject) => {
+    const req = https.get(`https://github.com/${REPO}/releases/latest`, {
+      headers: { 'user-agent': 'trackeroao' }, timeout: 30000,
+    }, (res) => {
+      res.resume();
+      const m = /\/releases\/tag\/([^/?#]+)/.exec(res.headers.location || '');
+      if (m) resolve(decodeURIComponent(m[1]));
+      else reject(new Error('HTTP ' + res.statusCode + ' na página da release'));
+    });
+    req.on('timeout', () => req.destroy(new Error('tempo esgotado na página da release')));
+    req.on('error', reject);
+  });
 }
 
 /** Baixa e descompacta o código de uma tag; devolve a pasta e a limpeza. */

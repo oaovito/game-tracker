@@ -115,6 +115,15 @@ Edge; ela mostra a página que o serviço serve no próprio computador, num
 endereço interno que nunca aparece. Links para fora, como a loja de um jogo,
 abrem no navegador da pessoa, e dentro da janela fica somente o Trackeroao.
 
+A moldura da janela também é do Trackeroao, e não a do Windows: uma barra fina
+com o ícone, o nome e os botões de minimizar, maximizar e fechar, no estilo dos
+aplicativos de jogo. A barra toma a cor do fundo da página, que é a cor das
+pontas da tela, e o contorno da janela a acompanha. Quando a página muda, por
+exemplo da tela inicial para a do Sekiro ou do tema escuro para o claro, a
+página informa a nova cor à janela, e a barra passa de uma cor para a outra
+em cerca de um terço de segundo. Sobre um fundo claro, o texto e os botões da
+barra escurecem para continuar legíveis.
+
 Ela abre por dois caminhos, e só por eles: dois cliques no atalho "Trackeroao"
 da área de trabalho, ou dois cliques no ícone da bandeja. Nenhuma outra coisa
 a abre, nem o jogo, nem a atualização, nem o logon. Existe uma única janela de
@@ -663,6 +672,18 @@ que a cor venha dos jogos e não da página. A tipografia é a Unbounded nos
 títulos e a Sora no texto. A tela abre sempre no modo escuro, e o botão de
 tema no canto alterna para o claro; a escolha é guardada à parte da página do
 Sekiro.
+
+No computador, a tela inicial cabe inteira na janela, sem barra de rolagem: o
+palco ocupa a altura que sobra, e os pôsteres são medidos também pela altura da
+janela, de modo que o título, o palco, os jogos instalados, os dois botões e o
+rodapé aparecem juntos em qualquer tamanho de janela. No celular, estreito
+demais para isso, a tela continua rolando.
+
+Nos pôsteres sem arte, o nome do jogo nunca se parte no meio de uma palavra.
+Quando uma palavra não cabe na largura do pôster, apenas a letra diminui, sem
+que o pôster cresça. Títulos longos aparecem pelo nome curto mais conhecido
+("Sekiro", "Skyrim", "GTA V"), ou pelo nome sem o subtítulo, e o nome completo
+continua sob o pôster.
 
 Cada jogo aparece pela própria arte, na maior resolução disponível. Para os
 títulos da Steam, `sync/arte.js` monta, para cada peça, uma lista de endereços
