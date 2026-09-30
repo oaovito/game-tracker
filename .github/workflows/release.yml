@@ -260,7 +260,7 @@ jobs:
             })
           }
           Get-CimInstance Win32_Process -Filter "Name='Trackeroao.exe'" | ForEach-Object { Write-Host "  processo $($_.ProcessId) (pai $($_.ParentProcessId)): $($_.CommandLine)" }
-          if ((Trackeroaos).Count -ne 1) { throw "janelas abertas: $((Trackeroaos).Count), e nao 1" }
+          if (@(Trackeroaos).Count -ne 1) { throw "janelas abertas: $(@(Trackeroaos).Count), e nao 1" }
 
           # O icone da bandeja e o proprio Trackeroao.exe, que a abertura acende
           # pelo servico, e o Windows o lista com o nome do produto.
@@ -320,7 +320,7 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "/so-janela saiu com $($p.ExitCode)" }
           if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw '/so-janela nao gravou a versao da janela' }
           if (Test-Path (Join-Path $destino 'app-novo')) { throw '/so-janela deixou a pasta temporaria' }
-          if ((Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja segurou o .exe durante a troca' }
+          if (@(Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja segurou o .exe durante a troca' }
           Write-Host 'a janela abriu, e unica e fecha pelo menu da bandeja'
 
           # "Forcar atualizacao": recem-instalada, a versao e a ultima.
@@ -335,7 +335,7 @@ jobs:
           if (-not (Test-Path (Join-Path $destino 'sync\fechado.flag'))) { throw 'o Fechar nao deixou a marca' }
           function Responde { try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:8777/progress.json' | Out-Null; $true } catch { $false } }
           if (Responde) { throw 'o servico continuou de pe depois do Fechar' }
-          if ((Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja ficou depois do Fechar' }
+          if (@(Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja ficou depois do Fechar' }
           schtasks /run /tn TrackeroaoSync | Out-Null
           Start-Sleep -Seconds 10
           if (Responde) { throw 'a tarefa do logon religou o servico depois do Fechar' }
