@@ -286,6 +286,41 @@ jobs:
           if ($desc -ne 'Trackeroao') { throw "o Windows listaria a bandeja como '$desc'" }
           Write-Host "bandeja: Trackeroao.exe /bandeja (pid $($tray.ProcessId)), descricao '$desc'"
 
+          # Orcamento de recursos: com a janela aberta e parada, o Trackeroao
+          # inteiro (servico, janela, bandeja e o motor da pagina) tem de
+          # gastar como um aplicativo leve de uso continuo. Passar daqui e
+          # regressao, e so sobe com autorizacao explicita.
+          $orcCpu = 2.0; $orcRam = 400
+          function ArvoreTrackeroao {
+            $todos = @(Get-CimInstance Win32_Process)
+            $raiz = @($todos | Where-Object { $_.Name -eq 'Trackeroao.exe' -or ($_.Name -eq 'node.exe' -and $_.CommandLine -like '*sync*main.js*') } | ForEach-Object { $_.ProcessId })
+            $ids = New-Object System.Collections.Generic.HashSet[int]
+            $fila = New-Object System.Collections.Generic.Queue[int]
+            foreach ($r in $raiz) { if ($ids.Add([int]$r)) { $fila.Enqueue([int]$r) } }
+            while ($fila.Count) {
+              $p = $fila.Dequeue()
+              foreach ($f in @($todos | Where-Object { $_.ParentProcessId -eq $p })) { if ($ids.Add([int]$f.ProcessId)) { $fila.Enqueue([int]$f.ProcessId) } }
+            }
+            @($ids)
+          }
+          Start-Sleep -Seconds 5
+          $ids = ArvoreTrackeroao
+          $antes = @{}; foreach ($i in $ids) { try { $antes[$i] = (Get-Process -Id $i).TotalProcessorTime.TotalMilliseconds } catch { } }
+          $t0 = Get-Date
+          Start-Sleep -Seconds 20
+          $cpuMs = 0; $ram = 0
+          foreach ($i in $ids) {
+            try { $pr = Get-Process -Id $i } catch { continue }
+            if ($antes.ContainsKey($i)) { $cpuMs += $pr.TotalProcessorTime.TotalMilliseconds - $antes[$i] }
+            $ram += $pr.WorkingSet64
+            Write-Host ("  consumo: {0} (pid {1}) {2:N0} MB" -f $pr.ProcessName, $i, ($pr.WorkingSet64 / 1MB))
+          }
+          $cpu = $cpuMs / ((Get-Date) - $t0).TotalMilliseconds / [Environment]::ProcessorCount * 100
+          $ramMb = $ram / 1MB
+          Write-Host ("consumo com a janela aberta: CPU {0:N2}% (limite {1}%), RAM {2:N0} MB (limite {3} MB), {4} processos" -f $cpu, $orcCpu, $ramMb, $orcRam, $ids.Count)
+          if ($cpu -gt $orcCpu) { throw ("CPU acima do orcamento: {0:N2}%" -f $cpu) }
+          if ($ramMb -gt $orcRam) { throw ("RAM acima do orcamento: {0:N0} MB" -f $ramMb) }
+
           # A barra propria: sem a barra de titulo do Windows, a area do
           # aplicativo comeca no topo da janela; na faixa de cima, fora dos
           # botoes, o Windows entende barra de titulo; no X, botao do aplicativo.

@@ -2032,6 +2032,23 @@ function resumo() {
     console.log('   FALHA o GET /abrir do atalho chega ao processo residente\n            ' + err.message);
   }
 
+  console.log('\n  === 23. O consumo da página ===');
+  check('a tela inicial não redesenha a cada quadro, e para fora de foco', () => {
+    const html = fs.readFileSync(path.join(RAIZ_PROJETO, 'trackeroao.html'), 'utf8');
+    // Animação de máscara, fundo ou sombra repinta a tela inteira: só
+    // transform e opacity andam sem redesenho.
+    const quadros = {};
+    for (const m of html.matchAll(/@keyframes\s+([\w-]+)\s*\{([\s\S]*?)\n  \}/g)) quadros[m[1]] = m[2];
+    const fundo = /\.vista-hub \.oao-fundo \{([\s\S]*?)\n  \}/.exec(html);
+    assert(fundo, 'não achei a trama do fundo');
+    const anim = /animation:\s*([\w-]+)[^;]*;/.exec(fundo[1]);
+    assert(anim && /steps\(/.test(anim[0]), 'a trama do fundo anda a sessenta quadros por segundo');
+    assert(!/mask-position|background-position/.test(quadros[anim[1]] || ''), 'a trama do fundo anima a máscara, e a tela é repintada a cada quadro');
+    assert(!/titulo-oao[^;]*infinite/.test(html), 'o título respira numa animação infinita');
+    assert(/html\.quieto \*[^{]*\{[^}]*animation-play-state:\s*paused/.test(html), 'fora de foco as animações continuam');
+    return 'trama por transform em passos, título por disparo, pausa fora de foco';
+  });
+
   console.log('\n  === 22. A varredura de jogos ===');
   {
     const nome = 'acha jogos pelo disco e pelo registro, sem Steam e sem rede';
