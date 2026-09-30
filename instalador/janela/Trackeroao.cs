@@ -534,6 +534,15 @@ static class Bandeja {
     return Textos[0];
   }
 
+  // A versao instalada, do versao.json que a instalacao e a atualizacao gravam.
+  static string Versao(string raiz) {
+    try {
+      Match m = Regex.Match(File.ReadAllText(Path.Combine(raiz, "versao.json"), Encoding.UTF8), "\"tag\"\\s*:\\s*\"v?([^\"]+)\"");
+      if (m.Success) return m.Groups[1].Value;
+    } catch { }
+    return null;
+  }
+
   static string Postar(string url) {
     HttpWebRequest r = (HttpWebRequest)WebRequest.Create(url);
     r.Method = "POST";
@@ -562,9 +571,15 @@ static class Bandeja {
 
     NotifyIcon icone = new NotifyIcon();
     icone.Icon = Programa.Icone(SystemInformation.SmallIconSize) ?? SystemIcons.Application;
-    icone.Text = "Trackeroao";
+    // O nome e a versao instalada: no texto ao passar o mouse e no topo do menu.
+    Func<string> nome = delegate { string v = Versao(raiz); return v == null ? "Trackeroao" : "Trackeroao " + v; };
+    icone.Text = nome();
 
     ContextMenuStrip menu = new ContextMenuStrip();
+    ToolStripItem versao = menu.Items.Add(nome());
+    versao.Enabled = false;
+    menu.Items.Add(new ToolStripSeparator());
+    menu.Opening += delegate { string n = nome(); versao.Text = n; icone.Text = n; };
     ToolStripItem atualizar = menu.Items.Add(t[1]);
     atualizar.Click += delegate {
       /*

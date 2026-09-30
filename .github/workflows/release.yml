@@ -268,8 +268,13 @@ jobs:
           # O icone da bandeja e o proprio Trackeroao.exe, que a abertura acende
           # pelo servico, e o Windows o lista com o nome do produto.
           $tray = $null
-          for ($i = 0; $i -lt 20 -and -not $tray; $i++) { Start-Sleep -Milliseconds 500; $tray = (Trackeroaos -Bandeja) | Select-Object -First 1 }
-          if (-not $tray) { throw 'o icone da bandeja nao acendeu com a janela' }
+          # Recem-instalado, o servico pode demorar a atender o pedido da janela.
+          for ($i = 0; $i -lt 60 -and -not $tray; $i++) { Start-Sleep -Milliseconds 500; $tray = (Trackeroaos -Bandeja) | Select-Object -First 1 }
+          if (-not $tray) {
+            $log = Join-Path $destino 'sync\trackeroao.log'
+            if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { Write-Host "  log: $_" } }
+            throw 'o icone da bandeja nao acendeu com a janela'
+          }
           if (@(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -like '*bandeja.ps1*' }).Count) { throw 'a bandeja ainda roda pelo PowerShell' }
           $desc = (Get-Item $janela).VersionInfo.FileDescription
           if ($desc -ne 'Trackeroao') { throw "o Windows listaria a bandeja como '$desc'" }

@@ -2801,7 +2801,7 @@
   .palco {
     position: relative; overflow: hidden; isolation: isolate;
     min-height: clamp(17rem, 34vw, 29rem);
-    border-radius: 26px; border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 26px; border: 1px solid rgba(255, 255, 255, 0.07);
     background: #0b0c10; color: #fff;
     box-shadow: 0 30px 70px var(--j-sombra);
     display: flex; align-items: flex-end;
@@ -2882,10 +2882,10 @@
   }
   .jogo-capa {
     position: relative; aspect-ratio: 2 / 3; max-width: 100%;
-    border-radius: 14px; overflow: hidden;
-    background: var(--j-vidro); border: 1px solid var(--j-borda);
-    box-shadow: 0 12px 28px var(--j-sombra);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border-radius: 12px; overflow: hidden;
+    background: var(--j-vidro);
+    box-shadow: 0 10px 24px var(--j-sombra);
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
   }
   .jogo-capa img, .jogo-faixa img {
     width: 100%; height: 100%; object-fit: cover; display: block;
@@ -2893,24 +2893,25 @@
   }
   .jogo-capa img.pronta, .jogo-faixa img.pronta { opacity: 1; }
   .jogo-card:hover .jogo-capa { transform: translateY(-3px); }
+  /* O jogo em foco sobe um pouco e ganha sombra; nada de moldura em volta. */
   .jogo-card.ativo .jogo-capa, .jogo-card:focus-visible .jogo-capa {
-    transform: translateY(-5px) scale(1.035);
-    box-shadow: 0 0 0 3px var(--j-bg), 0 0 0 5px var(--j-anel), 0 18px 40px var(--j-sombra);
+    transform: translateY(-6px);
+    box-shadow: 0 22px 44px var(--j-sombra);
   }
-  .jogo-selos { position: absolute; top: 8px; right: 8px; display: flex; gap: 5px; }
-  .jogo-selos span {
-    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-    background: rgba(8, 9, 12, 0.72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  }
-  .jogo-selos svg { width: 13px; height: 13px; display: block; }
-  .jogo-selos .selo-inst { color: #7ff0bd; }
-  .jogo-selos .selo-vig { color: #8fe0ff; }
   .jogo-card-nome {
     margin-top: 11px; font-size: 0.8rem; font-weight: 600; line-height: 1.3;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     overflow-wrap: anywhere; transition: color 0.2s ease;
   }
   .jogo-card.ativo .jogo-card-nome { color: var(--j-texto); }
+  .jogo-card::after {
+    content: ""; display: block; width: 18px; height: 2px; margin-top: 7px; border-radius: 2px;
+    background: var(--j-anel); opacity: 0; transform: scaleX(0.4); transform-origin: left;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .jogo-card.ativo::after { opacity: 1; transform: none; }
+  .jogo-card-nome .selo-vig { display: inline-flex; vertical-align: -1px; margin-right: 5px; color: var(--j-ciano); }
+  .jogo-card-nome .selo-vig svg { width: 12px; height: 12px; display: block; }
 
   /* A arte de reserva: só uma cor tirada do nome, sem texto dentro. */
   .arte-vazia {
@@ -3011,7 +3012,7 @@
     .vista-hub .topbar { flex: none; padding-bottom: 4px; }
     .vista-hub #hub { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .vista-hub .hub-topo { flex: none; margin: 2px 0 clamp(8px, 1.8vh, 22px); }
-    .vista-hub .palco { flex: 1 1 auto; min-height: 7.5rem; }
+    .vista-hub .palco { flex: 1 1 auto; min-height: 6rem; }
     .vista-hub .palco-info { gap: clamp(8px, 1.4vh, 14px); padding: clamp(14px, 2.6vh, 36px) clamp(20px, 3vw, 36px); }
     .vista-hub .palco-marca { min-height: 0; }
     .vista-hub .palco-logo { max-height: min(7.5rem, 11vh); }
@@ -8239,22 +8240,18 @@ function renderHub() {
       card.setAttribute("aria-label", g.nome);
       card.tabIndex = 0;
       card.appendChild(fazerCapa(g, "capa"));
-      const selos = document.createElement("div");
-      selos.className = "jogo-selos";
-      const selo = (classe, titulo, svg) => {
-        const s = document.createElement("span");
-        s.className = classe;
-        s.title = titulo;
-        s.innerHTML = svg;
-        selos.appendChild(s);
-      };
-      if (g.instalado) selo("selo-inst", t("selo.instalado"), SVG_PINO);
-      if (g.vigiado) selo("selo-vig", t("selo.vigiado"), SVG_OLHO);
-      card.appendChild(selos);
+      // A capa fica limpa, sem nada por cima: o "vigiado" vai junto do nome.
       const nome = document.createElement("div");
       nome.className = "jogo-card-nome";
       nome.setAttribute("translate", "no");
-      nome.textContent = g.nome;
+      if (g.vigiado) {
+        const olho = document.createElement("span");
+        olho.className = "selo-vig";
+        olho.title = t("selo.vigiado");
+        olho.innerHTML = SVG_OLHO;
+        nome.appendChild(olho);
+      }
+      nome.appendChild(document.createTextNode(g.nome));
       card.appendChild(nome);
       const abrir = () => {
         if (jogoEmFoco === g.chave && g.leitura === "completa") irPara(g.chave);
