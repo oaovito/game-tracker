@@ -2704,9 +2704,12 @@
     animation: titulo-entra 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
     animation-delay: calc(var(--i) * 45ms);
   }
-  .titulo-vivo span .l {
-    animation: titulo-entra 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, titulo-oao 7s ease-in-out infinite;
-    animation-delay: calc(var(--i) * 45ms), calc(1.4s + var(--o) * 140ms);
+  /* A respiração do "oao" é curta e disparada a cada sete segundos pelo
+     script (classe .respira): uma animação infinita com longas pausas faria
+     a página recalcular o estilo a cada quadro, mesmo parada. */
+  .titulo-vivo.respira span .l {
+    animation: titulo-oao 1.26s ease-in-out both;
+    animation-delay: calc(var(--o) * 140ms);
   }
   /* no jogo: nenhum; é da identidade do Trackeroao, as letras chegando como um jogo que carrega. */
   @keyframes titulo-entra {
@@ -2715,31 +2718,39 @@
   }
   /* no jogo: nenhum; é da identidade do Trackeroao, o "oao" com o brilho do anel de foco. */
   @keyframes titulo-oao {
-    0%, 82%, 100% { top: 0; text-shadow: none; }
-    88% { top: -0.12em; text-shadow: 0 0 0.45em var(--j-sinal); }
-    94% { top: 0; text-shadow: 0 0 0.2em var(--j-sinal); }
+    0%, 100% { top: 0; text-shadow: none; }
+    33% { top: -0.12em; text-shadow: 0 0 0.45em var(--j-sinal); }
+    67% { top: 0; text-shadow: 0 0 0.2em var(--j-sinal); }
   }
 
-  /* A trama de "oao" no fundo da tela inicial: quase invisível, deslizando
+  /* A trama de "Trackeroao" no fundo da tela inicial: quase invisível, deslizando
      na diagonal. É uma máscara, para a cor seguir o tema. */
   .oao-fundo { display: none; }
   .vista-hub .oao-fundo {
-    display: block; position: fixed; inset: -60%; z-index: 0; pointer-events: none;
-    transform: rotate(-12deg);
+    /* Maior que a tela só o bastante para o giro e para o passo de uma trama
+       inteira: a camada é desenhada uma vez e depois só se move. */
+    display: block; position: fixed; z-index: 0; pointer-events: none;
+    top: calc(-20% - 140px); left: calc(-20% - 540px); right: -20%; bottom: -20%;
+    transform: rotate(-12deg); will-change: transform;
     background: var(--j-texto); opacity: 0.022;
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2734%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3Eoao%3C/text%3E%3Ctext x=%27128%27 y=%27104%27%3Eoao%3C/text%3E%3C/g%3E%3C/svg%3E");
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2734%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3Eoao%3C/text%3E%3Ctext x=%27128%27 y=%27104%27%3Eoao%3C/text%3E%3C/g%3E%3C/svg%3E");
-    -webkit-mask-size: 240px 120px; mask-size: 240px 120px;
-    animation: oao-desliza 48s linear infinite;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27520%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2730%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3ETrackeroao%3C/text%3E%3Ctext x=%27268%27 y=%27104%27%3ETrackeroao%3C/text%3E%3C/g%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27520%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2730%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3ETrackeroao%3C/text%3E%3Ctext x=%27268%27 y=%27104%27%3ETrackeroao%3C/text%3E%3C/g%3E%3C/svg%3E");
+    -webkit-mask-size: 520px 120px; mask-size: 520px 120px;
+    /* Cinco passos por segundo, em vez de sessenta: na opacidade dela o
+       movimento parece o mesmo, e a tela é recomposta doze vezes menos. */
+    animation: oao-desliza 48s steps(240) infinite;
   }
-  /* no jogo: nenhum; é da identidade do Trackeroao, a trama de "oao" do fundo da tela inicial. */
+  /* no jogo: nenhum; é da identidade do Trackeroao, a trama de "Trackeroao" do fundo da tela inicial. */
   @keyframes oao-desliza {
-    from { -webkit-mask-position: 0 0; mask-position: 0 0; }
-    to { -webkit-mask-position: 240px 120px; mask-position: 240px 120px; }
+    from { transform: rotate(-12deg) translate(0, 0); }
+    to { transform: rotate(-12deg) translate(520px, 120px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .titulo-vivo .l, .titulo-vivo span .l, .vista-hub .oao-fundo { animation: none; }
   }
+  /* Com a janela fora de foco ou escondida, nada se move: ninguém está
+     olhando, e a animação parada não gasta processador nem placa de vídeo. */
+  html.quieto *, html.quieto *::before, html.quieto *::after { animation-play-state: paused !important; }
   .hub-relogio {
     font-family: var(--font-display); font-weight: 500; font-size: 1.5rem;
     font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--j-apagado);
@@ -3048,7 +3059,7 @@
 <body>
 <!-- O fundo da tela de jogos: a arte do jogo em foco, desfocada. -->
 <div class="ambiente" aria-hidden="true"><img id="ambienteImg" alt=""></div>
-<!-- O fundo da tela inicial: "oao" em trama, deslizando devagar. -->
+<!-- O fundo da tela inicial: "Trackeroao" em trama, deslizando devagar. -->
 <div class="oao-fundo" aria-hidden="true"></div>
 <div class="wrap">
 
@@ -9084,8 +9095,30 @@ function pintarBarra() {
 }
 if (window.chrome && window.chrome.webview) {
   pintarBarra();
-  setInterval(pintarBarra, 250);
+  setInterval(() => { if (!document.hidden) pintarBarra(); }, 250);
 }
+/* A respiração do "oao" no título: a cada sete segundos, só com a página à vista. */
+// setTimeout encadeado, e não setInterval: o único intervalo da página é o da leitura.
+setTimeout(function respirar() {
+  setTimeout(respirar, 7000);
+  const t = document.querySelector(".vista-hub .titulo-vivo");
+  if (!t || (document.documentElement && document.documentElement.classList.contains("quieto"))) return;
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  t.classList.add("respira");
+  setTimeout(() => t.classList.remove("respira"), 1700);
+}, 7000);
+/* Fora de foco ou escondida, a página fica parada (html.quieto). */
+function aquietar() {
+  const quieto = document.hidden || (typeof document.hasFocus === "function" && !document.hasFocus());
+  const raiz = document.documentElement;
+  if (raiz && raiz.classList) raiz.classList.toggle("quieto", !!quieto);
+}
+if (typeof window.addEventListener === "function") {
+  window.addEventListener("focus", aquietar);
+  window.addEventListener("blur", aquietar);
+}
+if (typeof document.addEventListener === "function") document.addEventListener("visibilitychange", aquietar);
+aquietar();
 </script>
 </body>
 </html>

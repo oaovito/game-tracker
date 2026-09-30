@@ -133,6 +133,10 @@ class Janela : Form {
     web.CreationProperties = new CoreWebView2CreationProperties();
     web.CreationProperties.UserDataFolder = Path.Combine(
       Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "trackeroao", "webview");
+    // Uma pagina so, local: um processo de pagina basta, sem reserva de outro
+    // e sem as tarefas de rede de fundo do navegador.
+    web.CreationProperties.AdditionalBrowserArguments =
+      "--renderer-process-limit=1 --disable-background-networking --disable-features=SpareRendererForSitePerProcess";
     Controls.Add(web);
     Controls.Add(barra);
     // A pagina ocupa o que sobra abaixo da barra.
@@ -148,7 +152,7 @@ class Janela : Form {
       // Faz o Windows recalcular a moldura com a regra de WndProc.
       SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0027);
     };
-    Resize += delegate { barra.Invalidate(); };
+    Resize += delegate { barra.Invalidate(); Poupar(); };
     // O contorno da janela acompanha a barra enquanto ela troca de cor.
     barra.Mudou += delegate(Color c) {
       if (!IsHandleCreated) return;
@@ -213,6 +217,19 @@ class Janela : Form {
     });
     t.IsBackground = true;
     t.Start();
+  }
+
+  /*
+   * Minimizada, a pagina para de desenhar e o componente devolve memoria ao
+   * sistema; de volta, tudo retoma de onde estava.
+   */
+  void Poupar() {
+    if (web == null || web.CoreWebView2 == null) return;
+    bool min = WindowState == FormWindowState.Minimized;
+    try {
+      web.Visible = !min;
+      web.CoreWebView2.MemoryUsageTargetLevel = min ? CoreWebView2MemoryUsageTargetLevel.Low : CoreWebView2MemoryUsageTargetLevel.Normal;
+    } catch { }
   }
 
   async Task Abrir() {
@@ -524,8 +541,7 @@ class Consumo {
   readonly int servico;
   readonly System.Collections.Generic.Dictionary<int, TimeSpan> antes = new System.Collections.Generic.Dictionary<int, TimeSpan>();
   DateTime quando;
-  System.Collections.Generic.List<PerformanceCounter> placas;
-  DateTime placasDe;
+  System.Collections.Generic.Dictionary<string, CounterSample> gpuAntes;
   public string Cpu = "...", Gpu = "...", Ram = "...";
 
   public Consumo(int servico) { this.servico = servico; }
@@ -566,8 +582,7 @@ class Consumo {
   public void Zerar() { antes.Clear(); Cpu = Gpu = Ram = "..."; }
 
   public void Soltar() {
-    if (placas != null) foreach (PerformanceCounter c in placas) c.Dispose();
-    placas = null;
+    gpuAntes = null;
   }
 
   public void Medir() {
@@ -598,34 +613,30 @@ class Consumo {
 
   string MedirGpu(System.Collections.Generic.HashSet<int> nossos, bool temAntes) {
     try {
-      // A lista de motores muda quando um processo abre ou fecha: refeita a cada 5 s.
-      if (placas == null || (DateTime.UtcNow - placasDe).TotalSeconds > 5) {
-        Soltar();
-        placas = new System.Collections.Generic.List<PerformanceCounter>();
-        placasDe = DateTime.UtcNow;
-        PerformanceCounterCategory cat = new PerformanceCounterCategory("GPU Engine");
-        foreach (string inst in cat.GetInstanceNames()) {
-          Match m = Regex.Match(inst, "^pid_(\\d+)_");
-          if (!m.Success || !nossos.Contains(int.Parse(m.Groups[1].Value))) continue;
-          PerformanceCounter c = new PerformanceCounter("GPU Engine", "Utilization Percentage", inst, true);
-          c.NextValue();
-          placas.Add(c);
-        }
-        // Os contadores novos so dao numero na proxima medida.
-        return temAntes ? Gpu : "...";
-      }
-      // Como o Gerenciador de Tarefas: por tipo de motor, a soma dos
-      // processos; o numero e o do motor mais ocupado.
+      /*
+       * Uma leitura so da categoria inteira por medida, em vez de um contador
+       * por motor: a propria medida nao pode pesar no numero que ela mostra.
+       * Como o Gerenciador de Tarefas: por tipo de motor, a soma dos
+       * processos; o numero e o do motor mais ocupado.
+       */
+      InstanceDataCollection util = new PerformanceCounterCategory("GPU Engine").ReadCategory()["Utilization Percentage"];
+      System.Collections.Generic.Dictionary<string, CounterSample> agora = new System.Collections.Generic.Dictionary<string, CounterSample>();
       System.Collections.Generic.Dictionary<string, double> porTipo = new System.Collections.Generic.Dictionary<string, double>();
-      foreach (PerformanceCounter c in placas) {
-        Match m = Regex.Match(c.InstanceName, "engtype_(.+)$");
-        string tipo = m.Success ? m.Groups[1].Value : "";
-        double v = 0;
-        try { v = c.NextValue(); } catch { }
-        double s;
-        porTipo.TryGetValue(tipo, out s);
-        porTipo[tipo] = s + v;
+      if (util != null) {
+        foreach (InstanceData d in util.Values) {
+          Match m = Regex.Match(d.InstanceName, "^pid_(\\d+)_.*engtype_(.+)$");
+          if (!m.Success || !nossos.Contains(int.Parse(m.Groups[1].Value))) continue;
+          agora[d.InstanceName] = d.Sample;
+          CounterSample a;
+          if (gpuAntes == null || !gpuAntes.TryGetValue(d.InstanceName, out a)) continue;
+          double v = CounterSample.Calculate(a, d.Sample), soma;
+          porTipo.TryGetValue(m.Groups[2].Value, out soma);
+          porTipo[m.Groups[2].Value] = soma + v;
+        }
       }
+      bool tinha = gpuAntes != null;
+      gpuAntes = agora;
+      if (!tinha) return "...";
       double maior = 0;
       foreach (double v in porTipo.Values) if (v > maior) maior = v;
       return Math.Min(100, maior).ToString("0.0") + "%";
@@ -635,15 +646,6 @@ class Consumo {
   }
 }
 
-/*
- * O icone da bandeja (Trackeroao.exe /bandeja /porta=8777 /pai=<pid>).
- *
- * Aparece quando um jogo escolhido abre, ou quando o Trackeroao e aberto a
- * mao, e some quando o servico que o chamou (o /pai) sai. Dois cliques abrem
- * a janela; o botao direito oferece "Forcar atualizacao" e "Fechar". Os
- * textos seguem o idioma escolhido no globo da pagina (sync\idioma.json) ou,
- * sem escolha, o do Windows.
- */
 /*
  * O icone de "atualizando": o anel do Trackeroao aberto em arco, girando.
  * O icone de sempre tem o anel fechado; o arco so aparece enquanto uma
@@ -762,6 +764,15 @@ static class Visivel {
   }
 }
 
+/*
+ * O icone da bandeja (Trackeroao.exe /bandeja /porta=8777 /pai=<pid>).
+ *
+ * Aparece quando um jogo escolhido abre, ou quando o Trackeroao e aberto a
+ * mao, e some quando o servico que o chamou (o /pai) sai. Dois cliques abrem
+ * a janela; o botao direito oferece "Forcar atualizacao" e "Fechar". Os
+ * textos seguem o idioma escolhido no globo da pagina (sync\idioma.json) ou,
+ * sem escolha, o do Windows.
+ */
 static class Bandeja {
   static readonly string[][] Textos = new string[][] {
     new string[] { "en", "Force update", "Close", "You are on the latest version ({0})." },

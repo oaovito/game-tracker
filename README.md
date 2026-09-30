@@ -384,6 +384,36 @@ para a outra. Abrir a janela também acende o ícone da bandeja, descrito a
 seguir, que continua lá depois de a janela fechar e só se apaga quando uma
 sessão de jogo termina ou quando a pessoa escolhe "Fechar".
 
+Até a versão 1.7.3, a tela inicial pesava mais do que devia: a trama do fundo
+era animada pela posição de uma máscara numa camada várias vezes maior que a
+tela, e o "oao" do título respirava numa animação infinita. As duas coisas
+obrigavam o navegador a redesenhar e recompor a página a cada quadro, sessenta
+vezes por segundo, e o vidro desfocado por cima refazia o desfoque a cada vez.
+O menu da bandeja chegou a mostrar, com a janela aberta, cerca de 7% a 10% de
+CPU, 28% de GPU e 350 MB de RAM. A partir da 1.7.4:
+
+- a trama é desenhada uma única vez, numa camada só um pouco maior que a tela,
+  e depois apenas se move, cinco passos por segundo, sem novo desenho;
+- a respiração do título é uma animação curta disparada a cada sete segundos,
+  e não uma animação infinita com pausas longas;
+- com a janela fora de foco ou escondida, toda animação da página para, e a
+  cor da barra deixa de ser conferida;
+- com a janela minimizada, a página deixa de ser desenhada e o componente é
+  instruído a devolver memória ao sistema (`MemoryUsageTargetLevel` baixo);
+- o WebView2 usa um único processo de página, sem processo de reserva e sem as
+  tarefas de rede de fundo do navegador.
+
+Medido no Chromium, sobre a mesma tela inicial em três segundos de janela
+parada, o número de rasterizações caiu de 4.345 para 24, e o de pinturas de
+360 para 6. Os números da bandeja no Windows dependem da placa de vídeo e do
+tamanho da janela; a medida certa é a do próprio menu, depois da atualização.
+
+A medida da bandeja também ficou mais leve. Antes, ela criava um contador do
+Windows para cada motor da placa de vídeo e refazia a lista a cada cinco
+segundos, o que custava processador ao próprio ícone, que entra na soma. Agora
+ela lê a categoria "GPU Engine" inteira de uma vez por segundo, e só enquanto o
+menu está aberto.
+
 ### Com o jogo aberto
 
 Ao processo `node` somam-se três coisas.
@@ -702,7 +732,8 @@ vermelho e o dourado daquela página. O modelo é a tela inicial de um console. 
 jogo em foco ocupa um palco no alto, com a arte larga do título, o logotipo
 recortado e o que se sabe dele; o fundo da tela inteira é essa mesma arte,
 desfocada, de modo que a cor ambiente muda conforme o jogo escolhido; e os
-jogos ficam logo abaixo, num trilho de pôsteres. A interface em si é neutra,
+jogos ficam logo abaixo, num trilho de pôsteres. Por trás de tudo, uma trama
+quase invisível repete o nome "Trackeroao" em diagonal e desliza devagar. A interface em si é neutra,
 com vidro escuro, texto claro e um único verde-limão para foco e ação, para
 que a cor venha dos jogos e não da página. A tipografia é a Unbounded nos
 títulos e a Sora no texto. A tela abre sempre no modo escuro, e o botão de
