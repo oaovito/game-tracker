@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="trackeroao">
+<meta name="apple-mobile-web-app-title" content="Trackeroao">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Unbounded:wght@500;600;700;800&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2698,6 +2698,41 @@
   }
   .hub-sub { margin: -10px 0 22px; font-size: 0.82rem; color: var(--j-apagado); }
 
+  /* O globo do idioma: traço fino e cor apagada, para não disputar com o
+     relógio. A lista abre por cima da tela, no mesmo vidro do resto. */
+  .hub-canto { display: flex; align-items: center; gap: 14px; }
+  .idioma { position: relative; }
+  .idioma-bt {
+    appearance: none; cursor: pointer; display: grid; place-items: center;
+    width: 32px; height: 32px; padding: 0; border-radius: 999px;
+    background: none; border: 1px solid transparent; color: var(--j-apagado);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .idioma-bt svg { width: 18px; height: 18px; display: block; }
+  .idioma-bt:hover, .idioma-bt:focus-visible, .idioma-bt[aria-expanded="true"] {
+    outline: 0; color: var(--j-texto); border-color: var(--j-borda);
+  }
+  .idioma-lista {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+    display: flex; flex-direction: column; min-width: 12.5rem;
+    max-height: min(70vh, 27rem); overflow-y: auto; padding: 6px;
+    background: var(--j-vidro-forte); border: 1px solid var(--j-borda); border-radius: 16px;
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    box-shadow: 0 18px 40px var(--j-sombra);
+  }
+  .idioma-op {
+    appearance: none; cursor: pointer; text-align: left;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: none; border: 0; border-radius: 10px; padding: 8px 12px;
+    font-family: 'Sora', system-ui, sans-serif; font-size: 0.84rem; color: var(--j-texto);
+  }
+  .idioma-op:hover, .idioma-op:focus-visible { outline: 0; background: var(--j-vidro); }
+  .idioma-op.sistema { color: var(--j-apagado); }
+  .idioma-op[aria-checked="true"]::after {
+    content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--j-anel);
+  }
+  .idioma-sep { height: 1px; margin: 4px 8px; background: var(--j-borda); }
+
   /* O palco. */
   .palco {
     position: relative; overflow: hidden; isolation: isolate;
@@ -2924,13 +2959,13 @@
   <div class="topbar">
     <div class="sync-line" id="syncLine">
       <button class="sync-dot" id="syncDot" type="button" aria-expanded="false"></button>
-      <span id="syncText" hidden>looking for the save…</span>
+      <span id="syncText" hidden data-i18n="sinc.procurando">looking for the save…</span>
     </div>
     <!-- Voltar, avançar e a tela inicial, em todas as páginas. -->
-    <nav class="navegar" aria-label="Navigation">
-      <button class="nav-bt" id="navVoltar" type="button" title="Back" aria-label="Back"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
-      <button class="nav-bt" id="navAvancar" type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
-      <button class="nav-bt" id="navInicio" type="button" title="Home" aria-label="Home"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 7.5 8 3l5.5 4.5M4 6.5V13h3V9.5h2V13h3V6.5"/></svg></button>
+    <nav class="navegar" aria-label="Navigation" data-i18n-aria="nav.rotulo">
+      <button class="nav-bt" id="navVoltar" type="button" title="Back" aria-label="Back" data-i18n-title="nav.voltar" data-i18n-aria="nav.voltar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+      <button class="nav-bt" id="navAvancar" type="button" title="Forward" aria-label="Forward" data-i18n-title="nav.avancar" data-i18n-aria="nav.avancar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
+      <button class="nav-bt" id="navInicio" type="button" title="Home" aria-label="Home" data-i18n-title="nav.inicio" data-i18n-aria="nav.inicio"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 7.5 8 3l5.5 4.5M4 6.5V13h3V9.5h2V13h3V6.5"/></svg></button>
     </nav>
     <button class="theme-toggle" id="themeToggle" type="button" title="Switch theme" aria-label="Switch theme">◐</button>
   </div>
@@ -2939,21 +2974,29 @@
   <!-- A tela de jogos, antes da página de cada um. Ver o CSS "tela de jogos". -->
   <section class="hub" id="hub" hidden>
     <div class="hub-topo">
-      <h1 class="hub-titulo">Tracker<span>oao</span></h1>
-      <div class="hub-relogio" id="hubRelogio" aria-hidden="true"></div>
+      <h1 class="hub-titulo" translate="no">Tracker<span>oao</span></h1>
+      <!-- O globo do idioma fica ao lado do relógio: discreto, e só aqui, na
+           tela inicial. A lista se monta no script, a partir de IDIOMAS. -->
+      <div class="hub-canto">
+        <div class="idioma" id="idioma">
+          <button class="idioma-bt" id="idiomaBt" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="idiomaLista" title="Language" aria-label="Language" data-i18n-title="idioma.rotulo" data-i18n-aria="idioma.rotulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>
+          <div class="idioma-lista" id="idiomaLista" role="menu" hidden></div>
+        </div>
+        <div class="hub-relogio" id="hubRelogio" aria-hidden="true"></div>
+      </div>
     </div>
     <div class="palco" id="hubPalco" hidden>
       <div class="palco-arte" id="palcoArte"></div>
       <div class="palco-info">
         <div class="palco-marca" id="palcoMarca"></div>
         <div class="palco-meta" id="palcoMeta"></div>
-        <button class="palco-abre" id="palcoAbre" type="button" hidden>Open progress <span aria-hidden="true">→</span></button>
+        <button class="palco-abre" id="palcoAbre" type="button" hidden><span data-i18n="hub.abrir">Open progress</span> <span aria-hidden="true">→</span></button>
       </div>
     </div>
     <div class="trilho-cabeca">
-      <span class="trilho-rotulo">Your games</span>
+      <span class="trilho-rotulo" data-i18n="hub.seusJogos">Your games</span>
       <span class="trilho-conta" id="hubConta"></span>
-      <button class="hub-bt" id="hubTodos" type="button">All games</button>
+      <button class="hub-bt" id="hubTodos" type="button" data-i18n="hub.todos">All games</button>
     </div>
     <div class="trilho" id="hubGrade"></div>
     <div class="hub-nota" id="hubNota"></div>
@@ -2962,19 +3005,19 @@
   <!-- Todos os jogos: o que está no computador e o que está na Steam. -->
   <section class="bibli" id="bibli" hidden>
     <div class="hub-topo">
-      <h1 class="hub-titulo">All <span>games</span></h1>
+      <h1 class="hub-titulo" translate="no">All <span>games</span></h1>
     </div>
-    <div class="hub-sub" id="bibliSub">on this computer and in the Steam library</div>
+    <div class="hub-sub" id="bibliSub" data-i18n="bibli.sub">on this computer and in the Steam library</div>
     <div id="bibliGrupos"></div>
     <div class="hub-acoes">
-      <button class="hub-bt" id="bibliVarrer" type="button" hidden>Search again</button>
+      <button class="hub-bt" id="bibliVarrer" type="button" hidden data-i18n="bibli.varrer">Search again</button>
     </div>
     <div class="hub-nota" id="bibliNota"></div>
   </section>
 
   <header class="top">
     <div class="top-centro">
-      <h1>Sekiro<span> 進捗</span></h1>
+      <h1 translate="no">Sekiro<span> 進捗</span></h1>
       <!--
         A assinatura sai do apelido do Steam, não do HTML.
 
@@ -2991,7 +3034,7 @@
     </div>
   </header>
 
-  <nav class="topics" id="topics" aria-label="Sections" hidden></nav>
+  <nav class="topics" id="topics" aria-label="Sections" data-i18n-aria="secoes.rotulo" hidden></nav>
 
   <!-- Bloco 1: as duas contagens de combate, logo abaixo do menu. São o que
        se olha primeiro, então vêm primeiro. -->
@@ -3001,7 +3044,7 @@
       <button class="quadro-abre" id="bossHead" type="button" aria-expanded="false" aria-controls="bossLista">
         <span class="quadro-kanji boss-kanji">討</span>
         <span class="quadro-num boss-num" id="bossNum">—</span>
-        <span class="quadro-rot">boss kills</span>
+        <span class="quadro-rot" data-i18n="quadro.bossKills">boss kills</span>
       </button>
     </section>
 
@@ -3010,7 +3053,7 @@
       <button class="quadro-abre" id="headlessHead" type="button" aria-expanded="false" aria-controls="headlessLista">
         <span class="quadro-kanji headless-kanji">首</span>
         <span class="quadro-num headless-num" id="headlessNum">—</span>
-        <span class="quadro-rot">headless</span>
+        <span class="quadro-rot" translate="no">headless</span>
       </button>
     </section>
   </div>
@@ -3030,8 +3073,8 @@
   -->
   <dialog class="janela" id="bossJanela">
     <div class="janela-topo">
-      <span class="janela-titulo">boss kills</span>
-      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+      <span class="janela-titulo" data-i18n="quadro.bossKills">boss kills</span>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">✕</button>
     </div>
     <div class="janela-corpo">
       <div class="boss-lista" id="bossLista"></div>
@@ -3040,8 +3083,8 @@
 
   <dialog class="janela" id="headlessJanela">
     <div class="janela-topo">
-      <span class="janela-titulo">headless</span>
-      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+      <span class="janela-titulo" translate="no">headless</span>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">✕</button>
     </div>
     <div class="janela-corpo">
       <div class="boss-lista headless-lista" id="headlessLista"></div>
@@ -3095,7 +3138,7 @@
 
     
     
-    <div class="deaths-head" role="group" aria-label="Deaths">
+    <div class="deaths-head" role="group" aria-label="Deaths" data-i18n-aria="mortes.rotulo">
       <!--
         A chama do Ídolo, no lugar do 死.
         =================================
@@ -3113,7 +3156,7 @@
         Desenhada e não emoji: emoji traria a paleta de outra pessoa, e o tom
         aqui é o ponto.
       -->
-      <span class="deaths-chama" role="img" aria-label="deaths">
+      <span class="deaths-chama" role="img" aria-label="deaths" data-i18n-aria="mortes.palavra">
         <svg viewBox="0 0 22 30" aria-hidden="true">
           <defs>
             <!--
@@ -3161,7 +3204,7 @@
         </svg>
       </span>
       <span class="deaths-count" id="deathsCount">—</span>
-      <span class="deaths-rot">deaths</span>
+      <span data-i18n="mortes.palavra" class="deaths-rot">deaths</span>
     </div>
 
     <div class="therm" id="therm">
@@ -3170,7 +3213,7 @@
            aparelho renderiza a dele, e no iPhone sai a caveira da Apple.
            O bebê, antes da primeira morte, segue a mesma regra. Só um dos
            dois aparece. -->
-      <div class="therm-pin" id="thermPin"><span class="therm-skull" role="img" aria-label="deaths">💀</span><span class="therm-skull therm-bebe" role="img" aria-label="no deaths yet">👶</span></div>
+      <div class="therm-pin" id="thermPin"><span class="therm-skull" role="img" aria-label="deaths" data-i18n-aria="mortes.palavra">💀</span><span class="therm-skull therm-bebe" role="img" aria-label="no deaths yet" data-i18n-aria="mortes.nenhuma">👶</span></div>
 
       <div class="therm-track"><div class="therm-fill" id="thermFill"></div></div>
       <div class="therm-scale">
@@ -3233,7 +3276,7 @@
           </g>
           <path class="sino-tronco" d="M20.6 16.1h2.6"/>
         </svg>
-        <span class="estado-rot" id="sinoRot">demon bell</span>
+        <span class="estado-rot" id="sinoRot" translate="no">demon bell</span>
       </div>
 
       <!--
@@ -3262,7 +3305,7 @@
           <span class="rot-kanji" aria-hidden="true">竜</span>
           <span class="rot-n" id="rotN" aria-hidden="true"></span>
         </span>
-        <span class="estado-rot" id="rotRot">dragon rot</span>
+        <span class="estado-rot" id="rotRot" translate="no">dragon rot</span>
       </button>
     </div>
 
@@ -3287,8 +3330,8 @@
 
   <dialog class="janela" id="rotJanela">
     <div class="janela-topo">
-      <span class="janela-titulo">Dragonrot</span>
-      <button class="janela-fecha" type="button" aria-label="Close">&times;</button>
+      <span class="janela-titulo" translate="no">Dragonrot</span>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">&times;</button>
     </div>
     <div class="janela-corpo">
       <div class="rot-lista" id="rotLista"></div>
@@ -3326,14 +3369,14 @@
         mesmo antes e depois.
       -->
       <button class="selo" id="selo" type="button" hidden
-              aria-label="All achievements complete">
+              aria-label="All achievements complete" data-i18n-aria="anel.selo">
         <span class="selo-tinta" aria-hidden="true"></span>
         <span class="selo-kanji" aria-hidden="true">皆伝</span>
       </button>
 
       <!-- A moldura de luz dos 100%. Vazia: quem desenha é o CSS. -->
       <span class="kaiden-moldura" aria-hidden="true"></span>
-      <button class="anel-abre" id="anelHead" type="button" aria-expanded="false" aria-controls="conqLista" title="Open the full list of achievements, by difficulty">
+      <button class="anel-abre" id="anelHead" type="button" aria-expanded="false" aria-controls="conqLista" title="Open the full list of achievements, by difficulty" data-i18n-title="anel.abrir">
         <div class="anel">
           <svg viewBox="0 0 100 100" aria-hidden="true">
             <defs>
@@ -3355,7 +3398,7 @@
             <span class="anel-num" id="overallCount">—</span>
           </div>
         </div>
-        <span class="quadro-rot quadro-rot-centro" id="overallLabel">complete</span>
+        <span class="quadro-rot quadro-rot-centro" id="overallLabel" data-i18n="anel.completo">complete</span>
       </button>
     </section>
 
@@ -3386,8 +3429,8 @@
   -->
   <dialog class="janela" id="jogosJanela">
     <div class="janela-topo">
-      <span class="janela-titulo">games watched</span>
-      <button class="janela-fecha" type="button" aria-label="Close">&times;</button>
+      <span class="janela-titulo" data-i18n="janela.jogos">games watched</span>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">&times;</button>
     </div>
     <div class="janela-corpo">
       <p class="jogos-nota" id="jogosNota"></p>
@@ -3398,15 +3441,15 @@
   <dialog class="janela" id="abaJanela">
     <div class="janela-topo">
       <span class="janela-titulo"></span>
-      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">✕</button>
     </div>
     <div class="janela-corpo"></div>
   </dialog>
 
   <dialog class="janela" id="conqJanela">
     <div class="janela-topo">
-      <span class="janela-titulo">achievements</span>
-      <button class="janela-fecha" type="button" aria-label="Close">✕</button>
+      <span class="janela-titulo" data-i18n="janela.conquistas">achievements</span>
+      <button class="janela-fecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">✕</button>
     </div>
     <div class="janela-corpo">
       <div class="conq-lista" id="conqLista"></div>
@@ -3475,12 +3518,12 @@ const DATA = [
 
 // Itens essenciais. `auto` diz de onde o valor vem no progress.json.
 const ESSENTIALS = [
-  { group: "Vitality and healing" },
+  { group: "ess.grupo.vida" },
   { key: "prayerBeads", label: "Prayer Beads", hint: "raise vitality and posture", auto: "beads", total: 40 },
   { key: "prayerNecklaces", label: "Prayer Necklaces", hint: "4 beads = 1 necklace", auto: "necklaces", total: 10 },
   { key: "gourdSeeds", label: "Gourd Seeds", hint: "raise healing charges", auto: "seeds", total: 9 },
   { key: "gourdCharges", label: "Healing Gourd charges", hint: "1 to start, +1 per seed given to Emma", auto: "charges", total: 10 },
-  { group: "Prosthetic materials" },
+  { group: "ess.grupo.materiais" },
   { key: "scrapIron", label: "Scrap Iron", hint: "common scrap", auto: "mat:scrapIron" },
   { key: "scrapMagnetite", label: "Scrap Magnetite", hint: "tier 2 scrap", auto: "mat:scrapMagnetite" },
   { key: "blackGunpowder", label: "Black Gunpowder", hint: "tier 1 gunpowder", auto: "mat:blackGunpowder" },
@@ -3515,6 +3558,2506 @@ function esquecer(chave) {
     localStorage.removeItem("trackeroao-" + chave);
     localStorage.removeItem("sekiro-progresso-" + chave);
   } catch (e) { /* aba anônima */ }
+}
+
+/* ----------------------------------------------------------------- idioma */
+
+/*
+ * O idioma da interface.
+ *
+ * Segue o do sistema (navigator.languages) até alguém escolher outro no globo
+ * da tela de jogos. A escolha fica no aparelho, sob "trackeroao-idioma", e no
+ * serviço, que a guarda para a bandeja e para as outras telas.
+ *
+ * O que não passa por aqui, de propósito: o nome da página, o rodapé, o nome
+ * de cada jogo e tudo que o Sekiro batiza — chefe, item, área, conquista,
+ * estado como Sinister Burden. São títulos, e título não se traduz; vêm dos
+ * dados do jeito que o jogo os escreve.
+ *
+ * Cada texto tem um id estável. O inglês é a fonte e a reserva: id que falte
+ * num idioma cai no inglês em vez de sumir da tela.
+ */
+const IDIOMAS = [
+  ["en", "English"],
+  ["pt-BR", "Português (Brasil)"],
+  ["es", "Español"],
+  ["fr", "Français"],
+  ["de", "Deutsch"],
+  ["it", "Italiano"],
+  ["ru", "Русский"],
+  ["pl", "Polski"],
+  ["tr", "Türkçe"],
+  ["ja", "日本語"],
+  ["ko", "한국어"],
+  ["zh-CN", "简体中文"],
+];
+const IDIOMA_CHAVE = "idioma";
+
+const I18N = {
+  en: {
+    "nav.rotulo": "Navigation",
+    "nav.voltar": "Back",
+    "nav.avancar": "Forward",
+    "nav.inicio": "Home",
+    "tema.paraClaro": "Switch to light mode",
+    "tema.paraEscuro": "Switch to dark mode",
+    "idioma.rotulo": "Language",
+    "idioma.sistema": "System language",
+    "sinc.procurando": "looking for the save…",
+    "sinc.parado": "not syncing — the service is not responding",
+    "sinc.naoLido": "save not read: {motivo}",
+    "sinc.erro": "error",
+    "sinc.velho": "save unavailable — showing the last known reading",
+    "sinc.ok": "synced with the save · slot {slot}",
+    "sinc.status": "Sync status: {texto}",
+    "secoes.rotulo": "Sections",
+    "hub.abrir": "Open progress",
+    "hub.seusJogos": "Your games",
+    "hub.todos": "All games",
+    "hub.nenhum": "No games found yet. The search runs a minute after the service starts.",
+    "hub.semSteam": "Searched without Steam.",
+    "hub.falhaEscolha": "Could not save the choice. Is the service running?",
+    "hub.rastreio": "full progress tracking",
+    "hub.soAbertura": "launch detection",
+    "hub.popular": "#{n} most played",
+    "hub.naSteam": "in the Steam library",
+    "pino.instalado": "installed",
+    "pino.naoInstalado": "not installed",
+    "pino.instaladoDica": "Installed on this computer.",
+    "pino.naoInstaladoDica": "Not found on this computer.",
+    "pino.vigiado": "watched",
+    "pino.naoVigiado": "not watched",
+    "pino.vigiadoDica": "Watched: the app lights up in the tray when this game starts.",
+    "pino.naoVigiadoDica": "Not watched.",
+    "pino.tocarVigiar": "Tap to watch it.",
+    "selo.instalado": "Installed",
+    "selo.vigiado": "Watched",
+    "bibli.sub": "on this computer and in the Steam library",
+    "bibli.noPc": "On this computer",
+    "bibli.naSteam": "In the Steam library",
+    "bibli.vazioPc": "Nothing found on the disks yet.",
+    "bibli.vazioSteam": "No Steam library on this computer, or nothing beyond what is installed.",
+    "bibli.progresso": "Progress →",
+    "bibli.varrer": "Search again",
+    "bibli.varrendo": "Searching between two reads; the list updates by itself.",
+    "janela.fechar": "Close",
+    "janela.jogos": "games watched",
+    "janela.conquistas": "achievements",
+    "quadro.bossKills": "boss kills",
+    "mortes.rotulo": "Deaths",
+    "mortes.palavra": "deaths",
+    "mortes.nenhuma": "no deaths yet",
+    "mortes.contadas": "Counted by watching the save since {desde}. A death only shows up when it costs Sen, and Unseen Aid cancels that loss sometimes.",
+    "mortes.inicio": "tracking started",
+    "mortes.doSave": "Read straight from the save.",
+    "mortes.alemEscala": "Past the end of the scale.",
+    "mortes.naoNoSave": "The save does not record deaths.",
+    "mortes.procurando": "Sekiro has no death counter of its own, so the tracker is working out which field it is by watching the save.",
+    "mortes.vistaUma": "1 death seen so far.",
+    "mortes.vistas": "{n} deaths seen so far.",
+    "mortes.candidatos": "{n} candidate fields left.",
+    "mortes.esperando": "Waiting for the first death.",
+    "anel.selo": "All achievements complete",
+    "anel.abrir": "Open the full list of achievements, by difficulty",
+    "anel.completo": "complete",
+    "anel.conquistas": "achievements",
+    "anel.esperando": "waiting for the save",
+    "tempo.rotulo": "playtime",
+    "tempo.indisponivel": "Playtime comes from Steam's own record. Not available right now.",
+    "tempo.steam": "{t} on the Steam clock, which counts menus and loading",
+    "tempo.interno": "{t} of in-game time, read from the game itself",
+    "tempo.internoVelho": "(in-game time is the last reading; the game is not running now)",
+    "tempo.metal": "the number is cast in {metal}, and the material changes every 25 hours",
+    "metal.0": "scrap iron",
+    "metal.25": "iron",
+    "metal.50": "magnetite",
+    "metal.75": "bronze",
+    "metal.100": "steel",
+    "metal.125": "silver",
+    "metal.150": "gold",
+    "metal.175": "adamantite",
+    "metal.200": "lazulite",
+    "comum.esperandoSave": "Waiting for the save.",
+    "jogos.local": "The app opens by itself — quietly, only in the tray — when one of these starts. The desktop shortcut opens it any time.",
+    "jogos.leitura": "Read-only here: the choice is made on the computer that runs the service.",
+    "jogos.ignorado": "ignored",
+    "jogos.completa": "Save and memory are read for this game.",
+    "jogos.soAbertura": "Only the launch is detected for this game; nothing is read from it.",
+    "sino.ativo": "Sinister Burden: the Bell Demon is being carried. Enemies are stronger and drop more. Return it at an idol to remove.",
+    "sino.inativo": "The Demon Bell has not been rung, or the Bell Demon has been returned.",
+    "rot.ativo": "Rot Essence held for {n} of {total} characters. Open for the names.",
+    "rot.nenhuma": "No Rot Essence in the inventory.",
+    "rot.vazio": "No Rot Essence in the inventory. Each character who catches Dragonrot leaves one, named after them.",
+    "assinatura.nome": "{nick} game progress",
+    "assinatura.convite": "name this progress",
+    "assinatura.dica": "Click to choose the name shown here.",
+    "assinatura.placeholder": "your name",
+    "assinatura.campo": "Name shown on the page",
+    "boss.semeado": "Counted as 1: already done when tracking started.",
+    "boss.resumo": "The game keeps no per-boss kill count: the flags are only done or not done. This counts every time a boss goes from undone to done, which is what happens on each NG+.",
+    "boss.semeados": "{n} were already done when tracking started, so this is a floor.",
+    "boss.memoriaGasta": "memory spent",
+    "boss.memoriaBolsa": "memory in the bag",
+    "headless.resumo": "Headless leave no readable flag, so each one is confirmed by the Spiritfall it drops — a permanent, exclusive item. {n} of {total} down.",
+    "drop": "drops {item}",
+    "item.melhoria": "{item} upgrade",
+    "pin.tirar": "Remove from the menu",
+    "pin.por": "Add to the menu",
+    "gaveta": "More sections",
+    "topico.chefes": "Bosses",
+    "topico.miniChefes": "Mini-bosses",
+    "topico.itens": "Items",
+    "topico.essenciais": "Essential Items",
+    "topico.outros": "Other Encounters",
+    "topico.jogos": "Games watched",
+    "nov.um": "1 update",
+    "nov.varios": "{n} updates",
+    "nov.visto": "mark as seen",
+    "nov.mais": "{n} more before these",
+    "nov.tipo.boss": "boss",
+    "nov.tipo.mini-boss": "mini-boss",
+    "nov.tipo.prayer-bead": "prayer-bead",
+    "nov.tipo.gourd-seed": "gourd-seed",
+    "nov.tipo.prosthetic": "prosthetic",
+    "nov.tipo.art": "art",
+    "nov.tipo.item": "item",
+    "nov.tipo.counter": "counter",
+    "nov.verbo.defeated": "defeated",
+    "nov.verbo.collected": "collected",
+    "nov.verbo.unlocked": "unlocked",
+    "nov.verbo.learned": "learned",
+    "nov.verbo.obtained": "obtained",
+    "nov.verbo.back to pending": "back to pending",
+    "cat.novos": "{n} new",
+    "novo.desdeVisita": "new since your last visit",
+    "novo.mudou": "changed since your last visit",
+    "lista.faltam": "{n} missing ({partes}).",
+    "lista.todos": "All {n} collected.",
+    "lista.aindaFaltam": "Still missing ({n})",
+    "lista.jaColetados": "Already collected ({n})",
+    "origem.shop": "shop",
+    "origem.world": "world",
+    "origem.enemy": "enemy",
+    "origem.mini-boss": "mini-boss",
+    "beads.extra": "Four beads make one Prayer Necklace, ten necklaces in all.",
+    "seeds.extra": "The Healing Gourd is at {c} of {max} charges.",
+    "seeds.extraBolsa": "The Healing Gourd is at {c} of {max} charges, and {n} seed(s) are still unspent in your bag.",
+    "inimigos.todos": "All {n} done.",
+    "inimigos.restam": "{n} left: {lista}",
+    "inimigos.restamDe": "{n} of {total} left.",
+    "inimigos.semPistaUm": "1 more is not recorded anywhere the save can be read from, so it is left unmarked.",
+    "inimigos.semPista": "{n} more are not recorded anywhere the save can be read from, so they are left unmarked.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "not tracked",
+    "tag.naoCalibrado": "not calibrated",
+    "idolos.aviso": "Each region keeps its idol flags in its own block, and those block offsets are not known yet ({b} of {total} calibrated). Rest at an idol you have not used before, then run: npm run discover idol",
+    "ess.grupo.vida": "Vitality and healing",
+    "ess.grupo.materiais": "Prosthetic materials",
+    "ess.rotulo.gourdCharges": "Healing Gourd charges",
+    "ess.dica.prayerBeads": "raise vitality and posture",
+    "ess.dica.prayerNecklaces": "4 beads = 1 necklace",
+    "ess.dica.gourdSeeds": "raise healing charges",
+    "ess.dica.gourdCharges": "1 to start, +1 per seed given to Emma",
+    "ess.dica.scrapIron": "common scrap",
+    "ess.dica.scrapMagnetite": "tier 2 scrap",
+    "ess.dica.blackGunpowder": "tier 1 gunpowder",
+    "ess.dica.yellowGunpowder": "tier 2 gunpowder",
+    "ess.dica.lumpOfFatWax": "tier 2 wax",
+    "ess.dica.lumpOfGraveWax": "tier 3 wax",
+    "ess.dica.adamantiteScrap": "tier 3 scrap",
+    "ess.dica.fulminatedMercury": "tier 3 gunpowder",
+    "ess.dica.lapisLazuli": "endgame material",
+    "kaiden.dica": "皆伝 — every achievement unlocked.",
+    "conq.facil": "easy",
+    "conq.media": "medium",
+    "conq.dificil": "hard",
+    "conq.oculta": "The game hides this one's text until you unlock it; this is the same trophy's description on PlayStation.",
+    "conq.incerta": "not provable from the save",
+    "conq.soSteam": "Steam has it; this save does not",
+    "conq.soSave": "the save has it; Steam does not",
+    "conq.ambos": "Proven by the save, confirmed by Steam.",
+    "conq.save": "Proven by the save.",
+    "conq.steam": "Unlocked on Steam; the save alone cannot show it.",
+    "conq.shinobi": "The rarest of them all — and it asks for every other one",
+    "conq.raridade": "{p}% of players have this one",
+    "efeito.fogo": "On fire: two or more achievements fell this session. {h} h left.",
+    "efeito.podridao": "Dragonrot: five or more deaths this session. {h} h left.",
+  },
+
+  "pt-BR": {
+    "nav.rotulo": "Navegação",
+    "nav.voltar": "Voltar",
+    "nav.avancar": "Avançar",
+    "nav.inicio": "Início",
+    "tema.paraClaro": "Mudar para o modo claro",
+    "tema.paraEscuro": "Mudar para o modo escuro",
+    "idioma.rotulo": "Idioma",
+    "idioma.sistema": "Idioma do sistema",
+    "sinc.procurando": "procurando o save…",
+    "sinc.parado": "sem sincronizar — o serviço não responde",
+    "sinc.naoLido": "save não lido: {motivo}",
+    "sinc.erro": "erro",
+    "sinc.velho": "save indisponível — mostrando a última leitura",
+    "sinc.ok": "sincronizado com o save · slot {slot}",
+    "sinc.status": "Sincronização: {texto}",
+    "secoes.rotulo": "Seções",
+    "hub.abrir": "Abrir progresso",
+    "hub.seusJogos": "Seus jogos",
+    "hub.todos": "Todos os jogos",
+    "hub.nenhum": "Nenhum jogo encontrado ainda. A busca roda um minuto depois que o serviço inicia.",
+    "hub.semSteam": "Busca feita sem a Steam.",
+    "hub.falhaEscolha": "Não foi possível salvar a escolha. O serviço está rodando?",
+    "hub.rastreio": "progresso completo",
+    "hub.soAbertura": "só detecta a abertura",
+    "hub.popular": "#{n} mais jogado",
+    "hub.naSteam": "na biblioteca da Steam",
+    "pino.instalado": "instalado",
+    "pino.naoInstalado": "não instalado",
+    "pino.instaladoDica": "Instalado neste computador.",
+    "pino.naoInstaladoDica": "Não encontrado neste computador.",
+    "pino.vigiado": "vigiado",
+    "pino.naoVigiado": "não vigiado",
+    "pino.vigiadoDica": "Vigiado: o app acende na bandeja quando este jogo abre.",
+    "pino.naoVigiadoDica": "Não vigiado.",
+    "pino.tocarVigiar": "Toque para vigiar.",
+    "selo.instalado": "Instalado",
+    "selo.vigiado": "Vigiado",
+    "bibli.sub": "neste computador e na biblioteca da Steam",
+    "bibli.noPc": "Neste computador",
+    "bibli.naSteam": "Na biblioteca da Steam",
+    "bibli.vazioPc": "Nada encontrado nos discos ainda.",
+    "bibli.vazioSteam": "Sem biblioteca da Steam neste computador, ou nada além do que está instalado.",
+    "bibli.progresso": "Progresso →",
+    "bibli.varrer": "Buscar de novo",
+    "bibli.varrendo": "Buscando entre duas leituras; a lista se atualiza sozinha.",
+    "janela.fechar": "Fechar",
+    "janela.jogos": "jogos vigiados",
+    "janela.conquistas": "conquistas",
+    "quadro.bossKills": "chefes abatidos",
+    "mortes.rotulo": "Mortes",
+    "mortes.palavra": "mortes",
+    "mortes.nenhuma": "nenhuma morte ainda",
+    "mortes.contadas": "Contadas observando o save desde {desde}. Uma morte só aparece quando custa Sen, e o Unseen Aid às vezes cancela essa perda.",
+    "mortes.inicio": "o início do rastreio",
+    "mortes.doSave": "Lido direto do save.",
+    "mortes.alemEscala": "Além do fim da escala.",
+    "mortes.naoNoSave": "O save não registra mortes.",
+    "mortes.procurando": "Sekiro não tem contador de mortes próprio, então o tracker está descobrindo qual campo é observando o save.",
+    "mortes.vistaUma": "1 morte vista até agora.",
+    "mortes.vistas": "{n} mortes vistas até agora.",
+    "mortes.candidatos": "Restam {n} campos candidatos.",
+    "mortes.esperando": "Esperando a primeira morte.",
+    "anel.selo": "Todas as conquistas completas",
+    "anel.abrir": "Abrir a lista completa de conquistas, por dificuldade",
+    "anel.completo": "completo",
+    "anel.conquistas": "conquistas",
+    "anel.esperando": "esperando o save",
+    "tempo.rotulo": "tempo de jogo",
+    "tempo.indisponivel": "O tempo de jogo vem do registro da própria Steam. Indisponível agora.",
+    "tempo.steam": "{t} no relógio da Steam, que conta menus e carregamento",
+    "tempo.interno": "{t} de tempo dentro do jogo, lido do próprio jogo",
+    "tempo.internoVelho": "(o tempo interno é a última leitura; o jogo não está aberto agora)",
+    "tempo.metal": "o número é fundido em {metal}, e o material muda a cada 25 horas",
+    "metal.0": "sucata de ferro",
+    "metal.25": "ferro",
+    "metal.50": "magnetita",
+    "metal.75": "bronze",
+    "metal.100": "aço",
+    "metal.125": "prata",
+    "metal.150": "ouro",
+    "metal.175": "adamantita",
+    "metal.200": "lazulita",
+    "comum.esperandoSave": "Esperando o save.",
+    "jogos.local": "O app abre sozinho — em silêncio, só na bandeja — quando um destes inicia. O atalho da área de trabalho o abre a qualquer hora.",
+    "jogos.leitura": "Somente leitura aqui: a escolha é feita no computador que roda o serviço.",
+    "jogos.ignorado": "ignorado",
+    "jogos.completa": "Save e memória são lidos para este jogo.",
+    "jogos.soAbertura": "Só a abertura é detectada para este jogo; nada é lido dele.",
+    "sino.ativo": "Sinister Burden: o Bell Demon está sendo carregado. Os inimigos ficam mais fortes e largam mais. Devolva-o num ídolo para remover.",
+    "sino.inativo": "O Demon Bell não foi tocado, ou o Bell Demon foi devolvido.",
+    "rot.ativo": "Rot Essence guardada de {n} de {total} personagens. Abra para ver os nomes.",
+    "rot.nenhuma": "Nenhuma Rot Essence no inventário.",
+    "rot.vazio": "Nenhuma Rot Essence no inventário. Cada personagem que pega Dragonrot deixa uma, com o nome dele.",
+    "assinatura.nome": "progresso de {nick}",
+    "assinatura.convite": "dê um nome a este progresso",
+    "assinatura.dica": "Clique para escolher o nome mostrado aqui.",
+    "assinatura.placeholder": "seu nome",
+    "assinatura.campo": "Nome mostrado na página",
+    "boss.semeado": "Contado como 1: já estava feito quando o rastreio começou.",
+    "boss.resumo": "O jogo não guarda quantas vezes cada chefe morreu: as flags só dizem feito ou não feito. Isto conta cada vez que um chefe passa de não feito para feito, que é o que acontece a cada NG+.",
+    "boss.semeados": "{n} já estavam feitos quando o rastreio começou, então isto é um mínimo.",
+    "boss.memoriaGasta": "memória usada",
+    "boss.memoriaBolsa": "memória na bolsa",
+    "headless.resumo": "Headless não deixam flag legível, então cada um é confirmado pelo Spiritfall que larga — um item permanente e exclusivo. {n} de {total} derrotados.",
+    "drop": "larga {item}",
+    "item.melhoria": "melhoria de {item}",
+    "pin.tirar": "Tirar do menu",
+    "pin.por": "Pôr no menu",
+    "gaveta": "Mais seções",
+    "topico.chefes": "Chefes",
+    "topico.miniChefes": "Minichefes",
+    "topico.itens": "Itens",
+    "topico.essenciais": "Itens essenciais",
+    "topico.outros": "Outros encontros",
+    "topico.jogos": "Jogos vigiados",
+    "nov.um": "1 novidade",
+    "nov.varios": "{n} novidades",
+    "nov.visto": "marcar como visto",
+    "nov.mais": "mais {n} antes destas",
+    "nov.tipo.boss": "chefe",
+    "nov.tipo.mini-boss": "minichefe",
+    "nov.tipo.prayer-bead": "conta de oração",
+    "nov.tipo.gourd-seed": "semente",
+    "nov.tipo.prosthetic": "prótese",
+    "nov.tipo.art": "arte",
+    "nov.tipo.item": "item",
+    "nov.tipo.counter": "contador",
+    "nov.verbo.defeated": "derrotado",
+    "nov.verbo.collected": "coletado",
+    "nov.verbo.unlocked": "desbloqueado",
+    "nov.verbo.learned": "aprendido",
+    "nov.verbo.obtained": "obtido",
+    "nov.verbo.back to pending": "voltou a pendente",
+    "cat.novos": "novos: {n}",
+    "novo.desdeVisita": "novo desde a sua última visita",
+    "novo.mudou": "mudou desde a sua última visita",
+    "lista.faltam": "Faltam {n} ({partes}).",
+    "lista.todos": "Todos os {n} coletados.",
+    "lista.aindaFaltam": "Ainda faltam ({n})",
+    "lista.jaColetados": "Já coletados ({n})",
+    "origem.shop": "loja",
+    "origem.world": "mundo",
+    "origem.enemy": "inimigo",
+    "origem.mini-boss": "minichefe",
+    "beads.extra": "Quatro contas formam um Prayer Necklace, dez colares no total.",
+    "seeds.extra": "A Healing Gourd está com {c} de {max} cargas.",
+    "seeds.extraBolsa": "A Healing Gourd está com {c} de {max} cargas, e {n} semente(s) ainda estão sem uso na bolsa.",
+    "inimigos.todos": "Todos os {n} feitos.",
+    "inimigos.restam": "Faltam {n}: {lista}",
+    "inimigos.restamDe": "Faltam {n} de {total}.",
+    "inimigos.semPistaUm": "Mais 1 não fica registrado em lugar nenhum que o save deixe ler, então fica sem marcar.",
+    "inimigos.semPista": "Mais {n} não ficam registrados em lugar nenhum que o save deixe ler, então ficam sem marcar.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "não rastreado",
+    "tag.naoCalibrado": "não calibrado",
+    "idolos.aviso": "Cada região guarda as flags dos ídolos num bloco próprio, e os offsets desses blocos ainda não são conhecidos ({b} de {total} calibrados). Descanse num ídolo que você ainda não usou e rode: npm run discover idol",
+    "ess.grupo.vida": "Vitalidade e cura",
+    "ess.grupo.materiais": "Materiais de prótese",
+    "ess.rotulo.gourdCharges": "Cargas da Healing Gourd",
+    "ess.dica.prayerBeads": "aumentam vitalidade e postura",
+    "ess.dica.prayerNecklaces": "4 contas = 1 colar",
+    "ess.dica.gourdSeeds": "aumentam as cargas de cura",
+    "ess.dica.gourdCharges": "1 no início, +1 por semente entregue à Emma",
+    "ess.dica.scrapIron": "sucata comum",
+    "ess.dica.scrapMagnetite": "sucata de nível 2",
+    "ess.dica.blackGunpowder": "pólvora de nível 1",
+    "ess.dica.yellowGunpowder": "pólvora de nível 2",
+    "ess.dica.lumpOfFatWax": "cera de nível 2",
+    "ess.dica.lumpOfGraveWax": "cera de nível 3",
+    "ess.dica.adamantiteScrap": "sucata de nível 3",
+    "ess.dica.fulminatedMercury": "pólvora de nível 3",
+    "ess.dica.lapisLazuli": "material de fim de jogo",
+    "kaiden.dica": "皆伝 — todas as conquistas desbloqueadas.",
+    "conq.facil": "fácil",
+    "conq.media": "média",
+    "conq.dificil": "difícil",
+    "conq.oculta": "O jogo esconde o texto desta até você desbloqueá-la; esta é a descrição do mesmo troféu no PlayStation.",
+    "conq.incerta": "não comprovável pelo save",
+    "conq.soSteam": "a Steam tem; este save não",
+    "conq.soSave": "o save tem; a Steam não",
+    "conq.ambos": "Comprovada pelo save, confirmada pela Steam.",
+    "conq.save": "Comprovada pelo save.",
+    "conq.steam": "Desbloqueada na Steam; o save sozinho não mostra.",
+    "conq.shinobi": "A mais rara de todas — e ela pede todas as outras",
+    "conq.raridade": "{p}% dos jogadores têm esta",
+    "efeito.fogo": "Em chamas: duas ou mais conquistas caíram nesta sessão. Faltam {h} h.",
+    "efeito.podridao": "Dragonrot: cinco ou mais mortes nesta sessão. Faltam {h} h.",
+  },
+
+  es: {
+    "nav.rotulo": "Navegación",
+    "nav.voltar": "Atrás",
+    "nav.avancar": "Adelante",
+    "nav.inicio": "Inicio",
+    "tema.paraClaro": "Cambiar a modo claro",
+    "tema.paraEscuro": "Cambiar a modo oscuro",
+    "idioma.rotulo": "Idioma",
+    "idioma.sistema": "Idioma del sistema",
+    "sinc.procurando": "buscando la partida guardada…",
+    "sinc.parado": "sin sincronizar — el servicio no responde",
+    "sinc.naoLido": "partida no leída: {motivo}",
+    "sinc.erro": "error",
+    "sinc.velho": "partida no disponible — se muestra la última lectura",
+    "sinc.ok": "sincronizado con la partida · ranura {slot}",
+    "sinc.status": "Sincronización: {texto}",
+    "secoes.rotulo": "Secciones",
+    "hub.abrir": "Abrir progreso",
+    "hub.seusJogos": "Tus juegos",
+    "hub.todos": "Todos los juegos",
+    "hub.nenhum": "Aún no se encontraron juegos. La búsqueda se ejecuta un minuto después de que arranca el servicio.",
+    "hub.semSteam": "Búsqueda hecha sin Steam.",
+    "hub.falhaEscolha": "No se pudo guardar la elección. ¿Está en marcha el servicio?",
+    "hub.rastreio": "seguimiento completo",
+    "hub.soAbertura": "solo detecta el inicio",
+    "hub.popular": "n.º {n} en más jugados",
+    "hub.naSteam": "en la biblioteca de Steam",
+    "pino.instalado": "instalado",
+    "pino.naoInstalado": "no instalado",
+    "pino.instaladoDica": "Instalado en este equipo.",
+    "pino.naoInstaladoDica": "No se encontró en este equipo.",
+    "pino.vigiado": "vigilado",
+    "pino.naoVigiado": "no vigilado",
+    "pino.vigiadoDica": "Vigilado: la app se enciende en la bandeja cuando se inicia este juego.",
+    "pino.naoVigiadoDica": "No vigilado.",
+    "pino.tocarVigiar": "Toca para vigilarlo.",
+    "selo.instalado": "Instalado",
+    "selo.vigiado": "Vigilado",
+    "bibli.sub": "en este equipo y en la biblioteca de Steam",
+    "bibli.noPc": "En este equipo",
+    "bibli.naSteam": "En la biblioteca de Steam",
+    "bibli.vazioPc": "Aún no se encontró nada en los discos.",
+    "bibli.vazioSteam": "No hay biblioteca de Steam en este equipo, o nada aparte de lo instalado.",
+    "bibli.progresso": "Progreso →",
+    "bibli.varrer": "Buscar de nuevo",
+    "bibli.varrendo": "Buscando entre dos lecturas; la lista se actualiza sola.",
+    "janela.fechar": "Cerrar",
+    "janela.jogos": "juegos vigilados",
+    "janela.conquistas": "logros",
+    "quadro.bossKills": "jefes abatidos",
+    "mortes.rotulo": "Muertes",
+    "mortes.palavra": "muertes",
+    "mortes.nenhuma": "aún sin muertes",
+    "mortes.contadas": "Contadas vigilando la partida desde {desde}. Una muerte solo aparece cuando cuesta Sen, y Unseen Aid a veces anula esa pérdida.",
+    "mortes.inicio": "el inicio del seguimiento",
+    "mortes.doSave": "Leído directamente de la partida.",
+    "mortes.alemEscala": "Más allá del final de la escala.",
+    "mortes.naoNoSave": "La partida no registra las muertes.",
+    "mortes.procurando": "Sekiro no tiene contador de muertes propio, así que el tracker está averiguando qué campo es vigilando la partida.",
+    "mortes.vistaUma": "1 muerte vista hasta ahora.",
+    "mortes.vistas": "{n} muertes vistas hasta ahora.",
+    "mortes.candidatos": "Quedan {n} campos candidatos.",
+    "mortes.esperando": "Esperando la primera muerte.",
+    "anel.selo": "Todos los logros completados",
+    "anel.abrir": "Abrir la lista completa de logros, por dificultad",
+    "anel.completo": "completado",
+    "anel.conquistas": "logros",
+    "anel.esperando": "esperando la partida",
+    "tempo.rotulo": "tiempo de juego",
+    "tempo.indisponivel": "El tiempo de juego viene del registro de Steam. No disponible ahora.",
+    "tempo.steam": "{t} en el reloj de Steam, que cuenta menús y cargas",
+    "tempo.interno": "{t} de tiempo dentro del juego, leído del propio juego",
+    "tempo.internoVelho": "(el tiempo interno es la última lectura; el juego no está abierto ahora)",
+    "tempo.metal": "el número está fundido en {metal}, y el material cambia cada 25 horas",
+    "metal.0": "chatarra de hierro",
+    "metal.25": "hierro",
+    "metal.50": "magnetita",
+    "metal.75": "bronce",
+    "metal.100": "acero",
+    "metal.125": "plata",
+    "metal.150": "oro",
+    "metal.175": "adamantita",
+    "metal.200": "lazulita",
+    "comum.esperandoSave": "Esperando la partida.",
+    "jogos.local": "La app se abre sola — en silencio, solo en la bandeja — cuando se inicia uno de estos. El acceso directo del escritorio la abre cuando quieras.",
+    "jogos.leitura": "Solo lectura aquí: la elección se hace en el equipo que ejecuta el servicio.",
+    "jogos.ignorado": "ignorado",
+    "jogos.completa": "Se leen la partida y la memoria de este juego.",
+    "jogos.soAbertura": "De este juego solo se detecta el inicio; no se lee nada.",
+    "sino.ativo": "Sinister Burden: llevas el Bell Demon. Los enemigos son más fuertes y sueltan más. Devuélvelo en un ídolo para quitarlo.",
+    "sino.inativo": "El Demon Bell no se ha tocado, o el Bell Demon ya se devolvió.",
+    "rot.ativo": "Rot Essence de {n} de {total} personajes. Abre para ver los nombres.",
+    "rot.nenhuma": "Ninguna Rot Essence en el inventario.",
+    "rot.vazio": "Ninguna Rot Essence en el inventario. Cada personaje que contrae Dragonrot deja una con su nombre.",
+    "assinatura.nome": "progreso de {nick}",
+    "assinatura.convite": "ponle nombre a este progreso",
+    "assinatura.dica": "Haz clic para elegir el nombre que se muestra aquí.",
+    "assinatura.placeholder": "tu nombre",
+    "assinatura.campo": "Nombre mostrado en la página",
+    "boss.semeado": "Contado como 1: ya estaba hecho cuando empezó el seguimiento.",
+    "boss.resumo": "El juego no guarda cuántas veces cae cada jefe: los flags solo dicen hecho o no hecho. Esto cuenta cada vez que un jefe pasa de no hecho a hecho, que es lo que ocurre en cada NG+.",
+    "boss.semeados": "{n} ya estaban hechos cuando empezó el seguimiento, así que esto es un mínimo.",
+    "boss.memoriaGasta": "memoria usada",
+    "boss.memoriaBolsa": "memoria en la bolsa",
+    "headless.resumo": "Los Headless no dejan un flag legible, así que cada uno se confirma por el Spiritfall que suelta — un objeto permanente y exclusivo. {n} de {total} derrotados.",
+    "drop": "suelta {item}",
+    "item.melhoria": "mejora de {item}",
+    "pin.tirar": "Quitar del menú",
+    "pin.por": "Añadir al menú",
+    "gaveta": "Más secciones",
+    "topico.chefes": "Jefes",
+    "topico.miniChefes": "Minijefes",
+    "topico.itens": "Objetos",
+    "topico.essenciais": "Objetos esenciales",
+    "topico.outros": "Otros encuentros",
+    "topico.jogos": "Juegos vigilados",
+    "nov.um": "1 novedad",
+    "nov.varios": "{n} novedades",
+    "nov.visto": "marcar como visto",
+    "nov.mais": "{n} más antes de estas",
+    "nov.tipo.boss": "jefe",
+    "nov.tipo.mini-boss": "minijefe",
+    "nov.tipo.prayer-bead": "cuenta de oración",
+    "nov.tipo.gourd-seed": "semilla",
+    "nov.tipo.prosthetic": "prótesis",
+    "nov.tipo.art": "arte",
+    "nov.tipo.item": "objeto",
+    "nov.tipo.counter": "contador",
+    "nov.verbo.defeated": "derrotado",
+    "nov.verbo.collected": "recogido",
+    "nov.verbo.unlocked": "desbloqueado",
+    "nov.verbo.learned": "aprendido",
+    "nov.verbo.obtained": "obtenido",
+    "nov.verbo.back to pending": "vuelve a pendiente",
+    "cat.novos": "nuevos: {n}",
+    "novo.desdeVisita": "nuevo desde tu última visita",
+    "novo.mudou": "cambió desde tu última visita",
+    "lista.faltam": "Faltan {n} ({partes}).",
+    "lista.todos": "Los {n} recogidos.",
+    "lista.aindaFaltam": "Aún faltan ({n})",
+    "lista.jaColetados": "Ya recogidos ({n})",
+    "origem.shop": "tienda",
+    "origem.world": "mundo",
+    "origem.enemy": "enemigo",
+    "origem.mini-boss": "minijefe",
+    "beads.extra": "Cuatro cuentas forman un Prayer Necklace, diez collares en total.",
+    "seeds.extra": "La Healing Gourd tiene {c} de {max} cargas.",
+    "seeds.extraBolsa": "La Healing Gourd tiene {c} de {max} cargas, y aún quedan {n} semilla(s) sin usar en tu bolsa.",
+    "inimigos.todos": "Los {n} hechos.",
+    "inimigos.restam": "Faltan {n}: {lista}",
+    "inimigos.restamDe": "Faltan {n} de {total}.",
+    "inimigos.semPistaUm": "1 más no queda registrado en ningún sitio legible de la partida, así que queda sin marcar.",
+    "inimigos.semPista": "{n} más no quedan registrados en ningún sitio legible de la partida, así que quedan sin marcar.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "sin seguimiento",
+    "tag.naoCalibrado": "sin calibrar",
+    "idolos.aviso": "Cada región guarda los flags de sus ídolos en un bloque propio, y los offsets de esos bloques aún no se conocen ({b} de {total} calibrados). Descansa en un ídolo que no hayas usado y ejecuta: npm run discover idol",
+    "ess.grupo.vida": "Vitalidad y curación",
+    "ess.grupo.materiais": "Materiales de prótesis",
+    "ess.rotulo.gourdCharges": "Cargas de la Healing Gourd",
+    "ess.dica.prayerBeads": "suben vitalidad y postura",
+    "ess.dica.prayerNecklaces": "4 cuentas = 1 collar",
+    "ess.dica.gourdSeeds": "suben las cargas de curación",
+    "ess.dica.gourdCharges": "1 al empezar, +1 por semilla dada a Emma",
+    "ess.dica.scrapIron": "chatarra común",
+    "ess.dica.scrapMagnetite": "chatarra de nivel 2",
+    "ess.dica.blackGunpowder": "pólvora de nivel 1",
+    "ess.dica.yellowGunpowder": "pólvora de nivel 2",
+    "ess.dica.lumpOfFatWax": "cera de nivel 2",
+    "ess.dica.lumpOfGraveWax": "cera de nivel 3",
+    "ess.dica.adamantiteScrap": "chatarra de nivel 3",
+    "ess.dica.fulminatedMercury": "pólvora de nivel 3",
+    "ess.dica.lapisLazuli": "material de final de juego",
+    "kaiden.dica": "皆伝 — todos los logros desbloqueados.",
+    "conq.facil": "fácil",
+    "conq.media": "media",
+    "conq.dificil": "difícil",
+    "conq.oculta": "El juego oculta el texto de este hasta que lo desbloqueas; es la descripción del mismo trofeo en PlayStation.",
+    "conq.incerta": "no demostrable con la partida",
+    "conq.soSteam": "Steam lo tiene; esta partida no",
+    "conq.soSave": "la partida lo tiene; Steam no",
+    "conq.ambos": "Demostrado por la partida, confirmado por Steam.",
+    "conq.save": "Demostrado por la partida.",
+    "conq.steam": "Desbloqueado en Steam; la partida sola no puede mostrarlo.",
+    "conq.shinobi": "El más raro de todos — y exige todos los demás",
+    "conq.raridade": "El {p}% de los jugadores lo tiene",
+    "efeito.fogo": "En llamas: cayeron dos o más logros en esta sesión. Quedan {h} h.",
+    "efeito.podridao": "Dragonrot: cinco o más muertes en esta sesión. Quedan {h} h.",
+  },
+
+  fr: {
+    "nav.rotulo": "Navigation",
+    "nav.voltar": "Retour",
+    "nav.avancar": "Suivant",
+    "nav.inicio": "Accueil",
+    "tema.paraClaro": "Passer en mode clair",
+    "tema.paraEscuro": "Passer en mode sombre",
+    "idioma.rotulo": "Langue",
+    "idioma.sistema": "Langue du système",
+    "sinc.procurando": "recherche de la sauvegarde…",
+    "sinc.parado": "pas de synchronisation — le service ne répond pas",
+    "sinc.naoLido": "sauvegarde non lue : {motivo}",
+    "sinc.erro": "erreur",
+    "sinc.velho": "sauvegarde indisponible — dernière lecture affichée",
+    "sinc.ok": "synchronisé avec la sauvegarde · emplacement {slot}",
+    "sinc.status": "Synchronisation : {texto}",
+    "secoes.rotulo": "Sections",
+    "hub.abrir": "Voir la progression",
+    "hub.seusJogos": "Vos jeux",
+    "hub.todos": "Tous les jeux",
+    "hub.nenhum": "Aucun jeu trouvé pour l’instant. La recherche se lance une minute après le démarrage du service.",
+    "hub.semSteam": "Recherche faite sans Steam.",
+    "hub.falhaEscolha": "Impossible d’enregistrer le choix. Le service tourne-t-il ?",
+    "hub.rastreio": "suivi complet",
+    "hub.soAbertura": "détection du lancement",
+    "hub.popular": "n° {n} des plus joués",
+    "hub.naSteam": "dans la bibliothèque Steam",
+    "pino.instalado": "installé",
+    "pino.naoInstalado": "non installé",
+    "pino.instaladoDica": "Installé sur cet ordinateur.",
+    "pino.naoInstaladoDica": "Introuvable sur cet ordinateur.",
+    "pino.vigiado": "surveillé",
+    "pino.naoVigiado": "non surveillé",
+    "pino.vigiadoDica": "Surveillé : l’app s’allume dans la barre des tâches quand ce jeu démarre.",
+    "pino.naoVigiadoDica": "Non surveillé.",
+    "pino.tocarVigiar": "Touchez pour le surveiller.",
+    "selo.instalado": "Installé",
+    "selo.vigiado": "Surveillé",
+    "bibli.sub": "sur cet ordinateur et dans la bibliothèque Steam",
+    "bibli.noPc": "Sur cet ordinateur",
+    "bibli.naSteam": "Dans la bibliothèque Steam",
+    "bibli.vazioPc": "Rien trouvé sur les disques pour l’instant.",
+    "bibli.vazioSteam": "Pas de bibliothèque Steam sur cet ordinateur, ou rien de plus que ce qui est installé.",
+    "bibli.progresso": "Progression →",
+    "bibli.varrer": "Relancer la recherche",
+    "bibli.varrendo": "Recherche entre deux lectures ; la liste se met à jour toute seule.",
+    "janela.fechar": "Fermer",
+    "janela.jogos": "jeux surveillés",
+    "janela.conquistas": "succès",
+    "quadro.bossKills": "boss vaincus",
+    "mortes.rotulo": "Morts",
+    "mortes.palavra": "morts",
+    "mortes.nenhuma": "aucune mort pour l’instant",
+    "mortes.contadas": "Comptées en surveillant la sauvegarde depuis {desde}. Une mort n’apparaît que si elle coûte des Sen, et Unseen Aid annule parfois cette perte.",
+    "mortes.inicio": "le début du suivi",
+    "mortes.doSave": "Lu directement dans la sauvegarde.",
+    "mortes.alemEscala": "Au-delà de la fin de l’échelle.",
+    "mortes.naoNoSave": "La sauvegarde n’enregistre pas les morts.",
+    "mortes.procurando": "Sekiro n’a pas de compteur de morts, alors le tracker cherche quel champ c’est en surveillant la sauvegarde.",
+    "mortes.vistaUma": "1 mort observée jusqu’ici.",
+    "mortes.vistas": "{n} morts observées jusqu’ici.",
+    "mortes.candidatos": "Il reste {n} champs candidats.",
+    "mortes.esperando": "En attente de la première mort.",
+    "anel.selo": "Tous les succès obtenus",
+    "anel.abrir": "Ouvrir la liste complète des succès, par difficulté",
+    "anel.completo": "terminé",
+    "anel.conquistas": "succès",
+    "anel.esperando": "en attente de la sauvegarde",
+    "tempo.rotulo": "temps de jeu",
+    "tempo.indisponivel": "Le temps de jeu vient du relevé de Steam. Indisponible pour le moment.",
+    "tempo.steam": "{t} sur l’horloge Steam, qui compte les menus et les chargements",
+    "tempo.interno": "{t} de temps en jeu, lu dans le jeu lui-même",
+    "tempo.internoVelho": "(le temps en jeu est la dernière lecture ; le jeu n’est pas lancé)",
+    "tempo.metal": "le nombre est coulé en {metal}, et la matière change toutes les 25 heures",
+    "metal.0": "ferraille",
+    "metal.25": "fer",
+    "metal.50": "magnétite",
+    "metal.75": "bronze",
+    "metal.100": "acier",
+    "metal.125": "argent",
+    "metal.150": "or",
+    "metal.175": "adamantite",
+    "metal.200": "lazulite",
+    "comum.esperandoSave": "En attente de la sauvegarde.",
+    "jogos.local": "L’app s’ouvre toute seule — discrètement, dans la barre des tâches — quand l’un de ces jeux démarre. Le raccourci du bureau l’ouvre à tout moment.",
+    "jogos.leitura": "Lecture seule ici : le choix se fait sur l’ordinateur qui fait tourner le service.",
+    "jogos.ignorado": "ignoré",
+    "jogos.completa": "La sauvegarde et la mémoire de ce jeu sont lues.",
+    "jogos.soAbertura": "Seul le lancement de ce jeu est détecté ; rien n’y est lu.",
+    "sino.ativo": "Sinister Burden : vous portez le Bell Demon. Les ennemis sont plus forts et lâchent plus. Rendez-le à une idole pour l’enlever.",
+    "sino.inativo": "La Demon Bell n’a pas sonné, ou le Bell Demon a été rendu.",
+    "rot.ativo": "Rot Essence détenue pour {n} personnages sur {total}. Ouvrez pour voir les noms.",
+    "rot.nenhuma": "Aucune Rot Essence dans l’inventaire.",
+    "rot.vazio": "Aucune Rot Essence dans l’inventaire. Chaque personnage atteint de Dragonrot en laisse une, à son nom.",
+    "assinatura.nome": "progression de {nick}",
+    "assinatura.convite": "nommer cette progression",
+    "assinatura.dica": "Cliquez pour choisir le nom affiché ici.",
+    "assinatura.placeholder": "votre nom",
+    "assinatura.campo": "Nom affiché sur la page",
+    "boss.semeado": "Compté comme 1 : déjà fait au début du suivi.",
+    "boss.resumo": "Le jeu ne compte pas les victoires par boss : les flags disent seulement fait ou non fait. Ceci compte chaque passage d’un boss de non fait à fait, ce qui arrive à chaque NG+.",
+    "boss.semeados": "{n} étaient déjà faits au début du suivi, c’est donc un minimum.",
+    "boss.memoriaGasta": "souvenir utilisé",
+    "boss.memoriaBolsa": "souvenir dans le sac",
+    "headless.resumo": "Les Headless ne laissent aucun flag lisible, donc chacun est confirmé par le Spiritfall qu’il lâche — un objet permanent et exclusif. {n} sur {total} vaincus.",
+    "drop": "lâche {item}",
+    "item.melhoria": "amélioration de {item}",
+    "pin.tirar": "Retirer du menu",
+    "pin.por": "Ajouter au menu",
+    "gaveta": "Plus de sections",
+    "topico.chefes": "Boss",
+    "topico.miniChefes": "Mini-boss",
+    "topico.itens": "Objets",
+    "topico.essenciais": "Objets essentiels",
+    "topico.outros": "Autres rencontres",
+    "topico.jogos": "Jeux surveillés",
+    "nov.um": "1 nouveauté",
+    "nov.varios": "{n} nouveautés",
+    "nov.visto": "marquer comme vu",
+    "nov.mais": "{n} de plus avant celles-ci",
+    "nov.tipo.boss": "boss",
+    "nov.tipo.mini-boss": "mini-boss",
+    "nov.tipo.prayer-bead": "perle de prière",
+    "nov.tipo.gourd-seed": "graine",
+    "nov.tipo.prosthetic": "prothèse",
+    "nov.tipo.art": "art",
+    "nov.tipo.item": "objet",
+    "nov.tipo.counter": "compteur",
+    "nov.verbo.defeated": "vaincu",
+    "nov.verbo.collected": "récupéré",
+    "nov.verbo.unlocked": "débloqué",
+    "nov.verbo.learned": "appris",
+    "nov.verbo.obtained": "obtenu",
+    "nov.verbo.back to pending": "de nouveau en attente",
+    "cat.novos": "nouveaux : {n}",
+    "novo.desdeVisita": "nouveau depuis votre dernière visite",
+    "novo.mudou": "modifié depuis votre dernière visite",
+    "lista.faltam": "Il en manque {n} ({partes}).",
+    "lista.todos": "Les {n} sont récupérés.",
+    "lista.aindaFaltam": "Encore manquants ({n})",
+    "lista.jaColetados": "Déjà récupérés ({n})",
+    "origem.shop": "boutique",
+    "origem.world": "monde",
+    "origem.enemy": "ennemi",
+    "origem.mini-boss": "mini-boss",
+    "beads.extra": "Quatre perles font un Prayer Necklace, dix colliers au total.",
+    "seeds.extra": "La Healing Gourd est à {c} charges sur {max}.",
+    "seeds.extraBolsa": "La Healing Gourd est à {c} charges sur {max}, et {n} graine(s) restent inutilisées dans votre sac.",
+    "inimigos.todos": "Les {n} sont faits.",
+    "inimigos.restam": "Il en reste {n} : {lista}",
+    "inimigos.restamDe": "Il en reste {n} sur {total}.",
+    "inimigos.semPistaUm": "1 de plus n’est enregistré nulle part de lisible dans la sauvegarde, il reste donc non coché.",
+    "inimigos.semPista": "{n} de plus ne sont enregistrés nulle part de lisible dans la sauvegarde, ils restent donc non cochés.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "non suivi",
+    "tag.naoCalibrado": "non calibré",
+    "idolos.aviso": "Chaque région garde les flags de ses idoles dans son propre bloc, et les offsets de ces blocs ne sont pas encore connus ({b} sur {total} calibrés). Reposez-vous à une idole jamais utilisée, puis lancez : npm run discover idol",
+    "ess.grupo.vida": "Vitalité et soins",
+    "ess.grupo.materiais": "Matériaux de prothèse",
+    "ess.rotulo.gourdCharges": "Charges de la Healing Gourd",
+    "ess.dica.prayerBeads": "augmentent vitalité et posture",
+    "ess.dica.prayerNecklaces": "4 perles = 1 collier",
+    "ess.dica.gourdSeeds": "augmentent les charges de soin",
+    "ess.dica.gourdCharges": "1 au départ, +1 par graine donnée à Emma",
+    "ess.dica.scrapIron": "ferraille courante",
+    "ess.dica.scrapMagnetite": "ferraille de niveau 2",
+    "ess.dica.blackGunpowder": "poudre de niveau 1",
+    "ess.dica.yellowGunpowder": "poudre de niveau 2",
+    "ess.dica.lumpOfFatWax": "cire de niveau 2",
+    "ess.dica.lumpOfGraveWax": "cire de niveau 3",
+    "ess.dica.adamantiteScrap": "ferraille de niveau 3",
+    "ess.dica.fulminatedMercury": "poudre de niveau 3",
+    "ess.dica.lapisLazuli": "matériau de fin de jeu",
+    "kaiden.dica": "皆伝 — tous les succès débloqués.",
+    "conq.facil": "facile",
+    "conq.media": "moyen",
+    "conq.dificil": "difficile",
+    "conq.oculta": "Le jeu cache le texte de celui-ci jusqu’à son déblocage ; c’est la description du même trophée sur PlayStation.",
+    "conq.incerta": "invérifiable dans la sauvegarde",
+    "conq.soSteam": "Steam l’a ; cette sauvegarde non",
+    "conq.soSave": "la sauvegarde l’a ; Steam non",
+    "conq.ambos": "Prouvé par la sauvegarde, confirmé par Steam.",
+    "conq.save": "Prouvé par la sauvegarde.",
+    "conq.steam": "Débloqué sur Steam ; la sauvegarde seule ne peut pas le montrer.",
+    "conq.shinobi": "Le plus rare de tous — et il exige tous les autres",
+    "conq.raridade": "{p} % des joueurs l’ont",
+    "efeito.fogo": "En feu : deux succès ou plus sont tombés cette session. Encore {h} h.",
+    "efeito.podridao": "Dragonrot : cinq morts ou plus cette session. Encore {h} h.",
+  },
+
+  de: {
+    "nav.rotulo": "Navigation",
+    "nav.voltar": "Zurück",
+    "nav.avancar": "Vorwärts",
+    "nav.inicio": "Start",
+    "tema.paraClaro": "Zum hellen Modus wechseln",
+    "tema.paraEscuro": "Zum dunklen Modus wechseln",
+    "idioma.rotulo": "Sprache",
+    "idioma.sistema": "Systemsprache",
+    "sinc.procurando": "Spielstand wird gesucht…",
+    "sinc.parado": "keine Synchronisierung — der Dienst antwortet nicht",
+    "sinc.naoLido": "Spielstand nicht gelesen: {motivo}",
+    "sinc.erro": "Fehler",
+    "sinc.velho": "Spielstand nicht verfügbar — letzte Lesung wird angezeigt",
+    "sinc.ok": "mit dem Spielstand synchronisiert · Slot {slot}",
+    "sinc.status": "Sync-Status: {texto}",
+    "secoes.rotulo": "Abschnitte",
+    "hub.abrir": "Fortschritt öffnen",
+    "hub.seusJogos": "Deine Spiele",
+    "hub.todos": "Alle Spiele",
+    "hub.nenhum": "Noch keine Spiele gefunden. Die Suche läuft eine Minute nach dem Start des Dienstes.",
+    "hub.semSteam": "Ohne Steam gesucht.",
+    "hub.falhaEscolha": "Die Auswahl konnte nicht gespeichert werden. Läuft der Dienst?",
+    "hub.rastreio": "voller Fortschritt",
+    "hub.soAbertura": "nur Starterkennung",
+    "hub.popular": "Platz {n} der meistgespielten",
+    "hub.naSteam": "in der Steam-Bibliothek",
+    "pino.instalado": "installiert",
+    "pino.naoInstalado": "nicht installiert",
+    "pino.instaladoDica": "Auf diesem Computer installiert.",
+    "pino.naoInstaladoDica": "Auf diesem Computer nicht gefunden.",
+    "pino.vigiado": "beobachtet",
+    "pino.naoVigiado": "nicht beobachtet",
+    "pino.vigiadoDica": "Beobachtet: Die App leuchtet im Infobereich auf, wenn dieses Spiel startet.",
+    "pino.naoVigiadoDica": "Nicht beobachtet.",
+    "pino.tocarVigiar": "Tippen, um es zu beobachten.",
+    "selo.instalado": "Installiert",
+    "selo.vigiado": "Beobachtet",
+    "bibli.sub": "auf diesem Computer und in der Steam-Bibliothek",
+    "bibli.noPc": "Auf diesem Computer",
+    "bibli.naSteam": "In der Steam-Bibliothek",
+    "bibli.vazioPc": "Auf den Laufwerken noch nichts gefunden.",
+    "bibli.vazioSteam": "Keine Steam-Bibliothek auf diesem Computer, oder nichts über das Installierte hinaus.",
+    "bibli.progresso": "Fortschritt →",
+    "bibli.varrer": "Erneut suchen",
+    "bibli.varrendo": "Suche zwischen zwei Lesungen; die Liste aktualisiert sich selbst.",
+    "janela.fechar": "Schließen",
+    "janela.jogos": "beobachtete Spiele",
+    "janela.conquistas": "Erfolge",
+    "quadro.bossKills": "besiegte Bosse",
+    "mortes.rotulo": "Tode",
+    "mortes.palavra": "Tode",
+    "mortes.nenhuma": "noch keine Tode",
+    "mortes.contadas": "Gezählt durch Beobachten des Spielstands seit {desde}. Ein Tod erscheint nur, wenn er Sen kostet, und Unseen Aid hebt diesen Verlust manchmal auf.",
+    "mortes.inicio": "Beginn der Aufzeichnung",
+    "mortes.doSave": "Direkt aus dem Spielstand gelesen.",
+    "mortes.alemEscala": "Über das Ende der Skala hinaus.",
+    "mortes.naoNoSave": "Der Spielstand speichert keine Tode.",
+    "mortes.procurando": "Sekiro hat keinen eigenen Todeszähler, daher ermittelt der Tracker durch Beobachten des Spielstands, welches Feld es ist.",
+    "mortes.vistaUma": "Bisher 1 Tod beobachtet.",
+    "mortes.vistas": "Bisher {n} Tode beobachtet.",
+    "mortes.candidatos": "Noch {n} mögliche Felder.",
+    "mortes.esperando": "Warte auf den ersten Tod.",
+    "anel.selo": "Alle Erfolge abgeschlossen",
+    "anel.abrir": "Die ganze Liste der Erfolge öffnen, nach Schwierigkeit",
+    "anel.completo": "abgeschlossen",
+    "anel.conquistas": "Erfolge",
+    "anel.esperando": "warte auf den Spielstand",
+    "tempo.rotulo": "Spielzeit",
+    "tempo.indisponivel": "Die Spielzeit stammt aus Steams eigener Aufzeichnung. Gerade nicht verfügbar.",
+    "tempo.steam": "{t} auf der Steam-Uhr, die Menüs und Ladezeiten mitzählt",
+    "tempo.interno": "{t} Spielzeit im Spiel, aus dem Spiel selbst gelesen",
+    "tempo.internoVelho": "(die Spielzeit im Spiel ist die letzte Lesung; das Spiel läuft gerade nicht)",
+    "tempo.metal": "die Zahl ist in {metal} gegossen, und das Material wechselt alle 25 Stunden",
+    "metal.0": "Alteisen",
+    "metal.25": "Eisen",
+    "metal.50": "Magnetit",
+    "metal.75": "Bronze",
+    "metal.100": "Stahl",
+    "metal.125": "Silber",
+    "metal.150": "Gold",
+    "metal.175": "Adamantit",
+    "metal.200": "Lazulith",
+    "comum.esperandoSave": "Warte auf den Spielstand.",
+    "jogos.local": "Die App öffnet sich von selbst — leise, nur im Infobereich —, wenn eines dieser Spiele startet. Die Desktop-Verknüpfung öffnet sie jederzeit.",
+    "jogos.leitura": "Hier nur lesbar: Die Auswahl erfolgt auf dem Computer, auf dem der Dienst läuft.",
+    "jogos.ignorado": "ignoriert",
+    "jogos.completa": "Spielstand und Speicher werden für dieses Spiel gelesen.",
+    "jogos.soAbertura": "Bei diesem Spiel wird nur der Start erkannt; nichts wird daraus gelesen.",
+    "sino.ativo": "Sinister Burden: Du trägst den Bell Demon. Gegner sind stärker und lassen mehr fallen. Gib ihn an einer Statue zurück, um ihn loszuwerden.",
+    "sino.inativo": "Die Demon Bell wurde nicht geläutet, oder der Bell Demon wurde zurückgegeben.",
+    "rot.ativo": "Rot Essence von {n} von {total} Figuren im Besitz. Öffnen für die Namen.",
+    "rot.nenhuma": "Keine Rot Essence im Inventar.",
+    "rot.vazio": "Keine Rot Essence im Inventar. Jede Figur, die an Dragonrot erkrankt, hinterlässt eine mit ihrem Namen.",
+    "assinatura.nome": "Spielfortschritt von {nick}",
+    "assinatura.convite": "diesem Fortschritt einen Namen geben",
+    "assinatura.dica": "Klicken, um den hier angezeigten Namen zu wählen.",
+    "assinatura.placeholder": "dein Name",
+    "assinatura.campo": "Auf der Seite angezeigter Name",
+    "boss.semeado": "Als 1 gezählt: war bei Beginn der Aufzeichnung schon erledigt.",
+    "boss.resumo": "Das Spiel zählt keine Siege pro Boss: Die Flags sagen nur erledigt oder nicht erledigt. Hier wird jeder Wechsel eines Bosses von nicht erledigt zu erledigt gezählt, was bei jedem NG+ passiert.",
+    "boss.semeados": "{n} waren bei Beginn der Aufzeichnung schon erledigt, das ist also ein Mindestwert.",
+    "boss.memoriaGasta": "Erinnerung verbraucht",
+    "boss.memoriaBolsa": "Erinnerung im Beutel",
+    "headless.resumo": "Headless hinterlassen kein lesbares Flag, daher wird jeder über das Spiritfall bestätigt, das er fallen lässt — ein dauerhafter, exklusiver Gegenstand. {n} von {total} besiegt.",
+    "drop": "lässt {item} fallen",
+    "item.melhoria": "Verbesserung von {item}",
+    "pin.tirar": "Aus dem Menü entfernen",
+    "pin.por": "Zum Menü hinzufügen",
+    "gaveta": "Weitere Abschnitte",
+    "topico.chefes": "Bosse",
+    "topico.miniChefes": "Minibosse",
+    "topico.itens": "Gegenstände",
+    "topico.essenciais": "Wichtige Gegenstände",
+    "topico.outros": "Weitere Begegnungen",
+    "topico.jogos": "Beobachtete Spiele",
+    "nov.um": "1 Neuigkeit",
+    "nov.varios": "{n} Neuigkeiten",
+    "nov.visto": "als gesehen markieren",
+    "nov.mais": "{n} weitere davor",
+    "nov.tipo.boss": "Boss",
+    "nov.tipo.mini-boss": "Miniboss",
+    "nov.tipo.prayer-bead": "Gebetsperle",
+    "nov.tipo.gourd-seed": "Kürbissamen",
+    "nov.tipo.prosthetic": "Prothese",
+    "nov.tipo.art": "Kampfkunst",
+    "nov.tipo.item": "Gegenstand",
+    "nov.tipo.counter": "Zähler",
+    "nov.verbo.defeated": "besiegt",
+    "nov.verbo.collected": "gesammelt",
+    "nov.verbo.unlocked": "freigeschaltet",
+    "nov.verbo.learned": "erlernt",
+    "nov.verbo.obtained": "erhalten",
+    "nov.verbo.back to pending": "wieder offen",
+    "cat.novos": "{n} neu",
+    "novo.desdeVisita": "neu seit deinem letzten Besuch",
+    "novo.mudou": "geändert seit deinem letzten Besuch",
+    "lista.faltam": "{n} fehlen ({partes}).",
+    "lista.todos": "Alle {n} gesammelt.",
+    "lista.aindaFaltam": "Fehlen noch ({n})",
+    "lista.jaColetados": "Schon gesammelt ({n})",
+    "origem.shop": "Händler",
+    "origem.world": "Welt",
+    "origem.enemy": "Gegner",
+    "origem.mini-boss": "Miniboss",
+    "beads.extra": "Vier Perlen ergeben eine Prayer Necklace, zehn Ketten insgesamt.",
+    "seeds.extra": "Die Healing Gourd hat {c} von {max} Ladungen.",
+    "seeds.extraBolsa": "Die Healing Gourd hat {c} von {max} Ladungen, und {n} Samen sind noch unbenutzt im Beutel.",
+    "inimigos.todos": "Alle {n} erledigt.",
+    "inimigos.restam": "{n} übrig: {lista}",
+    "inimigos.restamDe": "{n} von {total} übrig.",
+    "inimigos.semPistaUm": "1 weiterer ist nirgends vermerkt, wo der Spielstand gelesen werden kann, und bleibt daher unmarkiert.",
+    "inimigos.semPista": "{n} weitere sind nirgends vermerkt, wo der Spielstand gelesen werden kann, und bleiben daher unmarkiert.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "nicht erfasst",
+    "tag.naoCalibrado": "nicht kalibriert",
+    "idolos.aviso": "Jede Region speichert die Flags ihrer Statuen in einem eigenen Block, und deren Offsets sind noch unbekannt ({b} von {total} kalibriert). Raste an einer noch nicht benutzten Statue und führe dann aus: npm run discover idol",
+    "ess.grupo.vida": "Vitalität und Heilung",
+    "ess.grupo.materiais": "Prothesen-Materialien",
+    "ess.rotulo.gourdCharges": "Ladungen der Healing Gourd",
+    "ess.dica.prayerBeads": "erhöhen Vitalität und Haltung",
+    "ess.dica.prayerNecklaces": "4 Perlen = 1 Kette",
+    "ess.dica.gourdSeeds": "erhöhen die Heilladungen",
+    "ess.dica.gourdCharges": "1 zu Beginn, +1 je Samen an Emma",
+    "ess.dica.scrapIron": "gewöhnlicher Schrott",
+    "ess.dica.scrapMagnetite": "Schrott Stufe 2",
+    "ess.dica.blackGunpowder": "Pulver Stufe 1",
+    "ess.dica.yellowGunpowder": "Pulver Stufe 2",
+    "ess.dica.lumpOfFatWax": "Wachs Stufe 2",
+    "ess.dica.lumpOfGraveWax": "Wachs Stufe 3",
+    "ess.dica.adamantiteScrap": "Schrott Stufe 3",
+    "ess.dica.fulminatedMercury": "Pulver Stufe 3",
+    "ess.dica.lapisLazuli": "Material fürs Endspiel",
+    "kaiden.dica": "皆伝 — alle Erfolge freigeschaltet.",
+    "conq.facil": "leicht",
+    "conq.media": "mittel",
+    "conq.dificil": "schwer",
+    "conq.oculta": "Das Spiel verbirgt den Text bis zur Freischaltung; dies ist die Beschreibung derselben Trophäe auf PlayStation.",
+    "conq.incerta": "nicht aus dem Spielstand belegbar",
+    "conq.soSteam": "Steam hat ihn; dieser Spielstand nicht",
+    "conq.soSave": "der Spielstand hat ihn; Steam nicht",
+    "conq.ambos": "Vom Spielstand belegt, von Steam bestätigt.",
+    "conq.save": "Vom Spielstand belegt.",
+    "conq.steam": "Auf Steam freigeschaltet; der Spielstand allein kann es nicht zeigen.",
+    "conq.shinobi": "Der seltenste von allen — und er verlangt alle anderen",
+    "conq.raridade": "{p} % der Spieler haben ihn",
+    "efeito.fogo": "In Flammen: zwei oder mehr Erfolge in dieser Sitzung. Noch {h} h.",
+    "efeito.podridao": "Dragonrot: fünf oder mehr Tode in dieser Sitzung. Noch {h} h.",
+  },
+
+  it: {
+    "nav.rotulo": "Navigazione",
+    "nav.voltar": "Indietro",
+    "nav.avancar": "Avanti",
+    "nav.inicio": "Home",
+    "tema.paraClaro": "Passa alla modalità chiara",
+    "tema.paraEscuro": "Passa alla modalità scura",
+    "idioma.rotulo": "Lingua",
+    "idioma.sistema": "Lingua di sistema",
+    "sinc.procurando": "ricerca del salvataggio…",
+    "sinc.parado": "nessuna sincronizzazione — il servizio non risponde",
+    "sinc.naoLido": "salvataggio non letto: {motivo}",
+    "sinc.erro": "errore",
+    "sinc.velho": "salvataggio non disponibile — mostro l’ultima lettura",
+    "sinc.ok": "sincronizzato con il salvataggio · slot {slot}",
+    "sinc.status": "Stato sincronizzazione: {texto}",
+    "secoes.rotulo": "Sezioni",
+    "hub.abrir": "Apri i progressi",
+    "hub.seusJogos": "I tuoi giochi",
+    "hub.todos": "Tutti i giochi",
+    "hub.nenhum": "Nessun gioco trovato finora. La ricerca parte un minuto dopo l’avvio del servizio.",
+    "hub.semSteam": "Ricerca fatta senza Steam.",
+    "hub.falhaEscolha": "Impossibile salvare la scelta. Il servizio è attivo?",
+    "hub.rastreio": "tracciamento completo",
+    "hub.soAbertura": "solo rilevamento dell’avvio",
+    "hub.popular": "n. {n} tra i più giocati",
+    "hub.naSteam": "nella libreria di Steam",
+    "pino.instalado": "installato",
+    "pino.naoInstalado": "non installato",
+    "pino.instaladoDica": "Installato su questo computer.",
+    "pino.naoInstaladoDica": "Non trovato su questo computer.",
+    "pino.vigiado": "osservato",
+    "pino.naoVigiado": "non osservato",
+    "pino.vigiadoDica": "Osservato: l’app si accende nell’area di notifica quando questo gioco parte.",
+    "pino.naoVigiadoDica": "Non osservato.",
+    "pino.tocarVigiar": "Tocca per osservarlo.",
+    "selo.instalado": "Installato",
+    "selo.vigiado": "Osservato",
+    "bibli.sub": "su questo computer e nella libreria di Steam",
+    "bibli.noPc": "Su questo computer",
+    "bibli.naSteam": "Nella libreria di Steam",
+    "bibli.vazioPc": "Ancora nulla trovato sui dischi.",
+    "bibli.vazioSteam": "Nessuna libreria di Steam su questo computer, o niente oltre a ciò che è installato.",
+    "bibli.progresso": "Progressi →",
+    "bibli.varrer": "Cerca di nuovo",
+    "bibli.varrendo": "Ricerca tra due letture; l’elenco si aggiorna da solo.",
+    "janela.fechar": "Chiudi",
+    "janela.jogos": "giochi osservati",
+    "janela.conquistas": "obiettivi",
+    "quadro.bossKills": "boss sconfitti",
+    "mortes.rotulo": "Morti",
+    "mortes.palavra": "morti",
+    "mortes.nenhuma": "ancora nessuna morte",
+    "mortes.contadas": "Contate osservando il salvataggio dal {desde}. Una morte compare solo quando costa Sen, e Unseen Aid a volte annulla quella perdita.",
+    "mortes.inicio": "l’inizio del tracciamento",
+    "mortes.doSave": "Letto direttamente dal salvataggio.",
+    "mortes.alemEscala": "Oltre la fine della scala.",
+    "mortes.naoNoSave": "Il salvataggio non registra le morti.",
+    "mortes.procurando": "Sekiro non ha un contatore di morti proprio, quindi il tracker sta capendo quale campo sia osservando il salvataggio.",
+    "mortes.vistaUma": "1 morte vista finora.",
+    "mortes.vistas": "{n} morti viste finora.",
+    "mortes.candidatos": "Restano {n} campi candidati.",
+    "mortes.esperando": "In attesa della prima morte.",
+    "anel.selo": "Tutti gli obiettivi completati",
+    "anel.abrir": "Apri l’elenco completo degli obiettivi, per difficoltà",
+    "anel.completo": "completato",
+    "anel.conquistas": "obiettivi",
+    "anel.esperando": "in attesa del salvataggio",
+    "tempo.rotulo": "tempo di gioco",
+    "tempo.indisponivel": "Il tempo di gioco viene dal registro di Steam. Non disponibile ora.",
+    "tempo.steam": "{t} sull’orologio di Steam, che conta menu e caricamenti",
+    "tempo.interno": "{t} di tempo nel gioco, letto dal gioco stesso",
+    "tempo.internoVelho": "(il tempo nel gioco è l’ultima lettura; il gioco ora non è aperto)",
+    "tempo.metal": "il numero è fuso in {metal}, e il materiale cambia ogni 25 ore",
+    "metal.0": "rottame di ferro",
+    "metal.25": "ferro",
+    "metal.50": "magnetite",
+    "metal.75": "bronzo",
+    "metal.100": "acciaio",
+    "metal.125": "argento",
+    "metal.150": "oro",
+    "metal.175": "adamantite",
+    "metal.200": "lazulite",
+    "comum.esperandoSave": "In attesa del salvataggio.",
+    "jogos.local": "L’app si apre da sola — in silenzio, solo nell’area di notifica — quando parte uno di questi. Il collegamento sul desktop la apre in qualsiasi momento.",
+    "jogos.leitura": "Qui è in sola lettura: la scelta si fa sul computer che esegue il servizio.",
+    "jogos.ignorado": "ignorato",
+    "jogos.completa": "Di questo gioco si leggono salvataggio e memoria.",
+    "jogos.soAbertura": "Di questo gioco si rileva solo l’avvio; non si legge nulla.",
+    "sino.ativo": "Sinister Burden: stai portando il Bell Demon. I nemici sono più forti e lasciano più bottino. Restituiscilo a un idolo per toglierlo.",
+    "sino.inativo": "La Demon Bell non è stata suonata, oppure il Bell Demon è stato restituito.",
+    "rot.ativo": "Rot Essence posseduta per {n} personaggi su {total}. Apri per i nomi.",
+    "rot.nenhuma": "Nessuna Rot Essence nell’inventario.",
+    "rot.vazio": "Nessuna Rot Essence nell’inventario. Ogni personaggio che contrae il Dragonrot ne lascia una con il suo nome.",
+    "assinatura.nome": "progressi di {nick}",
+    "assinatura.convite": "dai un nome a questi progressi",
+    "assinatura.dica": "Clicca per scegliere il nome mostrato qui.",
+    "assinatura.placeholder": "il tuo nome",
+    "assinatura.campo": "Nome mostrato nella pagina",
+    "boss.semeado": "Contato come 1: era già fatto all’inizio del tracciamento.",
+    "boss.resumo": "Il gioco non conta le uccisioni per boss: i flag dicono solo fatto o non fatto. Qui si conta ogni volta che un boss passa da non fatto a fatto, cosa che succede a ogni NG+.",
+    "boss.semeados": "{n} erano già fatti all’inizio del tracciamento, quindi questo è un minimo.",
+    "boss.memoriaGasta": "ricordo usato",
+    "boss.memoriaBolsa": "ricordo nella borsa",
+    "headless.resumo": "Gli Headless non lasciano flag leggibili, quindi ognuno è confermato dallo Spiritfall che lascia — un oggetto permanente ed esclusivo. {n} su {total} sconfitti.",
+    "drop": "lascia {item}",
+    "item.melhoria": "potenziamento di {item}",
+    "pin.tirar": "Togli dal menu",
+    "pin.por": "Aggiungi al menu",
+    "gaveta": "Altre sezioni",
+    "topico.chefes": "Boss",
+    "topico.miniChefes": "Miniboss",
+    "topico.itens": "Oggetti",
+    "topico.essenciais": "Oggetti essenziali",
+    "topico.outros": "Altri incontri",
+    "topico.jogos": "Giochi osservati",
+    "nov.um": "1 novità",
+    "nov.varios": "{n} novità",
+    "nov.visto": "segna come visto",
+    "nov.mais": "altre {n} prima di queste",
+    "nov.tipo.boss": "boss",
+    "nov.tipo.mini-boss": "miniboss",
+    "nov.tipo.prayer-bead": "grano di preghiera",
+    "nov.tipo.gourd-seed": "seme",
+    "nov.tipo.prosthetic": "protesi",
+    "nov.tipo.art": "arte",
+    "nov.tipo.item": "oggetto",
+    "nov.tipo.counter": "contatore",
+    "nov.verbo.defeated": "sconfitto",
+    "nov.verbo.collected": "raccolto",
+    "nov.verbo.unlocked": "sbloccato",
+    "nov.verbo.learned": "appreso",
+    "nov.verbo.obtained": "ottenuto",
+    "nov.verbo.back to pending": "di nuovo in sospeso",
+    "cat.novos": "nuovi: {n}",
+    "novo.desdeVisita": "nuovo dalla tua ultima visita",
+    "novo.mudou": "cambiato dalla tua ultima visita",
+    "lista.faltam": "Ne mancano {n} ({partes}).",
+    "lista.todos": "Tutti i {n} raccolti.",
+    "lista.aindaFaltam": "Mancano ancora ({n})",
+    "lista.jaColetados": "Già raccolti ({n})",
+    "origem.shop": "negozio",
+    "origem.world": "mondo",
+    "origem.enemy": "nemico",
+    "origem.mini-boss": "miniboss",
+    "beads.extra": "Quattro grani formano una Prayer Necklace, dieci collane in tutto.",
+    "seeds.extra": "La Healing Gourd è a {c} cariche su {max}.",
+    "seeds.extraBolsa": "La Healing Gourd è a {c} cariche su {max}, e {n} seme/i sono ancora inutilizzati nella borsa.",
+    "inimigos.todos": "Tutti i {n} fatti.",
+    "inimigos.restam": "Ne restano {n}: {lista}",
+    "inimigos.restamDe": "Ne restano {n} su {total}.",
+    "inimigos.semPistaUm": "1 in più non è registrato in nessun punto leggibile del salvataggio, quindi resta non segnato.",
+    "inimigos.semPista": "{n} in più non sono registrati in nessun punto leggibile del salvataggio, quindi restano non segnati.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "non tracciato",
+    "tag.naoCalibrado": "non calibrato",
+    "idolos.aviso": "Ogni regione tiene i flag dei suoi idoli in un blocco proprio, e gli offset di quei blocchi non sono ancora noti ({b} su {total} calibrati). Riposa a un idolo mai usato, poi esegui: npm run discover idol",
+    "ess.grupo.vida": "Vitalità e cura",
+    "ess.grupo.materiais": "Materiali per protesi",
+    "ess.rotulo.gourdCharges": "Cariche della Healing Gourd",
+    "ess.dica.prayerBeads": "aumentano vitalità e postura",
+    "ess.dica.prayerNecklaces": "4 grani = 1 collana",
+    "ess.dica.gourdSeeds": "aumentano le cariche di cura",
+    "ess.dica.gourdCharges": "1 all’inizio, +1 per seme dato a Emma",
+    "ess.dica.scrapIron": "rottame comune",
+    "ess.dica.scrapMagnetite": "rottame di livello 2",
+    "ess.dica.blackGunpowder": "polvere di livello 1",
+    "ess.dica.yellowGunpowder": "polvere di livello 2",
+    "ess.dica.lumpOfFatWax": "cera di livello 2",
+    "ess.dica.lumpOfGraveWax": "cera di livello 3",
+    "ess.dica.adamantiteScrap": "rottame di livello 3",
+    "ess.dica.fulminatedMercury": "polvere di livello 3",
+    "ess.dica.lapisLazuli": "materiale di fine gioco",
+    "kaiden.dica": "皆伝 — tutti gli obiettivi sbloccati.",
+    "conq.facil": "facile",
+    "conq.media": "medio",
+    "conq.dificil": "difficile",
+    "conq.oculta": "Il gioco nasconde il testo di questo finché non lo sblocchi; è la descrizione dello stesso trofeo su PlayStation.",
+    "conq.incerta": "non dimostrabile dal salvataggio",
+    "conq.soSteam": "Steam ce l’ha; questo salvataggio no",
+    "conq.soSave": "il salvataggio ce l’ha; Steam no",
+    "conq.ambos": "Dimostrato dal salvataggio, confermato da Steam.",
+    "conq.save": "Dimostrato dal salvataggio.",
+    "conq.steam": "Sbloccato su Steam; il salvataggio da solo non può mostrarlo.",
+    "conq.shinobi": "Il più raro di tutti — e richiede tutti gli altri",
+    "conq.raridade": "Il {p}% dei giocatori ce l’ha",
+    "efeito.fogo": "In fiamme: due o più obiettivi in questa sessione. Restano {h} h.",
+    "efeito.podridao": "Dragonrot: cinque o più morti in questa sessione. Restano {h} h.",
+  },
+
+  ru: {
+    "nav.rotulo": "Навигация",
+    "nav.voltar": "Назад",
+    "nav.avancar": "Вперёд",
+    "nav.inicio": "Главная",
+    "tema.paraClaro": "Включить светлую тему",
+    "tema.paraEscuro": "Включить тёмную тему",
+    "idioma.rotulo": "Язык",
+    "idioma.sistema": "Язык системы",
+    "sinc.procurando": "ищем сохранение…",
+    "sinc.parado": "нет синхронизации — служба не отвечает",
+    "sinc.naoLido": "сохранение не прочитано: {motivo}",
+    "sinc.erro": "ошибка",
+    "sinc.velho": "сохранение недоступно — показано последнее чтение",
+    "sinc.ok": "синхронизировано с сохранением · слот {slot}",
+    "sinc.status": "Синхронизация: {texto}",
+    "secoes.rotulo": "Разделы",
+    "hub.abrir": "Открыть прогресс",
+    "hub.seusJogos": "Ваши игры",
+    "hub.todos": "Все игры",
+    "hub.nenhum": "Игры пока не найдены. Поиск запускается через минуту после старта службы.",
+    "hub.semSteam": "Поиск без Steam.",
+    "hub.falhaEscolha": "Не удалось сохранить выбор. Служба запущена?",
+    "hub.rastreio": "полный прогресс",
+    "hub.soAbertura": "только запуск",
+    "hub.popular": "№ {n} по популярности",
+    "hub.naSteam": "в библиотеке Steam",
+    "pino.instalado": "установлена",
+    "pino.naoInstalado": "не установлена",
+    "pino.instaladoDica": "Установлена на этом компьютере.",
+    "pino.naoInstaladoDica": "Не найдена на этом компьютере.",
+    "pino.vigiado": "отслеживается",
+    "pino.naoVigiado": "не отслеживается",
+    "pino.vigiadoDica": "Отслеживается: приложение загорается в трее, когда запускается эта игра.",
+    "pino.naoVigiadoDica": "Не отслеживается.",
+    "pino.tocarVigiar": "Нажмите, чтобы отслеживать.",
+    "selo.instalado": "Установлена",
+    "selo.vigiado": "Отслеживается",
+    "bibli.sub": "на этом компьютере и в библиотеке Steam",
+    "bibli.noPc": "На этом компьютере",
+    "bibli.naSteam": "В библиотеке Steam",
+    "bibli.vazioPc": "На дисках пока ничего не найдено.",
+    "bibli.vazioSteam": "На этом компьютере нет библиотеки Steam или в ней нет ничего сверх установленного.",
+    "bibli.progresso": "Прогресс →",
+    "bibli.varrer": "Искать снова",
+    "bibli.varrendo": "Поиск идёт между двумя чтениями; список обновится сам.",
+    "janela.fechar": "Закрыть",
+    "janela.jogos": "отслеживаемые игры",
+    "janela.conquistas": "достижения",
+    "quadro.bossKills": "убито боссов",
+    "mortes.rotulo": "Смерти",
+    "mortes.palavra": "смертей",
+    "mortes.nenhuma": "смертей пока нет",
+    "mortes.contadas": "Подсчитано по сохранению с {desde}. Смерть видна, только если стоит Sen, а Unseen Aid иногда отменяет эту потерю.",
+    "mortes.inicio": "начала отслеживания",
+    "mortes.doSave": "Прочитано прямо из сохранения.",
+    "mortes.alemEscala": "За пределами шкалы.",
+    "mortes.naoNoSave": "Сохранение не записывает смерти.",
+    "mortes.procurando": "В Sekiro нет своего счётчика смертей, поэтому трекер ищет нужное поле, наблюдая за сохранением.",
+    "mortes.vistaUma": "Замечено смертей: 1.",
+    "mortes.vistas": "Замечено смертей: {n}.",
+    "mortes.candidatos": "Осталось полей-кандидатов: {n}.",
+    "mortes.esperando": "Ждём первой смерти.",
+    "anel.selo": "Все достижения получены",
+    "anel.abrir": "Открыть полный список достижений по сложности",
+    "anel.completo": "готово",
+    "anel.conquistas": "достижения",
+    "anel.esperando": "ждём сохранение",
+    "tempo.rotulo": "время в игре",
+    "tempo.indisponivel": "Время в игре берётся из учёта Steam. Сейчас недоступно.",
+    "tempo.steam": "{t} по часам Steam, включая меню и загрузки",
+    "tempo.interno": "{t} игрового времени, прочитано из самой игры",
+    "tempo.internoVelho": "(игровое время — последнее чтение; игра сейчас не запущена)",
+    "tempo.metal": "число отлито из материала «{metal}», материал меняется каждые 25 часов",
+    "metal.0": "железный лом",
+    "metal.25": "железо",
+    "metal.50": "магнетит",
+    "metal.75": "бронза",
+    "metal.100": "сталь",
+    "metal.125": "серебро",
+    "metal.150": "золото",
+    "metal.175": "адамантит",
+    "metal.200": "лазурит",
+    "comum.esperandoSave": "Ждём сохранение.",
+    "jogos.local": "Приложение открывается само — тихо, только в трее — когда запускается одна из этих игр. Ярлык на рабочем столе открывает его в любой момент.",
+    "jogos.leitura": "Здесь только чтение: выбор делается на компьютере, где работает служба.",
+    "jogos.ignorado": "игнорируется",
+    "jogos.completa": "Для этой игры читаются сохранение и память.",
+    "jogos.soAbertura": "Для этой игры определяется только запуск; ничего не читается.",
+    "sino.ativo": "Sinister Burden: вы несёте Bell Demon. Враги сильнее и оставляют больше добычи. Верните его у идола, чтобы снять.",
+    "sino.inativo": "В Demon Bell не звонили, или Bell Demon уже возвращён.",
+    "rot.ativo": "Rot Essence есть для {n} из {total} персонажей. Откройте, чтобы увидеть имена.",
+    "rot.nenhuma": "В инвентаре нет Rot Essence.",
+    "rot.vazio": "В инвентаре нет Rot Essence. Каждый персонаж, заболевший Dragonrot, оставляет одну со своим именем.",
+    "assinatura.nome": "прогресс {nick}",
+    "assinatura.convite": "назовите этот прогресс",
+    "assinatura.dica": "Нажмите, чтобы выбрать имя, показанное здесь.",
+    "assinatura.placeholder": "ваше имя",
+    "assinatura.campo": "Имя на странице",
+    "boss.semeado": "Засчитан как 1: уже был пройден, когда началось отслеживание.",
+    "boss.resumo": "Игра не считает убийства каждого босса: флаги говорят только «пройден» или «не пройден». Здесь считается каждый переход босса из непройденного в пройденный — так происходит в каждой NG+.",
+    "boss.semeados": "Уже пройдено к началу отслеживания: {n}, поэтому это минимум.",
+    "boss.memoriaGasta": "память использована",
+    "boss.memoriaBolsa": "память в сумке",
+    "headless.resumo": "Headless не оставляют читаемого флага, поэтому каждый подтверждается выпавшим Spiritfall — постоянным уникальным предметом. Повержено: {n} из {total}.",
+    "drop": "дроп: {item}",
+    "item.melhoria": "улучшение: {item}",
+    "pin.tirar": "Убрать из меню",
+    "pin.por": "Добавить в меню",
+    "gaveta": "Другие разделы",
+    "topico.chefes": "Боссы",
+    "topico.miniChefes": "Мини-боссы",
+    "topico.itens": "Предметы",
+    "topico.essenciais": "Важные предметы",
+    "topico.outros": "Другие встречи",
+    "topico.jogos": "Отслеживаемые игры",
+    "nov.um": "Обновлений: 1",
+    "nov.varios": "Обновлений: {n}",
+    "nov.visto": "отметить как просмотренное",
+    "nov.mais": "и ещё {n} ранее",
+    "nov.tipo.boss": "босс",
+    "nov.tipo.mini-boss": "мини-босс",
+    "nov.tipo.prayer-bead": "чётка",
+    "nov.tipo.gourd-seed": "семя",
+    "nov.tipo.prosthetic": "протез",
+    "nov.tipo.art": "приём",
+    "nov.tipo.item": "предмет",
+    "nov.tipo.counter": "счётчик",
+    "nov.verbo.defeated": "побеждён",
+    "nov.verbo.collected": "собрано",
+    "nov.verbo.unlocked": "открыто",
+    "nov.verbo.learned": "изучено",
+    "nov.verbo.obtained": "получено",
+    "nov.verbo.back to pending": "снова не выполнено",
+    "cat.novos": "новых: {n}",
+    "novo.desdeVisita": "новое с вашего прошлого визита",
+    "novo.mudou": "изменилось с вашего прошлого визита",
+    "lista.faltam": "Не хватает: {n} ({partes}).",
+    "lista.todos": "Собрано всё: {n}.",
+    "lista.aindaFaltam": "Ещё не собрано ({n})",
+    "lista.jaColetados": "Уже собрано ({n})",
+    "origem.shop": "магазин",
+    "origem.world": "мир",
+    "origem.enemy": "враг",
+    "origem.mini-boss": "мини-босс",
+    "beads.extra": "Четыре чётки дают одно Prayer Necklace, всего десять ожерелий.",
+    "seeds.extra": "Зарядов Healing Gourd: {c} из {max}.",
+    "seeds.extraBolsa": "Зарядов Healing Gourd: {c} из {max}; неиспользованных семян в сумке: {n}.",
+    "inimigos.todos": "Пройдено всё: {n}.",
+    "inimigos.restam": "Осталось {n}: {lista}",
+    "inimigos.restamDe": "Осталось {n} из {total}.",
+    "inimigos.semPistaUm": "Ещё 1 нигде не записан в читаемой части сохранения, поэтому остаётся без отметки.",
+    "inimigos.semPista": "Ещё {n} нигде не записаны в читаемой части сохранения, поэтому остаются без отметки.",
+    "tag.auto": "авто",
+    "tag.naoRastreado": "не отслеживается",
+    "tag.naoCalibrado": "не откалиброван",
+    "idolos.aviso": "Каждый регион хранит флаги идолов в своём блоке, и смещения этих блоков пока неизвестны (откалибровано {b} из {total}). Отдохните у ещё не использованного идола и выполните: npm run discover idol",
+    "ess.grupo.vida": "Живучесть и лечение",
+    "ess.grupo.materiais": "Материалы для протеза",
+    "ess.rotulo.gourdCharges": "Заряды Healing Gourd",
+    "ess.dica.prayerBeads": "повышают живучесть и концентрацию",
+    "ess.dica.prayerNecklaces": "4 чётки = 1 ожерелье",
+    "ess.dica.gourdSeeds": "добавляют заряды лечения",
+    "ess.dica.gourdCharges": "1 в начале, +1 за каждое семя, отданное Emma",
+    "ess.dica.scrapIron": "обычный лом",
+    "ess.dica.scrapMagnetite": "лом 2-го уровня",
+    "ess.dica.blackGunpowder": "порох 1-го уровня",
+    "ess.dica.yellowGunpowder": "порох 2-го уровня",
+    "ess.dica.lumpOfFatWax": "воск 2-го уровня",
+    "ess.dica.lumpOfGraveWax": "воск 3-го уровня",
+    "ess.dica.adamantiteScrap": "лом 3-го уровня",
+    "ess.dica.fulminatedMercury": "порох 3-го уровня",
+    "ess.dica.lapisLazuli": "материал конца игры",
+    "kaiden.dica": "皆伝 — все достижения получены.",
+    "conq.facil": "лёгкие",
+    "conq.media": "средние",
+    "conq.dificil": "сложные",
+    "conq.oculta": "Игра скрывает текст этого достижения до получения; это описание того же трофея на PlayStation.",
+    "conq.incerta": "не доказуемо по сохранению",
+    "conq.soSteam": "есть в Steam, нет в этом сохранении",
+    "conq.soSave": "есть в сохранении, нет в Steam",
+    "conq.ambos": "Доказано сохранением, подтверждено Steam.",
+    "conq.save": "Доказано сохранением.",
+    "conq.steam": "Получено в Steam; одно сохранение этого не показывает.",
+    "conq.shinobi": "Самое редкое из всех — и требует все остальные",
+    "conq.raridade": "Есть у {p}% игроков",
+    "efeito.fogo": "В огне: за эту сессию получено два достижения или больше. Осталось {h} ч.",
+    "efeito.podridao": "Dragonrot: пять смертей или больше за эту сессию. Осталось {h} ч.",
+  },
+
+  pl: {
+    "nav.rotulo": "Nawigacja",
+    "nav.voltar": "Wstecz",
+    "nav.avancar": "Dalej",
+    "nav.inicio": "Start",
+    "tema.paraClaro": "Przełącz na tryb jasny",
+    "tema.paraEscuro": "Przełącz na tryb ciemny",
+    "idioma.rotulo": "Język",
+    "idioma.sistema": "Język systemu",
+    "sinc.procurando": "szukam zapisu gry…",
+    "sinc.parado": "brak synchronizacji — usługa nie odpowiada",
+    "sinc.naoLido": "zapis nieodczytany: {motivo}",
+    "sinc.erro": "błąd",
+    "sinc.velho": "zapis niedostępny — pokazuję ostatni odczyt",
+    "sinc.ok": "zsynchronizowano z zapisem · slot {slot}",
+    "sinc.status": "Stan synchronizacji: {texto}",
+    "secoes.rotulo": "Sekcje",
+    "hub.abrir": "Otwórz postęp",
+    "hub.seusJogos": "Twoje gry",
+    "hub.todos": "Wszystkie gry",
+    "hub.nenhum": "Nie znaleziono jeszcze gier. Wyszukiwanie rusza minutę po starcie usługi.",
+    "hub.semSteam": "Wyszukano bez Steama.",
+    "hub.falhaEscolha": "Nie udało się zapisać wyboru. Czy usługa działa?",
+    "hub.rastreio": "pełne śledzenie postępu",
+    "hub.soAbertura": "tylko wykrywanie uruchomienia",
+    "hub.popular": "nr {n} wśród najczęściej granych",
+    "hub.naSteam": "w bibliotece Steam",
+    "pino.instalado": "zainstalowana",
+    "pino.naoInstalado": "niezainstalowana",
+    "pino.instaladoDica": "Zainstalowana na tym komputerze.",
+    "pino.naoInstaladoDica": "Nie znaleziono na tym komputerze.",
+    "pino.vigiado": "obserwowana",
+    "pino.naoVigiado": "nieobserwowana",
+    "pino.vigiadoDica": "Obserwowana: aplikacja zapala się w zasobniku, gdy ta gra się uruchamia.",
+    "pino.naoVigiadoDica": "Nieobserwowana.",
+    "pino.tocarVigiar": "Dotknij, aby obserwować.",
+    "selo.instalado": "Zainstalowana",
+    "selo.vigiado": "Obserwowana",
+    "bibli.sub": "na tym komputerze i w bibliotece Steam",
+    "bibli.noPc": "Na tym komputerze",
+    "bibli.naSteam": "W bibliotece Steam",
+    "bibli.vazioPc": "Na dyskach nic jeszcze nie znaleziono.",
+    "bibli.vazioSteam": "Brak biblioteki Steam na tym komputerze albo nic poza tym, co zainstalowane.",
+    "bibli.progresso": "Postęp →",
+    "bibli.varrer": "Szukaj ponownie",
+    "bibli.varrendo": "Szukam między dwoma odczytami; lista zaktualizuje się sama.",
+    "janela.fechar": "Zamknij",
+    "janela.jogos": "obserwowane gry",
+    "janela.conquistas": "osiągnięcia",
+    "quadro.bossKills": "pokonani bossowie",
+    "mortes.rotulo": "Śmierci",
+    "mortes.palavra": "śmierci",
+    "mortes.nenhuma": "jeszcze bez śmierci",
+    "mortes.contadas": "Liczone przez obserwację zapisu od {desde}. Śmierć widać tylko, gdy kosztuje Sen, a Unseen Aid czasem tę stratę anuluje.",
+    "mortes.inicio": "początku śledzenia",
+    "mortes.doSave": "Odczytane prosto z zapisu.",
+    "mortes.alemEscala": "Poza końcem skali.",
+    "mortes.naoNoSave": "Zapis nie rejestruje śmierci.",
+    "mortes.procurando": "Sekiro nie ma własnego licznika śmierci, więc tracker ustala, które to pole, obserwując zapis.",
+    "mortes.vistaUma": "Zaobserwowane śmierci: 1.",
+    "mortes.vistas": "Zaobserwowane śmierci: {n}.",
+    "mortes.candidatos": "Pozostałe pola-kandydaci: {n}.",
+    "mortes.esperando": "Czekam na pierwszą śmierć.",
+    "anel.selo": "Wszystkie osiągnięcia zdobyte",
+    "anel.abrir": "Otwórz pełną listę osiągnięć według trudności",
+    "anel.completo": "ukończone",
+    "anel.conquistas": "osiągnięcia",
+    "anel.esperando": "czekam na zapis",
+    "tempo.rotulo": "czas gry",
+    "tempo.indisponivel": "Czas gry pochodzi z rejestru Steam. Teraz niedostępny.",
+    "tempo.steam": "{t} według zegara Steam, który liczy menu i wczytywanie",
+    "tempo.interno": "{t} czasu w grze, odczytane z samej gry",
+    "tempo.internoVelho": "(czas w grze to ostatni odczyt; gra nie jest teraz uruchomiona)",
+    "tempo.metal": "liczba jest odlana z materiału: {metal}; materiał zmienia się co 25 godzin",
+    "metal.0": "złom żelazny",
+    "metal.25": "żelazo",
+    "metal.50": "magnetyt",
+    "metal.75": "brąz",
+    "metal.100": "stal",
+    "metal.125": "srebro",
+    "metal.150": "złoto",
+    "metal.175": "adamantyt",
+    "metal.200": "lazuryt",
+    "comum.esperandoSave": "Czekam na zapis.",
+    "jogos.local": "Aplikacja otwiera się sama — po cichu, tylko w zasobniku — gdy uruchamia się jedna z tych gier. Skrót na pulpicie otwiera ją w każdej chwili.",
+    "jogos.leitura": "Tu tylko do odczytu: wyboru dokonuje się na komputerze, na którym działa usługa.",
+    "jogos.ignorado": "ignorowana",
+    "jogos.completa": "Dla tej gry odczytywane są zapis i pamięć.",
+    "jogos.soAbertura": "Dla tej gry wykrywane jest tylko uruchomienie; nic nie jest odczytywane.",
+    "sino.ativo": "Sinister Burden: niesiesz Bell Demon. Wrogowie są silniejsi i zostawiają więcej łupów. Oddaj go przy idolu, aby go usunąć.",
+    "sino.inativo": "W Demon Bell nie zadzwoniono albo Bell Demon został oddany.",
+    "rot.ativo": "Rot Essence dla {n} z {total} postaci. Otwórz, aby zobaczyć imiona.",
+    "rot.nenhuma": "Brak Rot Essence w ekwipunku.",
+    "rot.vazio": "Brak Rot Essence w ekwipunku. Każda postać, która zachoruje na Dragonrot, zostawia jedną ze swoim imieniem.",
+    "assinatura.nome": "postęp gracza {nick}",
+    "assinatura.convite": "nazwij ten postęp",
+    "assinatura.dica": "Kliknij, aby wybrać wyświetlaną tu nazwę.",
+    "assinatura.placeholder": "twoja nazwa",
+    "assinatura.campo": "Nazwa widoczna na stronie",
+    "boss.semeado": "Liczony jako 1: był już zaliczony, gdy zaczęło się śledzenie.",
+    "boss.resumo": "Gra nie liczy zabójstw poszczególnych bossów: flagi mówią tylko zaliczony lub nie. Tu liczy się każde przejście bossa z niezaliczonego na zaliczony, co dzieje się przy każdym NG+.",
+    "boss.semeados": "Już zaliczonych na starcie śledzenia: {n}, więc to wartość minimalna.",
+    "boss.memoriaGasta": "wspomnienie użyte",
+    "boss.memoriaBolsa": "wspomnienie w torbie",
+    "headless.resumo": "Headless nie zostawiają czytelnej flagi, więc każdego potwierdza upuszczony Spiritfall — trwały, wyjątkowy przedmiot. Pokonane: {n} z {total}.",
+    "drop": "upuszcza: {item}",
+    "item.melhoria": "ulepszenie: {item}",
+    "pin.tirar": "Usuń z menu",
+    "pin.por": "Dodaj do menu",
+    "gaveta": "Więcej sekcji",
+    "topico.chefes": "Bossowie",
+    "topico.miniChefes": "Minibossowie",
+    "topico.itens": "Przedmioty",
+    "topico.essenciais": "Kluczowe przedmioty",
+    "topico.outros": "Inne spotkania",
+    "topico.jogos": "Obserwowane gry",
+    "nov.um": "Nowości: 1",
+    "nov.varios": "Nowości: {n}",
+    "nov.visto": "oznacz jako obejrzane",
+    "nov.mais": "i jeszcze {n} wcześniej",
+    "nov.tipo.boss": "boss",
+    "nov.tipo.mini-boss": "miniboss",
+    "nov.tipo.prayer-bead": "paciorek modlitewny",
+    "nov.tipo.gourd-seed": "nasiono",
+    "nov.tipo.prosthetic": "proteza",
+    "nov.tipo.art": "technika",
+    "nov.tipo.item": "przedmiot",
+    "nov.tipo.counter": "licznik",
+    "nov.verbo.defeated": "pokonany",
+    "nov.verbo.collected": "zebrane",
+    "nov.verbo.unlocked": "odblokowane",
+    "nov.verbo.learned": "opanowane",
+    "nov.verbo.obtained": "zdobyte",
+    "nov.verbo.back to pending": "znów do zrobienia",
+    "cat.novos": "nowe: {n}",
+    "novo.desdeVisita": "nowe od twojej ostatniej wizyty",
+    "novo.mudou": "zmienione od twojej ostatniej wizyty",
+    "lista.faltam": "Brakuje: {n} ({partes}).",
+    "lista.todos": "Zebrano wszystkie: {n}.",
+    "lista.aindaFaltam": "Jeszcze brakuje ({n})",
+    "lista.jaColetados": "Już zebrane ({n})",
+    "origem.shop": "sklep",
+    "origem.world": "świat",
+    "origem.enemy": "wróg",
+    "origem.mini-boss": "miniboss",
+    "beads.extra": "Cztery paciorki tworzą jeden Prayer Necklace, łącznie dziesięć naszyjników.",
+    "seeds.extra": "Healing Gourd ma {c} z {max} ładunków.",
+    "seeds.extraBolsa": "Healing Gourd ma {c} z {max} ładunków; niewykorzystane nasiona w torbie: {n}.",
+    "inimigos.todos": "Zaliczono wszystkie: {n}.",
+    "inimigos.restam": "Zostało {n}: {lista}",
+    "inimigos.restamDe": "Zostało {n} z {total}.",
+    "inimigos.semPistaUm": "Jeszcze 1 nie jest zapisany nigdzie, skąd da się odczytać zapis, więc zostaje nieoznaczony.",
+    "inimigos.semPista": "Jeszcze {n} nie jest zapisanych nigdzie, skąd da się odczytać zapis, więc zostają nieoznaczone.",
+    "tag.auto": "auto",
+    "tag.naoRastreado": "nieśledzone",
+    "tag.naoCalibrado": "nieskalibrowane",
+    "idolos.aviso": "Każdy region trzyma flagi swoich idoli we własnym bloku, a przesunięcia tych bloków nie są jeszcze znane (skalibrowano {b} z {total}). Odpocznij przy nieużywanym idolu, a potem uruchom: npm run discover idol",
+    "ess.grupo.vida": "Witalność i leczenie",
+    "ess.grupo.materiais": "Materiały do protezy",
+    "ess.rotulo.gourdCharges": "Ładunki Healing Gourd",
+    "ess.dica.prayerBeads": "zwiększają witalność i postawę",
+    "ess.dica.prayerNecklaces": "4 paciorki = 1 naszyjnik",
+    "ess.dica.gourdSeeds": "zwiększają ładunki leczenia",
+    "ess.dica.gourdCharges": "1 na start, +1 za każde nasiono oddane Emmie",
+    "ess.dica.scrapIron": "zwykły złom",
+    "ess.dica.scrapMagnetite": "złom 2. poziomu",
+    "ess.dica.blackGunpowder": "proch 1. poziomu",
+    "ess.dica.yellowGunpowder": "proch 2. poziomu",
+    "ess.dica.lumpOfFatWax": "wosk 2. poziomu",
+    "ess.dica.lumpOfGraveWax": "wosk 3. poziomu",
+    "ess.dica.adamantiteScrap": "złom 3. poziomu",
+    "ess.dica.fulminatedMercury": "proch 3. poziomu",
+    "ess.dica.lapisLazuli": "materiał na koniec gry",
+    "kaiden.dica": "皆伝 — wszystkie osiągnięcia odblokowane.",
+    "conq.facil": "łatwe",
+    "conq.media": "średnie",
+    "conq.dificil": "trudne",
+    "conq.oculta": "Gra ukrywa tekst tego osiągnięcia do odblokowania; to opis tego samego trofeum na PlayStation.",
+    "conq.incerta": "niemożliwe do potwierdzenia z zapisu",
+    "conq.soSteam": "Steam je ma; ten zapis nie",
+    "conq.soSave": "zapis je ma; Steam nie",
+    "conq.ambos": "Potwierdzone przez zapis i przez Steam.",
+    "conq.save": "Potwierdzone przez zapis.",
+    "conq.steam": "Odblokowane na Steamie; sam zapis tego nie pokaże.",
+    "conq.shinobi": "Najrzadsze ze wszystkich — i wymaga wszystkich pozostałych",
+    "conq.raridade": "Ma je {p}% graczy",
+    "efeito.fogo": "W ogniu: w tej sesji wpadły dwa lub więcej osiągnięć. Zostało {h} h.",
+    "efeito.podridao": "Dragonrot: pięć lub więcej śmierci w tej sesji. Zostało {h} h.",
+  },
+
+  tr: {
+    "nav.rotulo": "Gezinme",
+    "nav.voltar": "Geri",
+    "nav.avancar": "İleri",
+    "nav.inicio": "Ana sayfa",
+    "tema.paraClaro": "Açık moda geç",
+    "tema.paraEscuro": "Koyu moda geç",
+    "idioma.rotulo": "Dil",
+    "idioma.sistema": "Sistem dili",
+    "sinc.procurando": "kayıt dosyası aranıyor…",
+    "sinc.parado": "eşitleme yok — hizmet yanıt vermiyor",
+    "sinc.naoLido": "kayıt okunamadı: {motivo}",
+    "sinc.erro": "hata",
+    "sinc.velho": "kayıt kullanılamıyor — son bilinen okuma gösteriliyor",
+    "sinc.ok": "kayıtla eşitlendi · yuva {slot}",
+    "sinc.status": "Eşitleme durumu: {texto}",
+    "secoes.rotulo": "Bölümler",
+    "hub.abrir": "İlerlemeyi aç",
+    "hub.seusJogos": "Oyunların",
+    "hub.todos": "Tüm oyunlar",
+    "hub.nenhum": "Henüz oyun bulunamadı. Arama, hizmet başladıktan bir dakika sonra çalışır.",
+    "hub.semSteam": "Steam olmadan arandı.",
+    "hub.falhaEscolha": "Seçim kaydedilemedi. Hizmet çalışıyor mu?",
+    "hub.rastreio": "tam ilerleme takibi",
+    "hub.soAbertura": "yalnızca açılış algılama",
+    "hub.popular": "en çok oynananlarda {n}. sırada",
+    "hub.naSteam": "Steam kütüphanesinde",
+    "pino.instalado": "yüklü",
+    "pino.naoInstalado": "yüklü değil",
+    "pino.instaladoDica": "Bu bilgisayarda yüklü.",
+    "pino.naoInstaladoDica": "Bu bilgisayarda bulunamadı.",
+    "pino.vigiado": "izleniyor",
+    "pino.naoVigiado": "izlenmiyor",
+    "pino.vigiadoDica": "İzleniyor: bu oyun başladığında uygulama sistem tepsisinde yanar.",
+    "pino.naoVigiadoDica": "İzlenmiyor.",
+    "pino.tocarVigiar": "İzlemek için dokun.",
+    "selo.instalado": "Yüklü",
+    "selo.vigiado": "İzleniyor",
+    "bibli.sub": "bu bilgisayarda ve Steam kütüphanesinde",
+    "bibli.noPc": "Bu bilgisayarda",
+    "bibli.naSteam": "Steam kütüphanesinde",
+    "bibli.vazioPc": "Disklerde henüz bir şey bulunamadı.",
+    "bibli.vazioSteam": "Bu bilgisayarda Steam kütüphanesi yok ya da yüklü olanların dışında bir şey yok.",
+    "bibli.progresso": "İlerleme →",
+    "bibli.varrer": "Yeniden ara",
+    "bibli.varrendo": "İki okuma arasında aranıyor; liste kendiliğinden güncellenir.",
+    "janela.fechar": "Kapat",
+    "janela.jogos": "izlenen oyunlar",
+    "janela.conquistas": "başarımlar",
+    "quadro.bossKills": "boss öldürme",
+    "mortes.rotulo": "Ölümler",
+    "mortes.palavra": "ölüm",
+    "mortes.nenhuma": "henüz ölüm yok",
+    "mortes.contadas": "{desde} tarihinden beri kayıt izlenerek sayıldı. Bir ölüm yalnızca Sen kaybettirdiğinde görünür ve Unseen Aid bu kaybı bazen iptal eder.",
+    "mortes.inicio": "takibin başladığı",
+    "mortes.doSave": "Doğrudan kayıttan okundu.",
+    "mortes.alemEscala": "Ölçeğin sonunun ötesinde.",
+    "mortes.naoNoSave": "Kayıt ölümleri tutmuyor.",
+    "mortes.procurando": "Sekiro'nun kendi ölüm sayacı yok; bu yüzden takipçi, kaydı izleyerek hangi alan olduğunu bulmaya çalışıyor.",
+    "mortes.vistaUma": "Şu ana kadar görülen ölüm: 1.",
+    "mortes.vistas": "Şu ana kadar görülen ölüm: {n}.",
+    "mortes.candidatos": "Kalan aday alan: {n}.",
+    "mortes.esperando": "İlk ölüm bekleniyor.",
+    "anel.selo": "Tüm başarımlar tamamlandı",
+    "anel.abrir": "Başarımların tam listesini zorluğa göre aç",
+    "anel.completo": "tamamlandı",
+    "anel.conquistas": "başarım",
+    "anel.esperando": "kayıt bekleniyor",
+    "tempo.rotulo": "oyun süresi",
+    "tempo.indisponivel": "Oyun süresi Steam'in kendi kaydından gelir. Şu anda kullanılamıyor.",
+    "tempo.steam": "Steam saatinde {t}; menüler ve yüklemeler dahil",
+    "tempo.interno": "oyun içinde {t}; doğrudan oyundan okundu",
+    "tempo.internoVelho": "(oyun içi süre son okumadır; oyun şu anda açık değil)",
+    "tempo.metal": "sayı {metal} malzemesinden dökülür; malzeme her 25 saatte değişir",
+    "metal.0": "hurda demir",
+    "metal.25": "demir",
+    "metal.50": "manyetit",
+    "metal.75": "bronz",
+    "metal.100": "çelik",
+    "metal.125": "gümüş",
+    "metal.150": "altın",
+    "metal.175": "adamantit",
+    "metal.200": "lazulit",
+    "comum.esperandoSave": "Kayıt bekleniyor.",
+    "jogos.local": "Bunlardan biri başladığında uygulama kendiliğinden açılır — sessizce, yalnızca sistem tepsisinde. Masaüstü kısayolu onu her zaman açar.",
+    "jogos.leitura": "Burada salt okunur: seçim, hizmetin çalıştığı bilgisayarda yapılır.",
+    "jogos.ignorado": "yok sayılıyor",
+    "jogos.completa": "Bu oyun için kayıt ve bellek okunur.",
+    "jogos.soAbertura": "Bu oyun için yalnızca açılış algılanır; hiçbir şey okunmaz.",
+    "sino.ativo": "Sinister Burden: Bell Demon'ı taşıyorsun. Düşmanlar daha güçlü ve daha çok ganimet düşürüyor. Kaldırmak için bir idolde geri ver.",
+    "sino.inativo": "Demon Bell çalınmadı ya da Bell Demon geri verildi.",
+    "rot.ativo": "{total} karakterden {n} tanesi için Rot Essence var. İsimler için aç.",
+    "rot.nenhuma": "Envanterde Rot Essence yok.",
+    "rot.vazio": "Envanterde Rot Essence yok. Dragonrot'a yakalanan her karakter, kendi adını taşıyan bir tane bırakır.",
+    "assinatura.nome": "{nick} oyun ilerlemesi",
+    "assinatura.convite": "bu ilerlemeye bir ad ver",
+    "assinatura.dica": "Burada görünen adı seçmek için tıkla.",
+    "assinatura.placeholder": "adın",
+    "assinatura.campo": "Sayfada görünen ad",
+    "boss.semeado": "1 sayıldı: takip başladığında zaten yapılmıştı.",
+    "boss.resumo": "Oyun her boss için ayrı öldürme sayısı tutmaz: bayraklar yalnızca yapıldı ya da yapılmadı der. Burada bir boss her yapılmadıdan yapıldıya geçtiğinde sayılır; bu her NG+'da olur.",
+    "boss.semeados": "{n} tanesi takip başladığında zaten yapılmıştı; yani bu bir alt sınır.",
+    "boss.memoriaGasta": "anı kullanıldı",
+    "boss.memoriaBolsa": "anı çantada",
+    "headless.resumo": "Headless okunabilir bir bayrak bırakmaz; bu yüzden her biri düşürdüğü Spiritfall ile doğrulanır — kalıcı, özel bir eşya. {total} içinden {n} yenildi.",
+    "drop": "düşürür: {item}",
+    "item.melhoria": "{item} geliştirmesi",
+    "pin.tirar": "Menüden kaldır",
+    "pin.por": "Menüye ekle",
+    "gaveta": "Diğer bölümler",
+    "topico.chefes": "Bosslar",
+    "topico.miniChefes": "Mini bosslar",
+    "topico.itens": "Eşyalar",
+    "topico.essenciais": "Temel eşyalar",
+    "topico.outros": "Diğer karşılaşmalar",
+    "topico.jogos": "İzlenen oyunlar",
+    "nov.um": "1 yenilik",
+    "nov.varios": "{n} yenilik",
+    "nov.visto": "görüldü olarak işaretle",
+    "nov.mais": "bunlardan önce {n} tane daha",
+    "nov.tipo.boss": "boss",
+    "nov.tipo.mini-boss": "mini boss",
+    "nov.tipo.prayer-bead": "dua boncuğu",
+    "nov.tipo.gourd-seed": "tohum",
+    "nov.tipo.prosthetic": "protez",
+    "nov.tipo.art": "dövüş sanatı",
+    "nov.tipo.item": "eşya",
+    "nov.tipo.counter": "sayaç",
+    "nov.verbo.defeated": "yenildi",
+    "nov.verbo.collected": "toplandı",
+    "nov.verbo.unlocked": "açıldı",
+    "nov.verbo.learned": "öğrenildi",
+    "nov.verbo.obtained": "elde edildi",
+    "nov.verbo.back to pending": "yeniden bekliyor",
+    "cat.novos": "{n} yeni",
+    "novo.desdeVisita": "son ziyaretinden beri yeni",
+    "novo.mudou": "son ziyaretinden beri değişti",
+    "lista.faltam": "{n} eksik ({partes}).",
+    "lista.todos": "{n} tanesinin hepsi toplandı.",
+    "lista.aindaFaltam": "Hâlâ eksik ({n})",
+    "lista.jaColetados": "Zaten toplandı ({n})",
+    "origem.shop": "dükkân",
+    "origem.world": "dünya",
+    "origem.enemy": "düşman",
+    "origem.mini-boss": "mini boss",
+    "beads.extra": "Dört boncuk bir Prayer Necklace yapar; toplam on kolye.",
+    "seeds.extra": "Healing Gourd {max} şarjın {c} tanesinde.",
+    "seeds.extraBolsa": "Healing Gourd {max} şarjın {c} tanesinde ve çantanda hâlâ kullanılmamış {n} tohum var.",
+    "inimigos.todos": "{n} tanesinin hepsi yapıldı.",
+    "inimigos.restam": "{n} kaldı: {lista}",
+    "inimigos.restamDe": "{total} içinden {n} kaldı.",
+    "inimigos.semPistaUm": "1 tane daha kaydın okunabildiği hiçbir yerde tutulmuyor, bu yüzden işaretsiz kalıyor.",
+    "inimigos.semPista": "{n} tane daha kaydın okunabildiği hiçbir yerde tutulmuyor, bu yüzden işaretsiz kalıyor.",
+    "tag.auto": "oto",
+    "tag.naoRastreado": "takip edilmiyor",
+    "tag.naoCalibrado": "kalibre edilmedi",
+    "idolos.aviso": "Her bölge idol bayraklarını kendi bloğunda tutar ve bu blokların ofsetleri henüz bilinmiyor ({total} içinden {b} kalibre edildi). Daha önce kullanmadığın bir idolde dinlen, sonra şunu çalıştır: npm run discover idol",
+    "ess.grupo.vida": "Canlılık ve iyileşme",
+    "ess.grupo.materiais": "Protez malzemeleri",
+    "ess.rotulo.gourdCharges": "Healing Gourd şarjları",
+    "ess.dica.prayerBeads": "canlılığı ve duruşu artırır",
+    "ess.dica.prayerNecklaces": "4 boncuk = 1 kolye",
+    "ess.dica.gourdSeeds": "iyileşme şarjlarını artırır",
+    "ess.dica.gourdCharges": "başta 1, Emma'ya verilen her tohum için +1",
+    "ess.dica.scrapIron": "sıradan hurda",
+    "ess.dica.scrapMagnetite": "2. seviye hurda",
+    "ess.dica.blackGunpowder": "1. seviye barut",
+    "ess.dica.yellowGunpowder": "2. seviye barut",
+    "ess.dica.lumpOfFatWax": "2. seviye balmumu",
+    "ess.dica.lumpOfGraveWax": "3. seviye balmumu",
+    "ess.dica.adamantiteScrap": "3. seviye hurda",
+    "ess.dica.fulminatedMercury": "3. seviye barut",
+    "ess.dica.lapisLazuli": "oyun sonu malzemesi",
+    "kaiden.dica": "皆伝 — tüm başarımlar açıldı.",
+    "conq.facil": "kolay",
+    "conq.media": "orta",
+    "conq.dificil": "zor",
+    "conq.oculta": "Oyun bu başarımın metnini açılana kadar gizler; bu, aynı kupanın PlayStation'daki açıklamasıdır.",
+    "conq.incerta": "kayıttan kanıtlanamıyor",
+    "conq.soSteam": "Steam'de var; bu kayıtta yok",
+    "conq.soSave": "kayıtta var; Steam'de yok",
+    "conq.ambos": "Kayıtla kanıtlandı, Steam ile doğrulandı.",
+    "conq.save": "Kayıtla kanıtlandı.",
+    "conq.steam": "Steam'de açıldı; kayıt tek başına bunu gösteremez.",
+    "conq.shinobi": "Hepsinin en nadiri — ve diğer hepsini ister",
+    "conq.raridade": "Oyuncuların %{p} kadarında var",
+    "efeito.fogo": "Alev alev: bu oturumda iki veya daha fazla başarım açıldı. {h} sa kaldı.",
+    "efeito.podridao": "Dragonrot: bu oturumda beş veya daha fazla ölüm. {h} sa kaldı.",
+  },
+
+  ja: {
+    "nav.rotulo": "ナビゲーション",
+    "nav.voltar": "戻る",
+    "nav.avancar": "進む",
+    "nav.inicio": "ホーム",
+    "tema.paraClaro": "ライトモードに切り替え",
+    "tema.paraEscuro": "ダークモードに切り替え",
+    "idioma.rotulo": "言語",
+    "idioma.sistema": "システムの言語",
+    "sinc.procurando": "セーブデータを探しています…",
+    "sinc.parado": "同期していません — サービスが応答しません",
+    "sinc.naoLido": "セーブデータを読めません：{motivo}",
+    "sinc.erro": "エラー",
+    "sinc.velho": "セーブデータを利用できません — 最後の読み取りを表示中",
+    "sinc.ok": "セーブデータと同期済み · スロット {slot}",
+    "sinc.status": "同期状態：{texto}",
+    "secoes.rotulo": "セクション",
+    "hub.abrir": "進捗を開く",
+    "hub.seusJogos": "あなたのゲーム",
+    "hub.todos": "すべてのゲーム",
+    "hub.nenhum": "まだゲームが見つかりません。検索はサービス起動の1分後に実行されます。",
+    "hub.semSteam": "Steam なしで検索しました。",
+    "hub.falhaEscolha": "選択を保存できませんでした。サービスは起動していますか？",
+    "hub.rastreio": "進捗を完全に追跡",
+    "hub.soAbertura": "起動の検出のみ",
+    "hub.popular": "プレイ数 {n} 位",
+    "hub.naSteam": "Steam ライブラリ内",
+    "pino.instalado": "インストール済み",
+    "pino.naoInstalado": "未インストール",
+    "pino.instaladoDica": "このコンピューターにインストール済み。",
+    "pino.naoInstaladoDica": "このコンピューターに見つかりません。",
+    "pino.vigiado": "監視中",
+    "pino.naoVigiado": "未監視",
+    "pino.vigiadoDica": "監視中：このゲームが起動するとトレイのアプリが点灯します。",
+    "pino.naoVigiadoDica": "未監視。",
+    "pino.tocarVigiar": "タップで監視します。",
+    "selo.instalado": "インストール済み",
+    "selo.vigiado": "監視中",
+    "bibli.sub": "このコンピューターと Steam ライブラリ",
+    "bibli.noPc": "このコンピューター",
+    "bibli.naSteam": "Steam ライブラリ",
+    "bibli.vazioPc": "ディスクにはまだ何も見つかりません。",
+    "bibli.vazioSteam": "このコンピューターに Steam ライブラリがないか、インストール済み以外に何もありません。",
+    "bibli.progresso": "進捗 →",
+    "bibli.varrer": "再検索",
+    "bibli.varrendo": "次の読み取りまでに検索します。一覧は自動で更新されます。",
+    "janela.fechar": "閉じる",
+    "janela.jogos": "監視中のゲーム",
+    "janela.conquistas": "実績",
+    "quadro.bossKills": "ボス撃破",
+    "mortes.rotulo": "死亡",
+    "mortes.palavra": "死亡",
+    "mortes.nenhuma": "まだ死亡なし",
+    "mortes.contadas": "{desde}からセーブデータを見て数えています。死亡は Sen を失ったときだけ現れ、Unseen Aid がその損失を打ち消すこともあります。",
+    "mortes.inicio": "追跡開始",
+    "mortes.doSave": "セーブデータから直接読み取りました。",
+    "mortes.alemEscala": "目盛りの終わりを超えています。",
+    "mortes.naoNoSave": "セーブデータは死亡を記録していません。",
+    "mortes.procurando": "SEKIRO には死亡カウンターがないため、トラッカーがセーブデータを見てどのフィールドかを特定しています。",
+    "mortes.vistaUma": "これまでに確認した死亡：1。",
+    "mortes.vistas": "これまでに確認した死亡：{n}。",
+    "mortes.candidatos": "残りの候補フィールド：{n}。",
+    "mortes.esperando": "最初の死亡を待っています。",
+    "anel.selo": "すべての実績を達成",
+    "anel.abrir": "実績の一覧を難易度別に開く",
+    "anel.completo": "達成",
+    "anel.conquistas": "実績",
+    "anel.esperando": "セーブデータを待機中",
+    "tempo.rotulo": "プレイ時間",
+    "tempo.indisponivel": "プレイ時間は Steam の記録から取得します。現在は利用できません。",
+    "tempo.steam": "Steam の時計で {t}（メニューとロードを含む）",
+    "tempo.interno": "ゲーム内時間 {t}（ゲーム本体から読み取り）",
+    "tempo.internoVelho": "（ゲーム内時間は最後の読み取りです。ゲームは現在起動していません）",
+    "tempo.metal": "数字は{metal}で鋳造され、素材は25時間ごとに変わります",
+    "metal.0": "鉄屑",
+    "metal.25": "鉄",
+    "metal.50": "磁鉄",
+    "metal.75": "青銅",
+    "metal.100": "鋼",
+    "metal.125": "銀",
+    "metal.150": "金",
+    "metal.175": "精鉄",
+    "metal.200": "瑠璃",
+    "comum.esperandoSave": "セーブデータを待っています。",
+    "jogos.local": "これらのゲームが起動するとアプリが自動で開きます — 静かに、トレイだけに。デスクトップのショートカットからいつでも開けます。",
+    "jogos.leitura": "ここでは読み取り専用です。選択はサービスを実行しているコンピューターで行います。",
+    "jogos.ignorado": "無視",
+    "jogos.completa": "このゲームはセーブデータとメモリを読み取ります。",
+    "jogos.soAbertura": "このゲームは起動のみ検出し、何も読み取りません。",
+    "sino.ativo": "Sinister Burden：Bell Demon を所持中。敵が強くなり、ドロップも増えます。鬼仏で返すと解除されます。",
+    "sino.inativo": "Demon Bell は鳴らされていないか、Bell Demon は返却済みです。",
+    "rot.ativo": "{total} 人中 {n} 人分の Rot Essence を所持。開くと名前を表示します。",
+    "rot.nenhuma": "インベントリに Rot Essence はありません。",
+    "rot.vazio": "インベントリに Rot Essence はありません。Dragonrot にかかった人物は、その名の付いたものを 1 つ残します。",
+    "assinatura.nome": "{nick} のゲーム進捗",
+    "assinatura.convite": "この進捗に名前を付ける",
+    "assinatura.dica": "クリックしてここに表示する名前を選びます。",
+    "assinatura.placeholder": "名前",
+    "assinatura.campo": "ページに表示する名前",
+    "boss.semeado": "1 として数えました：追跡開始時にすでに撃破済み。",
+    "boss.resumo": "ゲームはボスごとの撃破数を保存しません。フラグは済みか未済みかだけです。ここではボスが未済みから済みに変わるたびに数えます。これは NG+ のたびに起こります。",
+    "boss.semeados": "{n} 体は追跡開始時にすでに撃破済みのため、これは最低値です。",
+    "boss.memoriaGasta": "記憶は使用済み",
+    "boss.memoriaBolsa": "記憶は所持中",
+    "headless.resumo": "Headless は読み取れるフラグを残さないため、それぞれが落とす Spiritfall（永続の専用アイテム）で確認します。{total} 体中 {n} 体撃破。",
+    "drop": "ドロップ：{item}",
+    "item.melhoria": "{item}の強化",
+    "pin.tirar": "メニューから外す",
+    "pin.por": "メニューに追加",
+    "gaveta": "その他のセクション",
+    "topico.chefes": "ボス",
+    "topico.miniChefes": "中ボス",
+    "topico.itens": "アイテム",
+    "topico.essenciais": "重要アイテム",
+    "topico.outros": "その他の遭遇",
+    "topico.jogos": "監視中のゲーム",
+    "nov.um": "更新 1 件",
+    "nov.varios": "更新 {n} 件",
+    "nov.visto": "既読にする",
+    "nov.mais": "これ以前にさらに {n} 件",
+    "nov.tipo.boss": "ボス",
+    "nov.tipo.mini-boss": "中ボス",
+    "nov.tipo.prayer-bead": "数珠玉",
+    "nov.tipo.gourd-seed": "瓢箪の種",
+    "nov.tipo.prosthetic": "義手忍具",
+    "nov.tipo.art": "流派技",
+    "nov.tipo.item": "アイテム",
+    "nov.tipo.counter": "カウンター",
+    "nov.verbo.defeated": "撃破",
+    "nov.verbo.collected": "入手",
+    "nov.verbo.unlocked": "解放",
+    "nov.verbo.learned": "習得",
+    "nov.verbo.obtained": "獲得",
+    "nov.verbo.back to pending": "未達成に戻った",
+    "cat.novos": "新着 {n}",
+    "novo.desdeVisita": "前回の訪問以降に新規",
+    "novo.mudou": "前回の訪問以降に変化",
+    "lista.faltam": "残り {n}（{partes}）。",
+    "lista.todos": "{n} 個すべて入手済み。",
+    "lista.aindaFaltam": "未入手（{n}）",
+    "lista.jaColetados": "入手済み（{n}）",
+    "origem.shop": "店",
+    "origem.world": "フィールド",
+    "origem.enemy": "敵",
+    "origem.mini-boss": "中ボス",
+    "beads.extra": "数珠玉 4 個で Prayer Necklace 1 つ、全部で 10 本。",
+    "seeds.extra": "Healing Gourd の回数は {max} 回中 {c} 回です。",
+    "seeds.extraBolsa": "Healing Gourd の回数は {max} 回中 {c} 回で、未使用の種がまだ {n} 個あります。",
+    "inimigos.todos": "{n} 体すべて撃破。",
+    "inimigos.restam": "残り {n}：{lista}",
+    "inimigos.restamDe": "{total} 中 残り {n}。",
+    "inimigos.semPistaUm": "さらに 1 体はセーブデータの読める場所に記録されないため、未チェックのままです。",
+    "inimigos.semPista": "さらに {n} 体はセーブデータの読める場所に記録されないため、未チェックのままです。",
+    "tag.auto": "自動",
+    "tag.naoRastreado": "追跡不可",
+    "tag.naoCalibrado": "未調整",
+    "idolos.aviso": "各地域は鬼仏のフラグを独自のブロックに保存しており、そのオフセットはまだ不明です（{total} 中 {b} 調整済み）。まだ使っていない鬼仏で休息してから実行してください：npm run discover idol",
+    "ess.grupo.vida": "体力と回復",
+    "ess.grupo.materiais": "義手忍具の素材",
+    "ess.rotulo.gourdCharges": "Healing Gourd の回数",
+    "ess.dica.prayerBeads": "体力と体幹を上げる",
+    "ess.dica.prayerNecklaces": "数珠玉 4 個 = 首飾り 1 つ",
+    "ess.dica.gourdSeeds": "回復回数を増やす",
+    "ess.dica.gourdCharges": "最初は 1、Emma に種を渡すごとに +1",
+    "ess.dica.scrapIron": "一般的な鉄屑",
+    "ess.dica.scrapMagnetite": "段階 2 の屑",
+    "ess.dica.blackGunpowder": "段階 1 の火薬",
+    "ess.dica.yellowGunpowder": "段階 2 の火薬",
+    "ess.dica.lumpOfFatWax": "段階 2 の蝋",
+    "ess.dica.lumpOfGraveWax": "段階 3 の蝋",
+    "ess.dica.adamantiteScrap": "段階 3 の屑",
+    "ess.dica.fulminatedMercury": "段階 3 の火薬",
+    "ess.dica.lapisLazuli": "終盤の素材",
+    "kaiden.dica": "皆伝 — すべての実績を解除。",
+    "conq.facil": "易",
+    "conq.media": "中",
+    "conq.dificil": "難",
+    "conq.oculta": "ゲームは解除するまでこの説明を隠します。これは PlayStation の同じトロフィーの説明です。",
+    "conq.incerta": "セーブデータでは証明不可",
+    "conq.soSteam": "Steam では解除、このセーブでは未解除",
+    "conq.soSave": "セーブでは解除、Steam では未解除",
+    "conq.ambos": "セーブデータで証明、Steam で確認済み。",
+    "conq.save": "セーブデータで証明。",
+    "conq.steam": "Steam で解除。セーブデータだけでは示せません。",
+    "conq.shinobi": "最も希少 — そして他のすべてを要求します",
+    "conq.raridade": "{p}% のプレイヤーが所持",
+    "efeito.fogo": "炎上中：このセッションで実績を 2 つ以上解除。残り {h} 時間。",
+    "efeito.podridao": "Dragonrot：このセッションで 5 回以上死亡。残り {h} 時間。",
+  },
+
+  ko: {
+    "nav.rotulo": "탐색",
+    "nav.voltar": "뒤로",
+    "nav.avancar": "앞으로",
+    "nav.inicio": "홈",
+    "tema.paraClaro": "라이트 모드로 전환",
+    "tema.paraEscuro": "다크 모드로 전환",
+    "idioma.rotulo": "언어",
+    "idioma.sistema": "시스템 언어",
+    "sinc.procurando": "세이브 파일을 찾는 중…",
+    "sinc.parado": "동기화 안 됨 — 서비스가 응답하지 않습니다",
+    "sinc.naoLido": "세이브를 읽지 못함: {motivo}",
+    "sinc.erro": "오류",
+    "sinc.velho": "세이브를 사용할 수 없음 — 마지막으로 읽은 값 표시 중",
+    "sinc.ok": "세이브와 동기화됨 · 슬롯 {slot}",
+    "sinc.status": "동기화 상태: {texto}",
+    "secoes.rotulo": "섹션",
+    "hub.abrir": "진행 상황 열기",
+    "hub.seusJogos": "내 게임",
+    "hub.todos": "모든 게임",
+    "hub.nenhum": "아직 찾은 게임이 없습니다. 검색은 서비스 시작 1분 후에 실행됩니다.",
+    "hub.semSteam": "Steam 없이 검색했습니다.",
+    "hub.falhaEscolha": "선택을 저장하지 못했습니다. 서비스가 실행 중인가요?",
+    "hub.rastreio": "전체 진행 추적",
+    "hub.soAbertura": "실행 감지만",
+    "hub.popular": "가장 많이 플레이한 게임 {n}위",
+    "hub.naSteam": "Steam 라이브러리에 있음",
+    "pino.instalado": "설치됨",
+    "pino.naoInstalado": "설치 안 됨",
+    "pino.instaladoDica": "이 컴퓨터에 설치되어 있습니다.",
+    "pino.naoInstaladoDica": "이 컴퓨터에서 찾을 수 없습니다.",
+    "pino.vigiado": "감시 중",
+    "pino.naoVigiado": "감시 안 함",
+    "pino.vigiadoDica": "감시 중: 이 게임이 시작되면 트레이의 앱이 켜집니다.",
+    "pino.naoVigiadoDica": "감시 안 함.",
+    "pino.tocarVigiar": "탭하면 감시합니다.",
+    "selo.instalado": "설치됨",
+    "selo.vigiado": "감시 중",
+    "bibli.sub": "이 컴퓨터와 Steam 라이브러리",
+    "bibli.noPc": "이 컴퓨터",
+    "bibli.naSteam": "Steam 라이브러리",
+    "bibli.vazioPc": "아직 디스크에서 찾은 것이 없습니다.",
+    "bibli.vazioSteam": "이 컴퓨터에 Steam 라이브러리가 없거나, 설치된 것 외에는 없습니다.",
+    "bibli.progresso": "진행 상황 →",
+    "bibli.varrer": "다시 검색",
+    "bibli.varrendo": "두 번의 읽기 사이에 검색합니다. 목록은 자동으로 갱신됩니다.",
+    "janela.fechar": "닫기",
+    "janela.jogos": "감시 중인 게임",
+    "janela.conquistas": "도전 과제",
+    "quadro.bossKills": "보스 처치",
+    "mortes.rotulo": "사망",
+    "mortes.palavra": "사망",
+    "mortes.nenhuma": "아직 사망 없음",
+    "mortes.contadas": "{desde}부터 세이브를 지켜보며 셌습니다. 사망은 Sen을 잃을 때만 나타나며, Unseen Aid가 가끔 그 손실을 없애 줍니다.",
+    "mortes.inicio": "추적 시작",
+    "mortes.doSave": "세이브에서 직접 읽었습니다.",
+    "mortes.alemEscala": "눈금의 끝을 넘었습니다.",
+    "mortes.naoNoSave": "세이브는 사망을 기록하지 않습니다.",
+    "mortes.procurando": "SEKIRO에는 자체 사망 카운터가 없어서, 트래커가 세이브를 지켜보며 어느 필드인지 찾는 중입니다.",
+    "mortes.vistaUma": "지금까지 확인한 사망: 1.",
+    "mortes.vistas": "지금까지 확인한 사망: {n}.",
+    "mortes.candidatos": "남은 후보 필드: {n}.",
+    "mortes.esperando": "첫 사망을 기다리는 중.",
+    "anel.selo": "모든 도전 과제 달성",
+    "anel.abrir": "도전 과제 전체 목록을 난이도별로 열기",
+    "anel.completo": "달성",
+    "anel.conquistas": "도전 과제",
+    "anel.esperando": "세이브를 기다리는 중",
+    "tempo.rotulo": "플레이 시간",
+    "tempo.indisponivel": "플레이 시간은 Steam 자체 기록에서 가져옵니다. 지금은 사용할 수 없습니다.",
+    "tempo.steam": "Steam 시계 기준 {t} (메뉴와 로딩 포함)",
+    "tempo.interno": "게임 내 시간 {t} (게임에서 직접 읽음)",
+    "tempo.internoVelho": "(게임 내 시간은 마지막으로 읽은 값입니다. 지금은 게임이 실행 중이 아닙니다)",
+    "tempo.metal": "숫자는 {metal}(으)로 주조되며, 재질은 25시간마다 바뀝니다",
+    "metal.0": "고철",
+    "metal.25": "철",
+    "metal.50": "자철",
+    "metal.75": "청동",
+    "metal.100": "강철",
+    "metal.125": "은",
+    "metal.150": "금",
+    "metal.175": "정철",
+    "metal.200": "유리",
+    "comum.esperandoSave": "세이브를 기다리는 중.",
+    "jogos.local": "이 중 하나가 시작되면 앱이 알아서 열립니다 — 조용히, 트레이에서만. 바탕화면 바로 가기로 언제든 열 수 있습니다.",
+    "jogos.leitura": "여기서는 읽기 전용입니다. 선택은 서비스를 실행하는 컴퓨터에서 합니다.",
+    "jogos.ignorado": "무시",
+    "jogos.completa": "이 게임은 세이브와 메모리를 읽습니다.",
+    "jogos.soAbertura": "이 게임은 실행만 감지하며 아무것도 읽지 않습니다.",
+    "sino.ativo": "Sinister Burden: Bell Demon을 지니고 있습니다. 적이 강해지고 더 많이 떨어뜨립니다. 귀불에서 반납하면 해제됩니다.",
+    "sino.inativo": "Demon Bell을 울리지 않았거나 Bell Demon을 반납했습니다.",
+    "rot.ativo": "{total}명 중 {n}명의 Rot Essence를 보유 중입니다. 열면 이름이 보입니다.",
+    "rot.nenhuma": "인벤토리에 Rot Essence가 없습니다.",
+    "rot.vazio": "인벤토리에 Rot Essence가 없습니다. Dragonrot에 걸린 인물은 자기 이름이 붙은 것을 하나 남깁니다.",
+    "assinatura.nome": "{nick}의 게임 진행",
+    "assinatura.convite": "이 진행에 이름 붙이기",
+    "assinatura.dica": "클릭해서 여기에 표시할 이름을 고르세요.",
+    "assinatura.placeholder": "이름",
+    "assinatura.campo": "페이지에 표시할 이름",
+    "boss.semeado": "1로 셈: 추적을 시작할 때 이미 처치한 상태.",
+    "boss.resumo": "게임은 보스별 처치 횟수를 저장하지 않습니다. 플래그는 완료 여부만 알려 줍니다. 여기서는 보스가 미완료에서 완료로 바뀔 때마다 셉니다. NG+마다 이렇게 됩니다.",
+    "boss.semeados": "{n}개는 추적 시작 때 이미 완료되어 있었으므로 이 값은 최솟값입니다.",
+    "boss.memoriaGasta": "기억 사용함",
+    "boss.memoriaBolsa": "기억 보유 중",
+    "headless.resumo": "Headless는 읽을 수 있는 플래그를 남기지 않아서, 각각 떨어뜨리는 Spiritfall(영구적인 전용 아이템)로 확인합니다. {total}체 중 {n}체 처치.",
+    "drop": "드롭: {item}",
+    "item.melhoria": "{item} 강화",
+    "pin.tirar": "메뉴에서 빼기",
+    "pin.por": "메뉴에 추가",
+    "gaveta": "더 많은 섹션",
+    "topico.chefes": "보스",
+    "topico.miniChefes": "중간 보스",
+    "topico.itens": "아이템",
+    "topico.essenciais": "필수 아이템",
+    "topico.outros": "기타 조우",
+    "topico.jogos": "감시 중인 게임",
+    "nov.um": "업데이트 1개",
+    "nov.varios": "업데이트 {n}개",
+    "nov.visto": "확인함으로 표시",
+    "nov.mais": "이전 항목 {n}개 더",
+    "nov.tipo.boss": "보스",
+    "nov.tipo.mini-boss": "중간 보스",
+    "nov.tipo.prayer-bead": "염주알",
+    "nov.tipo.gourd-seed": "호리병 씨앗",
+    "nov.tipo.prosthetic": "의수 인술 도구",
+    "nov.tipo.art": "유파 기술",
+    "nov.tipo.item": "아이템",
+    "nov.tipo.counter": "카운터",
+    "nov.verbo.defeated": "처치",
+    "nov.verbo.collected": "획득",
+    "nov.verbo.unlocked": "해금",
+    "nov.verbo.learned": "습득",
+    "nov.verbo.obtained": "입수",
+    "nov.verbo.back to pending": "다시 미완료",
+    "cat.novos": "새 항목 {n}",
+    "novo.desdeVisita": "지난 방문 이후 새로 생김",
+    "novo.mudou": "지난 방문 이후 바뀜",
+    "lista.faltam": "{n}개 남음 ({partes}).",
+    "lista.todos": "{n}개 모두 획득.",
+    "lista.aindaFaltam": "아직 없음 ({n})",
+    "lista.jaColetados": "이미 획득 ({n})",
+    "origem.shop": "상점",
+    "origem.world": "필드",
+    "origem.enemy": "적",
+    "origem.mini-boss": "중간 보스",
+    "beads.extra": "염주알 4개로 Prayer Necklace 1개, 모두 10개입니다.",
+    "seeds.extra": "Healing Gourd 횟수는 {max}회 중 {c}회입니다.",
+    "seeds.extraBolsa": "Healing Gourd 횟수는 {max}회 중 {c}회이고, 아직 쓰지 않은 씨앗이 {n}개 있습니다.",
+    "inimigos.todos": "{n}개 모두 완료.",
+    "inimigos.restam": "{n}개 남음: {lista}",
+    "inimigos.restamDe": "{total}개 중 {n}개 남음.",
+    "inimigos.semPistaUm": "1개는 세이브에서 읽을 수 있는 곳에 기록되지 않아 표시하지 않습니다.",
+    "inimigos.semPista": "{n}개는 세이브에서 읽을 수 있는 곳에 기록되지 않아 표시하지 않습니다.",
+    "tag.auto": "자동",
+    "tag.naoRastreado": "추적 불가",
+    "tag.naoCalibrado": "보정 안 됨",
+    "idolos.aviso": "각 지역은 귀불 플래그를 자체 블록에 저장하며, 그 블록의 오프셋은 아직 알 수 없습니다({total}개 중 {b}개 보정됨). 아직 쓰지 않은 귀불에서 쉰 다음 실행하세요: npm run discover idol",
+    "ess.grupo.vida": "체력과 회복",
+    "ess.grupo.materiais": "의수 인술 재료",
+    "ess.rotulo.gourdCharges": "Healing Gourd 횟수",
+    "ess.dica.prayerBeads": "체력과 체간을 올림",
+    "ess.dica.prayerNecklaces": "염주알 4개 = 목걸이 1개",
+    "ess.dica.gourdSeeds": "회복 횟수를 늘림",
+    "ess.dica.gourdCharges": "처음 1회, Emma에게 준 씨앗마다 +1",
+    "ess.dica.scrapIron": "흔한 고철",
+    "ess.dica.scrapMagnetite": "2단계 고철",
+    "ess.dica.blackGunpowder": "1단계 화약",
+    "ess.dica.yellowGunpowder": "2단계 화약",
+    "ess.dica.lumpOfFatWax": "2단계 밀랍",
+    "ess.dica.lumpOfGraveWax": "3단계 밀랍",
+    "ess.dica.adamantiteScrap": "3단계 고철",
+    "ess.dica.fulminatedMercury": "3단계 화약",
+    "ess.dica.lapisLazuli": "후반부 재료",
+    "kaiden.dica": "皆伝 — 모든 도전 과제 달성.",
+    "conq.facil": "쉬움",
+    "conq.media": "보통",
+    "conq.dificil": "어려움",
+    "conq.oculta": "게임은 달성할 때까지 이 설명을 숨깁니다. 이것은 PlayStation의 같은 트로피 설명입니다.",
+    "conq.incerta": "세이브로는 증명할 수 없음",
+    "conq.soSteam": "Steam에는 있고 이 세이브에는 없음",
+    "conq.soSave": "세이브에는 있고 Steam에는 없음",
+    "conq.ambos": "세이브로 증명, Steam으로 확인.",
+    "conq.save": "세이브로 증명.",
+    "conq.steam": "Steam에서 달성. 세이브만으로는 보여 줄 수 없습니다.",
+    "conq.shinobi": "가장 희귀한 것 — 그리고 나머지 전부를 요구합니다",
+    "conq.raridade": "플레이어의 {p}%가 보유",
+    "efeito.fogo": "불타는 중: 이번 세션에 도전 과제 2개 이상 달성. {h}시간 남음.",
+    "efeito.podridao": "Dragonrot: 이번 세션에 5번 이상 사망. {h}시간 남음.",
+  },
+
+  "zh-CN": {
+    "nav.rotulo": "导航",
+    "nav.voltar": "后退",
+    "nav.avancar": "前进",
+    "nav.inicio": "主页",
+    "tema.paraClaro": "切换到浅色模式",
+    "tema.paraEscuro": "切换到深色模式",
+    "idioma.rotulo": "语言",
+    "idioma.sistema": "系统语言",
+    "sinc.procurando": "正在查找存档…",
+    "sinc.parado": "未同步 — 服务没有响应",
+    "sinc.naoLido": "未读取存档：{motivo}",
+    "sinc.erro": "错误",
+    "sinc.velho": "存档不可用 — 显示最后一次读取",
+    "sinc.ok": "已与存档同步 · 槽位 {slot}",
+    "sinc.status": "同步状态：{texto}",
+    "secoes.rotulo": "分区",
+    "hub.abrir": "打开进度",
+    "hub.seusJogos": "你的游戏",
+    "hub.todos": "全部游戏",
+    "hub.nenhum": "尚未找到游戏。服务启动一分钟后会开始搜索。",
+    "hub.semSteam": "已在没有 Steam 的情况下搜索。",
+    "hub.falhaEscolha": "无法保存选择。服务在运行吗？",
+    "hub.rastreio": "完整进度追踪",
+    "hub.soAbertura": "仅检测启动",
+    "hub.popular": "最常玩第 {n} 名",
+    "hub.naSteam": "在 Steam 库中",
+    "pino.instalado": "已安装",
+    "pino.naoInstalado": "未安装",
+    "pino.instaladoDica": "已安装在这台电脑上。",
+    "pino.naoInstaladoDica": "在这台电脑上未找到。",
+    "pino.vigiado": "已监视",
+    "pino.naoVigiado": "未监视",
+    "pino.vigiadoDica": "已监视：此游戏启动时，托盘中的应用会亮起。",
+    "pino.naoVigiadoDica": "未监视。",
+    "pino.tocarVigiar": "点按以监视。",
+    "selo.instalado": "已安装",
+    "selo.vigiado": "已监视",
+    "bibli.sub": "这台电脑上和 Steam 库中",
+    "bibli.noPc": "这台电脑上",
+    "bibli.naSteam": "Steam 库中",
+    "bibli.vazioPc": "磁盘上还没有找到任何内容。",
+    "bibli.vazioSteam": "这台电脑上没有 Steam 库，或除已安装的之外没有其他内容。",
+    "bibli.progresso": "进度 →",
+    "bibli.varrer": "重新搜索",
+    "bibli.varrendo": "将在两次读取之间搜索；列表会自动更新。",
+    "janela.fechar": "关闭",
+    "janela.jogos": "监视的游戏",
+    "janela.conquistas": "成就",
+    "quadro.bossKills": "击败头目",
+    "mortes.rotulo": "死亡",
+    "mortes.palavra": "次死亡",
+    "mortes.nenhuma": "尚无死亡",
+    "mortes.contadas": "自 {desde} 起通过观察存档计数。只有损失 Sen 时才会记录死亡，而 Unseen Aid 有时会抵消这一损失。",
+    "mortes.inicio": "开始追踪",
+    "mortes.doSave": "直接从存档读取。",
+    "mortes.alemEscala": "已超出刻度末端。",
+    "mortes.naoNoSave": "存档不记录死亡。",
+    "mortes.procurando": "《只狼》没有自带的死亡计数器，因此追踪器正在通过观察存档找出是哪个字段。",
+    "mortes.vistaUma": "目前已观察到 1 次死亡。",
+    "mortes.vistas": "目前已观察到 {n} 次死亡。",
+    "mortes.candidatos": "还剩 {n} 个候选字段。",
+    "mortes.esperando": "正在等待第一次死亡。",
+    "anel.selo": "全部成就已完成",
+    "anel.abrir": "按难度打开完整的成就列表",
+    "anel.completo": "完成",
+    "anel.conquistas": "成就",
+    "anel.esperando": "正在等待存档",
+    "tempo.rotulo": "游戏时间",
+    "tempo.indisponivel": "游戏时间来自 Steam 自己的记录。目前不可用。",
+    "tempo.steam": "Steam 时钟计时 {t}，包含菜单和加载",
+    "tempo.interno": "游戏内时间 {t}，直接从游戏读取",
+    "tempo.internoVelho": "（游戏内时间为最后一次读取；游戏当前未运行）",
+    "tempo.metal": "数字以{metal}铸成，材质每 25 小时变化一次",
+    "metal.0": "废铁",
+    "metal.25": "铁",
+    "metal.50": "磁铁",
+    "metal.75": "青铜",
+    "metal.100": "钢",
+    "metal.125": "银",
+    "metal.150": "金",
+    "metal.175": "精铁",
+    "metal.200": "琉璃",
+    "comum.esperandoSave": "正在等待存档。",
+    "jogos.local": "其中任一游戏启动时，应用会自动打开 — 安静地，只在托盘中。桌面快捷方式随时可以打开它。",
+    "jogos.leitura": "此处为只读：选择需在运行服务的电脑上进行。",
+    "jogos.ignorado": "已忽略",
+    "jogos.completa": "会读取此游戏的存档和内存。",
+    "jogos.soAbertura": "此游戏只检测启动，不读取任何内容。",
+    "sino.ativo": "Sinister Burden：正携带 Bell Demon。敌人更强，掉落更多。在鬼佛处归还即可解除。",
+    "sino.inativo": "Demon Bell 尚未敲响，或 Bell Demon 已归还。",
+    "rot.ativo": "持有 {total} 名角色中 {n} 名的 Rot Essence。打开查看名字。",
+    "rot.nenhuma": "物品栏中没有 Rot Essence。",
+    "rot.vazio": "物品栏中没有 Rot Essence。每个染上 Dragonrot 的角色都会留下一个以其名字命名的。",
+    "assinatura.nome": "{nick} 的游戏进度",
+    "assinatura.convite": "为此进度命名",
+    "assinatura.dica": "点击选择此处显示的名字。",
+    "assinatura.placeholder": "你的名字",
+    "assinatura.campo": "页面上显示的名字",
+    "boss.semeado": "计为 1：开始追踪时已完成。",
+    "boss.resumo": "游戏不记录每个头目的击杀次数：标志只表示完成或未完成。这里统计每次头目从未完成变为完成，每次 NG+ 都会发生。",
+    "boss.semeados": "开始追踪时已有 {n} 个完成，因此这是最低值。",
+    "boss.memoriaGasta": "记忆已使用",
+    "boss.memoriaBolsa": "记忆在背包中",
+    "headless.resumo": "Headless 不留下可读的标志，因此每个都通过其掉落的 Spiritfall（永久、专属的物品）确认。{total} 个中已击败 {n} 个。",
+    "drop": "掉落 {item}",
+    "item.melhoria": "{item} 强化",
+    "pin.tirar": "从菜单移除",
+    "pin.por": "添加到菜单",
+    "gaveta": "更多分区",
+    "topico.chefes": "头目",
+    "topico.miniChefes": "小头目",
+    "topico.itens": "物品",
+    "topico.essenciais": "重要物品",
+    "topico.outros": "其他遭遇",
+    "topico.jogos": "监视的游戏",
+    "nov.um": "1 项更新",
+    "nov.varios": "{n} 项更新",
+    "nov.visto": "标记为已看",
+    "nov.mais": "此前还有 {n} 项",
+    "nov.tipo.boss": "头目",
+    "nov.tipo.mini-boss": "小头目",
+    "nov.tipo.prayer-bead": "念珠",
+    "nov.tipo.gourd-seed": "葫芦种子",
+    "nov.tipo.prosthetic": "义手忍具",
+    "nov.tipo.art": "流派技",
+    "nov.tipo.item": "物品",
+    "nov.tipo.counter": "计数",
+    "nov.verbo.defeated": "已击败",
+    "nov.verbo.collected": "已收集",
+    "nov.verbo.unlocked": "已解锁",
+    "nov.verbo.learned": "已习得",
+    "nov.verbo.obtained": "已获得",
+    "nov.verbo.back to pending": "回到未完成",
+    "cat.novos": "新增 {n}",
+    "novo.desdeVisita": "自上次访问后新增",
+    "novo.mudou": "自上次访问后有变化",
+    "lista.faltam": "缺少 {n} 个（{partes}）。",
+    "lista.todos": "全部 {n} 个已收集。",
+    "lista.aindaFaltam": "仍缺少（{n}）",
+    "lista.jaColetados": "已收集（{n}）",
+    "origem.shop": "商店",
+    "origem.world": "场景",
+    "origem.enemy": "敌人",
+    "origem.mini-boss": "小头目",
+    "beads.extra": "四颗念珠组成一串 Prayer Necklace，共十串。",
+    "seeds.extra": "Healing Gourd 次数为 {c}/{max}。",
+    "seeds.extraBolsa": "Healing Gourd 次数为 {c}/{max}，背包中还有 {n} 颗种子未使用。",
+    "inimigos.todos": "全部 {n} 个已完成。",
+    "inimigos.restam": "剩余 {n} 个：{lista}",
+    "inimigos.restamDe": "{total} 个中剩余 {n} 个。",
+    "inimigos.semPistaUm": "另有 1 个未记录在存档的任何可读位置，因此不作标记。",
+    "inimigos.semPista": "另有 {n} 个未记录在存档的任何可读位置，因此不作标记。",
+    "tag.auto": "自动",
+    "tag.naoRastreado": "无法追踪",
+    "tag.naoCalibrado": "未校准",
+    "idolos.aviso": "每个区域把鬼佛标志存放在各自的数据块中，这些数据块的偏移量尚未知（已校准 {b}/{total}）。在一个没用过的鬼佛休息，然后运行：npm run discover idol",
+    "ess.grupo.vida": "体力与回复",
+    "ess.grupo.materiais": "义手材料",
+    "ess.rotulo.gourdCharges": "Healing Gourd 次数",
+    "ess.dica.prayerBeads": "提升体力和躯干",
+    "ess.dica.prayerNecklaces": "4 颗念珠 = 1 串",
+    "ess.dica.gourdSeeds": "增加回复次数",
+    "ess.dica.gourdCharges": "初始 1 次，每交给 Emma一颗种子 +1",
+    "ess.dica.scrapIron": "普通废铁",
+    "ess.dica.scrapMagnetite": "二级废料",
+    "ess.dica.blackGunpowder": "一级火药",
+    "ess.dica.yellowGunpowder": "二级火药",
+    "ess.dica.lumpOfFatWax": "二级蜡",
+    "ess.dica.lumpOfGraveWax": "三级蜡",
+    "ess.dica.adamantiteScrap": "三级废料",
+    "ess.dica.fulminatedMercury": "三级火药",
+    "ess.dica.lapisLazuli": "后期材料",
+    "kaiden.dica": "皆伝 — 全部成就已解锁。",
+    "conq.facil": "简单",
+    "conq.media": "中等",
+    "conq.dificil": "困难",
+    "conq.oculta": "游戏在解锁前会隐藏此项的文字；这是 PlayStation 上同一奖杯的描述。",
+    "conq.incerta": "无法通过存档证明",
+    "conq.soSteam": "Steam 有，此存档没有",
+    "conq.soSave": "存档有，Steam 没有",
+    "conq.ambos": "由存档证明，经 Steam 确认。",
+    "conq.save": "由存档证明。",
+    "conq.steam": "已在 Steam 解锁；仅凭存档无法显示。",
+    "conq.shinobi": "所有成就中最稀有的 — 而且要求其他全部",
+    "conq.raridade": "{p}% 的玩家拥有",
+    "efeito.fogo": "燃烧中：本次会话解锁了两个或更多成就。还剩 {h} 小时。",
+    "efeito.podridao": "Dragonrot：本次会话死亡五次或更多。还剩 {h} 小时。",
+  },
+};
+
+function idiomaSuportado(codigo) {
+  return IDIOMAS.some((i) => i[0] === codigo) ? codigo : null;
+}
+
+/*
+ * O idioma do sistema: para cada idioma que o navegador pede, na ordem dele,
+ * primeiro a etiqueta exata e depois só a língua ("pt-PT" cai em "pt-BR").
+ * Nenhum casou, inglês.
+ */
+function idiomaDoSistema() {
+  const nav = typeof navigator !== "undefined" ? navigator : null;
+  const pedidos = nav ? (nav.languages && nav.languages.length ? nav.languages : [nav.language]) : [];
+  for (const p of pedidos) {
+    if (!p) continue;
+    const pedido = String(p).toLowerCase();
+    const exato = IDIOMAS.find((i) => i[0].toLowerCase() === pedido);
+    if (exato) return exato[0];
+    const lingua = pedido.split("-")[0];
+    const parecido = IDIOMAS.find((i) => i[0].toLowerCase().split("-")[0] === lingua);
+    if (parecido) return parecido[0];
+  }
+  return "en";
+}
+
+// null = seguir o sistema. O escolhido à mão vence o do sistema.
+let idiomaEscolhido = idiomaSuportado(guardado(IDIOMA_CHAVE));
+let idiomaAtual = idiomaEscolhido || idiomaDoSistema();
+
+/** O texto de um id no idioma atual, com {var} trocado pelo valor. */
+function t(id, vars) {
+  const tabela = I18N[idiomaAtual] || I18N.en;
+  let s = tabela[id];
+  if (s === undefined) s = I18N.en[id];
+  if (s === undefined) return id;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
+  return s;
+}
+
+/** O mesmo t(), para as funções em que `t` já é outra coisa (o tempo de jogo, um tópico). */
+function tr(id, vars) { return t(id, vars); }
+
+/** Como t(), para o que vem do serviço (tipos, verbos, origens): sem id, o texto cru. */
+function tOu(id, cru) {
+  return I18N.en[id] !== undefined ? t(id) : cru;
+}
+
+/** Número com casas decimais no costume do idioma: 82.3 em inglês, 82,3 em alemão. */
+function decimal(v, casas) {
+  try {
+    return Number(v).toLocaleString(idiomaAtual, { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  } catch (e) {
+    return Number(v).toFixed(casas);
+  }
+}
+
+/*
+ * Os rótulos do menu. A chave continua sendo o nome em inglês — é ela que fica
+ * gravada no aparelho (aba aberta, alfinetes) e que casa com GRUPOS —, e só o
+ * que aparece na tela muda. Os nomes que o jogo dá às seções (Prayer Beads,
+ * Prosthetic Tools...) não estão aqui e ficam como são.
+ */
+const ROTULO_TOPICO = {
+  "Bosses": "topico.chefes",
+  "Mini-bosses": "topico.miniChefes",
+  "Items": "topico.itens",
+  "Essential Items": "topico.essenciais",
+  "Other Encounters": "topico.outros",
+  "Games watched": "topico.jogos",
+};
+function rotuloTopico(nome) {
+  return ROTULO_TOPICO[nome] ? t(ROTULO_TOPICO[nome]) : nome;
+}
+
+/** Os textos fixos da marcação: data-i18n no conteúdo, -aria e -title nos atributos. */
+function traduzirMarcacao() {
+  if (typeof document === "undefined" || !document.querySelectorAll) return;
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.getAttribute("data-i18n"));
+  for (const el of document.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+  for (const el of document.querySelectorAll("[data-i18n-title]")) el.setAttribute("title", t(el.getAttribute("data-i18n-title")));
+}
+
+/**
+ * Troca o idioma da página inteira, na hora.
+ *
+ * `codigo` null volta a seguir o sistema. A marcação fixa é refeita primeiro e
+ * o render depois, porque o render escreve por cima de alguns rótulos fixos.
+ */
+function aplicarIdioma(codigo) {
+  idiomaEscolhido = idiomaSuportado(codigo);
+  idiomaAtual = idiomaEscolhido || idiomaDoSistema();
+  if (typeof document !== "undefined" && document.documentElement) document.documentElement.lang = idiomaAtual;
+  traduzirMarcacao();
+  montarIdiomas();
+  if (typeof applyTheme === "function" && document.getElementById("themeToggle")) {
+    applyTheme(document.documentElement.getAttribute("data-theme"));
+  }
+  render();
+}
+
+/** O globo: monta a lista de idiomas, cada um no próprio nome. */
+function montarIdiomas() {
+  const lista = typeof document !== "undefined" ? document.getElementById("idiomaLista") : null;
+  if (!lista) return;
+  lista.innerHTML = "";
+  const opcao = (codigo, nome, classe) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "idioma-op" + (classe ? " " + classe : "");
+    b.setAttribute("role", "menuitemradio");
+    b.setAttribute("aria-checked", (codigo || null) === idiomaEscolhido ? "true" : "false");
+    if (codigo) {
+      // O nome de cada idioma é dele mesmo, e o navegador precisa saber qual
+      // é para escolher a fonte certa (日本語 e 简体中文 dividem ideogramas).
+      b.setAttribute("lang", codigo);
+      b.setAttribute("translate", "no");
+    }
+    b.textContent = nome;
+    b.addEventListener("click", () => escolherIdioma(codigo));
+    lista.appendChild(b);
+  };
+  opcao(null, t("idioma.sistema"), "sistema");
+  const sep = document.createElement("div");
+  sep.className = "idioma-sep";
+  sep.setAttribute("role", "separator");
+  lista.appendChild(sep);
+  for (const [codigo, nome] of IDIOMAS) opcao(codigo, nome, "");
+}
+
+function abrirIdiomas(abrir) {
+  const bt = document.getElementById("idiomaBt");
+  const lista = document.getElementById("idiomaLista");
+  if (!bt || !lista) return;
+  lista.hidden = !abrir;
+  bt.setAttribute("aria-expanded", abrir ? "true" : "false");
+}
+
+/*
+ * A escolha vale na hora, fica no aparelho e vai para o serviço sem esperar
+ * resposta: pelo link público não há serviço, e a página não pode travar
+ * nisso.
+ */
+function escolherIdioma(codigo) {
+  idiomaPerguntado = true;
+  if (codigo) guardar(IDIOMA_CHAVE, codigo);
+  else esquecer(IDIOMA_CHAVE);
+  if (typeof fetch === "function") {
+    fetch("/idioma", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idioma: codigo || null }),
+    }).catch(() => {});
+  }
+  abrirIdiomas(false);
+  aplicarIdioma(codigo || null);
+  const bt = document.getElementById("idiomaBt");
+  if (bt && bt.focus) bt.focus();
+}
+
+// Uma escolha feita aqui antes de o serviço responder não pode ser desfeita
+// pela resposta dele, que é mais velha que ela.
+let idiomaPerguntado = false;
+
+function ligarIdiomas() {
+  if (typeof document === "undefined") return;
+  const bt = document.getElementById("idiomaBt");
+  const caixa = document.getElementById("idioma");
+  if (!bt || bt.dataset.ligado) return;
+  bt.dataset.ligado = "1";
+  montarIdiomas();
+  bt.addEventListener("click", (ev) => {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    const lista = document.getElementById("idiomaLista");
+    abrirIdiomas(!!(lista && lista.hidden));
+  });
+  // Fora do globo, ou Esc, fecha a lista.
+  document.addEventListener("click", (ev) => {
+    if (caixa && caixa.contains && ev && ev.target && caixa.contains(ev.target)) return;
+    abrirIdiomas(false);
+  });
+  document.addEventListener("keydown", (ev) => {
+    const lista = document.getElementById("idiomaLista");
+    if (ev && ev.key === "Escape" && lista && !lista.hidden) { abrirIdiomas(false); bt.focus(); }
+  });
 }
 
 const THEME_KEY = "theme";
@@ -3684,7 +6227,7 @@ function aplicarPins() {
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M6 1.8h4l-.7 4.1 2.4 2.3H4.3l2.4-2.3z"/>' +
       '<path d="M8 8.2V14"/></svg>';
-    const rotulo = fixo ? "Remove from the menu" : "Add to the menu";
+    const rotulo = fixo ? tr("pin.tirar") : tr("pin.por");
     b.title = rotulo;
     b.setAttribute("aria-label", rotulo);
     b.setAttribute("aria-pressed", fixo ? "true" : "false");
@@ -3766,7 +6309,7 @@ function aplicarAba() {
     janela.addEventListener("close", () => { if (abaAtual) selecionarAba(null); });
   }
   const titulo = janela.querySelector(".janela-titulo");
-  if (titulo) titulo.textContent = abaAtual || "";
+  if (titulo) titulo.textContent = abaAtual ? rotuloTopico(abaAtual) : "";
   if (alvo.length) abrirJanela(janela, null);
   else if (janela.open) janela.close();
 }
@@ -3812,7 +6355,7 @@ function renderTopicos() {
     b.type = "button";
     b.className = classe + (nome === abaAtual ? " on" : "");
     const c = contar(secoesDoTopico(nome));
-    b.appendChild(document.createTextNode(nome));
+    b.appendChild(document.createTextNode(rotuloTopico(nome)));
     if (c) {
       const n = document.createElement("span");
       n.className = "topic-n";
@@ -3839,8 +6382,8 @@ function renderTopicos() {
     const bt = document.createElement("button");
     bt.type = "button";
     bt.className = "topic gaveta-bt" + (naGaveta.indexOf(abaAtual) >= 0 ? " on" : "");
-    bt.title = "More sections";
-    bt.setAttribute("aria-label", "More sections");
+    bt.title = t("gaveta");
+    bt.setAttribute("aria-label", t("gaveta"));
     bt.setAttribute("aria-expanded", gavetaAberta ? "true" : "false");
     for (let i = 0; i < 3; i++) bt.appendChild(document.createElement("span"));
     bt.addEventListener("click", () => { gavetaAberta = !gavetaAberta; renderTopicos(); });
@@ -3931,11 +6474,13 @@ function renderNovidades() {
   const head = document.createElement("div");
   head.className = "nov-head";
   const quantas = lista.length;
-  head.innerHTML = '<span class="nov-titulo">' + quantas +
-    (quantas === 1 ? " update" : " updates") + "</span>";
+  const titulo = document.createElement("span");
+  titulo.className = "nov-titulo";
+  titulo.textContent = quantas === 1 ? t("nov.um") : t("nov.varios", { n: quantas });
+  head.appendChild(titulo);
   const btn = document.createElement("button");
   btn.className = "visto-btn";
-  btn.textContent = "mark as seen";
+  btn.textContent = t("nov.visto");
   btn.addEventListener("click", marcarVisto);
   head.appendChild(btn);
   cx.appendChild(head);
@@ -3947,9 +6492,9 @@ function renderNovidades() {
   for (const h of mostrar) {
     const li = document.createElement("li");
     li.innerHTML =
-      '<span class="nov-tipo">' + h.tipo + "</span>" +
-      '<span class="nov-label">' + h.label + "</span>" +
-      '<span class="nov-texto">' + h.texto + "</span>";
+      '<span class="nov-tipo">' + tOu("nov.tipo." + h.tipo, h.tipo) + "</span>" +
+      '<span class="nov-label" translate="no">' + h.label + "</span>" +
+      '<span class="nov-texto">' + tOu("nov.verbo." + h.texto, h.texto) + "</span>";
     ul.appendChild(li);
   }
   cx.appendChild(ul);
@@ -3957,7 +6502,7 @@ function renderNovidades() {
   if (lista.length > MAX_NOV) {
     const mais = document.createElement("div");
     mais.className = "nov-mais";
-    mais.textContent = (lista.length - MAX_NOV) + " more before these";
+    mais.textContent = t("nov.mais", { n: lista.length - MAX_NOV });
     cx.appendChild(mais);
   }
   root.appendChild(cx);
@@ -3989,10 +6534,10 @@ function renderChecklist(containerId, campo, titulo, resumoExtra) {
   header.className = "cat-header";
   header.innerHTML = `
     <div class="cat-title-group">
-      <span class="cat-title">${titulo}</span>
+      <span class="cat-title">${rotuloTopico(titulo)}</span>
       <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${feitos / lista.length * 100}%"></div></div>
     </div>
-    ${novasAqui ? `<span class="cat-novo">${novasAqui} new</span>` : ""}
+    ${novasAqui ? `<span class="cat-novo">${t("cat.novos", { n: novasAqui })}</span>` : ""}
     <span class="cat-progress-text">${feitos}/${lista.length}</span>
     <span class="chevron">▸</span>
   `;
@@ -4006,22 +6551,22 @@ function renderChecklist(containerId, campo, titulo, resumoExtra) {
   resumo.className = "cat-aviso";
   const porOrigem = {};
   for (const x of faltam) porOrigem[x.from] = (porOrigem[x.from] || 0) + 1;
-  const partes = Object.keys(porOrigem).map((k) => porOrigem[k] + " " + k);
+  const partes = Object.keys(porOrigem).map((k) => porOrigem[k] + " " + tOu("origem." + k, k));
   resumo.textContent = faltam.length
-    ? faltam.length + " missing (" + partes.join(", ") + ")."
-    : "All " + lista.length + " collected.";
+    ? t("lista.faltam", { n: faltam.length, partes: partes.join(", ") })
+    : t("lista.todos", { n: lista.length });
   if (resumoExtra) resumo.textContent += " " + resumoExtra;
   wrap.appendChild(resumo);
 
   const grupos = [
-    { titulo: "Still missing", itens: faltam },
-    { titulo: "Already collected", itens: lista.filter((x) => x.collected) },
+    { titulo: "lista.aindaFaltam", itens: faltam },
+    { titulo: "lista.jaColetados", itens: lista.filter((x) => x.collected) },
   ];
   for (const g of grupos) {
     if (!g.itens.length) continue;
     const h = document.createElement("div");
     h.className = "sub-head";
-    h.textContent = g.titulo + " (" + g.itens.length + ")";
+    h.textContent = t(g.titulo, { n: g.itens.length });
     wrap.appendChild(h);
     for (const x of g.itens) {
       const detalhe = [x.area, x.where].filter(Boolean).join(" · ");
@@ -4030,8 +6575,8 @@ function renderChecklist(containerId, campo, titulo, resumoExtra) {
       row.innerHTML = `
         <input type="checkbox" ${x.collected ? "checked" : ""} disabled>
         <label>${x.label}${detalhe ? '<span class="loc">' + detalhe + "</span>" : ""}</label>
-        <span class="tag auto">auto</span>
-        ${novas.linhas.has(campo + ":" + x.key) ? '<span class="novo" title="new since your last visit"></span>' : ""}
+        <span class="tag auto">${t("tag.auto")}</span>
+        ${novas.linhas.has(campo + ":" + x.key) ? '<span class="novo" title="' + t("novo.desdeVisita") + '"></span>' : ""}
       `;
       wrap.appendChild(row);
     }
@@ -4044,15 +6589,15 @@ function renderChecklist(containerId, campo, titulo, resumoExtra) {
 }
 
 function renderBeads() {
-  return renderChecklist("beads", "prayerBeadList", "Prayer Beads",
-    "Four beads make one Prayer Necklace, ten necklaces in all.");
+  return renderChecklist("beads", "prayerBeadList", "Prayer Beads", t("beads.extra"));
 }
 
 function renderSeeds() {
   const gs = (temSync() && sync.essentials && sync.essentials.gourdSeeds) || null;
   const extra = gs
-    ? "The Healing Gourd is at " + gs.charges + " of " + gs.maxCharges + " charges" +
-      (gs.held ? ", and " + gs.held + " seed(s) are still unspent in your bag." : ".")
+    ? (gs.held
+      ? t("seeds.extraBolsa", { c: gs.charges, max: gs.maxCharges, n: gs.held })
+      : t("seeds.extra", { c: gs.charges, max: gs.maxCharges }))
     : null;
   return renderChecklist("seeds", "gourdSeedList", "Gourd Seeds", extra);
 }
@@ -4086,10 +6631,10 @@ function renderEnemies(containerId, campo, titulo, prefixo, detalheExtra) {
   header.className = "cat-header";
   header.innerHTML = `
     <div class="cat-title-group">
-      <span class="cat-title">${titulo}</span>
+      <span class="cat-title">${rotuloTopico(titulo)}</span>
       <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${rastreaveis.length ? (feitos / rastreaveis.length * 100) : 0}%"></div></div>
     </div>
-    ${novasAqui ? `<span class="cat-novo">${novasAqui} new</span>` : ""}
+    ${novasAqui ? `<span class="cat-novo">${t("cat.novos", { n: novasAqui })}</span>` : ""}
     <span class="cat-progress-text">${feitos}/${rastreaveis.length}</span>
     <span class="chevron">▸</span>
   `;
@@ -4103,17 +6648,15 @@ function renderEnemies(containerId, campo, titulo, prefixo, detalheExtra) {
   const resumo = document.createElement("div");
   resumo.className = "cat-aviso";
   if (!faltam.length) {
-    resumo.textContent = "All " + rastreaveis.length + " done.";
+    resumo.textContent = t("inimigos.todos", { n: rastreaveis.length });
   } else if (faltam.length <= 6) {
-    resumo.textContent = faltam.length + " left: " +
-      faltam.map((x) => x.label + " (" + x.area + ")").join("; ");
+    resumo.textContent = t("inimigos.restam", { n: faltam.length,
+      lista: faltam.map((x) => x.label + " (" + x.area + ")").join("; ") });
   } else {
-    resumo.textContent = faltam.length + " of " + rastreaveis.length + " left.";
+    resumo.textContent = t("inimigos.restamDe", { n: faltam.length, total: rastreaveis.length });
   }
   if (semPista) {
-    resumo.textContent += " " + semPista + " more " + (semPista === 1 ? "is" : "are") +
-      " not recorded anywhere the save can be read from, so " +
-      (semPista === 1 ? "it is" : "they are") + " left unmarked.";
+    resumo.textContent += " " + (semPista === 1 ? t("inimigos.semPistaUm") : t("inimigos.semPista", { n: semPista }));
   }
   wrap.appendChild(resumo);
 
@@ -4128,15 +6671,15 @@ function renderEnemies(containerId, campo, titulo, prefixo, detalheExtra) {
     }
     const rastreado = x.detected !== false;
     const marcado = rastreado && x.defeated === true;
-    const detalhe = [x.drop ? "drops " + x.drop : "", detalheExtra ? detalheExtra(x) : ""]
+    const detalhe = [x.drop ? t("drop", { item: x.drop }) : "", detalheExtra ? detalheExtra(x) : ""]
       .filter(Boolean).join(" · ");
     const row = document.createElement("div");
     row.className = "item" + (marcado ? " done" : "");
     row.innerHTML = `
       <input type="checkbox" ${marcado ? "checked" : ""} ${rastreado ? "" : 'class="pending"'} disabled>
       <label>${x.label}${detalhe ? '<span class="loc">' + detalhe + "</span>" : ""}</label>
-      ${rastreado ? '<span class="tag auto">auto</span>' : '<span class="tag pending">not tracked</span>'}
-      ${ehNova(x) ? '<span class="novo" title="new since your last visit"></span>' : ""}
+      ${rastreado ? '<span class="tag auto">' + t("tag.auto") + '</span>' : '<span class="tag pending">' + t("tag.naoRastreado") + '</span>'}
+      ${ehNova(x) ? '<span class="novo" title="' + t("novo.desdeVisita") + '"></span>' : ""}
     `;
     wrap.appendChild(row);
   }
@@ -4149,7 +6692,7 @@ function renderEnemies(containerId, campo, titulo, prefixo, detalheExtra) {
 
 function renderBosses() {
   return renderEnemies("bosses", "bosses", "Bosses", "", (b) =>
-    b.memory === "used" ? "memory spent" : b.memory === "held" ? "memory in the bag" : "");
+    b.memory === "used" ? t("boss.memoriaGasta") : b.memory === "held" ? t("boss.memoriaBolsa") : "");
 }
 
 function renderMiniBosses() {
@@ -4193,10 +6736,7 @@ function renderIdols() {
   if (!calibrado) {
     const aviso = document.createElement("div");
     aviso.className = "cat-aviso";
-    aviso.textContent =
-      "Each region keeps its idol flags in its own block, and those block " +
-      "offsets are not known yet (" + cal.blocos + " of " + cal.total + " calibrated). " +
-      "Rest at an idol you have not used before, then run: npm run discover idol";
+    aviso.textContent = t("idolos.aviso", { b: cal.blocos, total: cal.total });
     wrap.appendChild(aviso);
   }
 
@@ -4215,7 +6755,7 @@ function renderIdols() {
     row.innerHTML = `
       <input type="checkbox" ${marcado ? "checked" : ""} ${i.detected ? "" : 'class="pending"'} disabled>
       <label>${i.label}</label>
-      ${i.detected ? '<span class="tag auto">auto</span>' : '<span class="tag pending">not calibrated</span>'}
+      ${i.detected ? '<span class="tag auto">' + t("tag.auto") + '</span>' : '<span class="tag pending">' + t("tag.naoCalibrado") + '</span>'}
     `;
     wrap.appendChild(row);
   }
@@ -4260,15 +6800,15 @@ function renderDeaths() {
     // o texto diz exatamente o que ele é — inclusive o que ele não pega.
     box.title =
       d.how === "counted"
-        ? "Counted by watching the save since " +
-          (d.desde ? new Date(d.desde).toLocaleDateString() : "tracking started") +
-          ". A death only shows up when it costs Sen, and Unseen Aid cancels that loss sometimes."
-        : "Read straight from the save.";
+        ? t("mortes.contadas", {
+          desde: d.desde ? new Date(d.desde).toLocaleDateString(idiomaAtual) : t("mortes.inicio"),
+        })
+        : t("mortes.doSave");
     // O painel não carrega parágrafo: é um número para ler de relance. A
     // ressalva não some do produto, muda de lugar — está no `title` acima,
     // que já diz desde quando a conta vale e o que ela não pega.
     nota.textContent =
-      d.how === "discovered" && d.count > TOPO ? "Past the end of the scale." : "";
+      d.how === "discovered" && d.count > TOPO ? t("mortes.alemEscala") : "";
     guardarRessalva(box);
     return;
   }
@@ -4280,7 +6820,7 @@ function renderDeaths() {
 
   const p = d.progresso || {};
   if (d.how === "not-in-save") {
-    nota.textContent = "The save does not record deaths.";
+    nota.textContent = t("mortes.naoNoSave");
     box.title = p.motivo || "";
     guardarRessalva(box);
     return;
@@ -4291,13 +6831,11 @@ function renderDeaths() {
   // fixo no painel só ocupava espaço. O andamento fica no title, para quem
   // quiser saber por que ainda não tem número.
   nota.textContent = "";
-  box.title =
-    "Sekiro has no death counter of its own, so the tracker is working out which " +
-    "field it is by watching the save. " +
+  box.title = t("mortes.procurando") + " " +
     (p.mortes
-      ? p.mortes + " death" + (p.mortes === 1 ? "" : "s") + " seen so far" +
-        (p.candidatos ? ", " + p.candidatos + " candidate fields left." : ".")
-      : "Waiting for the first death.");
+      ? (p.mortes === 1 ? t("mortes.vistaUma") : t("mortes.vistas", { n: p.mortes })) +
+        (p.candidatos ? " " + t("mortes.candidatos", { n: p.candidatos }) : "")
+      : t("mortes.esperando"));
   guardarRessalva(box);
 }
 
@@ -4359,18 +6897,22 @@ function renderTempo() {
   const quadro = document.getElementById("quadroTempo");
   const marcos = document.getElementById("marcos");
   const t = temSync() ? sync.playtime : null;
+  // O rótulo é fixo, mas segue o idioma; é escrito aqui porque a marcação dele
+  // fica sem data-i18n (o teste lê o texto cru logo depois do id).
+  const rotulo = document.getElementById("tempoRot");
+  if (rotulo) rotulo.textContent = tr("tempo.rotulo");
 
   if (!t) {
     num.textContent = "—";
     marcos.innerHTML = "";
-    quadro.title = "Playtime comes from Steam's own record. Not available right now.";
+    quadro.title = tr("tempo.indisponivel");
     return;
   }
 
   const horas = t.horas;
   // O "h" vai colado no número, e não num rótulo embaixo: sem ele, "82.3"
   // sozinho não diz se são horas, partidas ou porcentagem.
-  num.textContent = (horas >= 100 ? Math.round(horas) : horas.toFixed(1)) + "h";
+  num.textContent = (horas >= 100 ? Math.round(horas) : decimal(horas, 1)) + "h";
   const d = degrau(horas);
   // O metal do momento entra como variáveis; o gradiente do número as usa.
   // O NOME do metal não aparece mais: "BRONZE" embaixo de um número de horas
@@ -4394,14 +6936,15 @@ function renderTempo() {
     + `${String(Math.floor((seg % 3600) / 60)).padStart(2, "0")}m `
     + `${String(seg % 60).padStart(2, "0")}s`;
 
-  const linhas = [`${hm(t.minutos)} on the Steam clock, which counts menus and loading`];
+  const linhas = [tr("tempo.steam", { t: hm(t.minutos) })];
   if (typeof t.internoSegundos === "number") {
-    linhas.push(`${hms(t.internoSegundos)} of in-game time, read from the game itself`);
+    linhas.push(tr("tempo.interno", { t: hms(t.internoSegundos) }));
     if (!temSync() || !sync.deaths || sync.deaths.aoVivo === false) {
-      linhas.push("(in-game time is the last reading; the game is not running now)");
+      linhas.push(tr("tempo.internoVelho"));
     }
   }
-  linhas.push(`the number is cast in ${d[1]}, and the material changes every 25 hours`);
+  // O metal vai pelo degrau, e não pelo nome: o nome em ESCADA é inglês fixo.
+  linhas.push(tr("tempo.metal", { metal: tr("metal." + d[0]) }));
   quadro.title = linhas.join("\n");
 
   // Oito blocos de 25h. O bloco onde você está fica preenchido em parte, para a
@@ -4506,6 +7049,7 @@ function renderContador(cfg) {
 
     const nome = document.createElement("div");
     nome.className = "boss-card-nome";
+    nome.setAttribute("translate", "no");
     nome.textContent = b.label;
 
     card.appendChild(n); card.appendChild(slot); card.appendChild(nome);
@@ -4555,13 +7099,11 @@ function renderJogos() {
 
   lista.innerHTML = "";
   if (!j || !j.lista || !j.lista.length) {
-    nota.textContent = "Waiting for the save.";
+    nota.textContent = t("comum.esperandoSave");
     return;
   }
 
-  nota.textContent = daMaquina
-    ? "The app opens by itself — quietly, only in the tray — when one of these starts. The desktop shortcut opens it any time."
-    : "Read-only here: the choice is made on the computer that runs the service.";
+  nota.textContent = daMaquina ? t("jogos.local") : t("jogos.leitura");
 
   for (const g of j.lista) {
     const linha = document.createElement("button");
@@ -4575,20 +7117,19 @@ function renderJogos() {
 
     const nome = document.createElement("span");
     nome.className = "jogo-nome";
+    nome.setAttribute("translate", "no");
     nome.textContent = g.nome;
 
     const estado = document.createElement("span");
     estado.className = "jogo-estado";
-    estado.textContent = g.vigiado ? "watched" : "ignored";
+    estado.textContent = g.vigiado ? t("pino.vigiado") : t("jogos.ignorado");
 
     linha.appendChild(marca);
     linha.appendChild(nome);
     linha.appendChild(estado);
 
     // A ressalva vai para o hover: a lista é lista, não parágrafo.
-    linha.title = g.leitura === "completa"
-      ? "Save and memory are read for this game."
-      : "Only the launch is detected for this game; nothing is read from it.";
+    linha.title = g.leitura === "completa" ? t("jogos.completa") : t("jogos.soAbertura");
 
     if (daMaquina) {
       linha.addEventListener("click", () => {
@@ -4611,7 +7152,7 @@ function renderJogos() {
           sync.jogosVigiados = novo;
           renderJogos();
         }).catch(() => {
-          nota.textContent = "Could not save the choice. Is the service running?";
+          nota.textContent = t("hub.falhaEscolha");
         });
       });
     }
@@ -4649,9 +7190,7 @@ function renderEstados() {
     const rotulo = document.getElementById("sinoRot");
     if (rotulo) rotulo.textContent = b.ativo ? "sinister burden" : "demon bell";
     // A ressalva vai para o hover, não para a página: o bloco é contador.
-    sino.title = b.ativo
-      ? "Sinister Burden: the Bell Demon is being carried. Enemies are stronger and drop more. Return it at an idol to remove."
-      : "The Demon Bell has not been rung, or the Bell Demon has been returned.";
+    sino.title = b.ativo ? t("sino.ativo") : t("sino.inativo");
   }
 
   rot.hidden = !d;
@@ -4675,8 +7214,8 @@ function renderEstados() {
     const rotulo = document.getElementById("rotRot");
     if (rotulo) rotulo.textContent = "dragon rot";
     rot.title = d.ativo
-      ? "Rot Essence held for " + d.quantos + " of " + d.total + " characters. Open for the names."
-      : "No Rot Essence in the inventory.";
+      ? t("rot.ativo", { n: d.quantos, total: d.total })
+      : t("rot.nenhuma");
   }
 
   caixa.hidden = !b && !d;
@@ -4702,14 +7241,13 @@ function renderRotLista(d) {
   if (!itens.length) {
     const vazio = document.createElement("p");
     vazio.className = "rot-vazio";
-    vazio.textContent = d
-      ? "No Rot Essence in the inventory. Each character who catches Dragonrot leaves one, named after them."
-      : "Waiting for the save.";
+    vazio.textContent = d ? t("rot.vazio") : t("comum.esperandoSave");
     lista.appendChild(vazio);
   }
   for (const e of itens) {
     const linha = document.createElement("div");
     linha.className = "rot-linha";
+    linha.setAttribute("translate", "no");
     const item = document.createElement("div");
     item.className = "rot-item";
     item.textContent = e.item;
@@ -4751,11 +7289,12 @@ function renderAssinatura() {
    */
   const local = daMaquinaLocal() && temSync();
   el.hidden = !nick && !local;
-  el.textContent = nick ? nick + " game progress" : (local ? "name this progress" : "");
+  el.textContent = nick ? t("assinatura.nome", { nick }) : (local ? t("assinatura.convite") : "");
   if (el.classList) el.classList.toggle("sem-nome", !nick);
+  // Fora do bloco que liga o clique: o idioma pode mudar depois de ligado.
+  if (local) el.title = t("assinatura.dica");
   if (local && !el.dataset.ligado) {
     el.dataset.ligado = "1";
-    el.title = "Click to choose the name shown here.";
     el.style.cursor = "pointer";
     el.addEventListener("click", editarAssinatura);
   }
@@ -4771,8 +7310,8 @@ function editarAssinatura() {
   campo.className = "assinatura-campo";
   campo.maxLength = 32;
   campo.value = atual;
-  campo.placeholder = "your name";
-  campo.setAttribute("aria-label", "Name shown on the page");
+  campo.placeholder = t("assinatura.placeholder");
+  campo.setAttribute("aria-label", t("assinatura.campo"));
   el.appendChild(campo);
   campo.focus();
   const fim = (gravar) => {
@@ -4802,12 +7341,11 @@ function renderBossKills() {
     marca: (b) => b.vezes || 0,
     dica: (b) => [
       b.emblemaPorque ? b.emblema + " — " + b.emblemaPorque : "",
-      b.semeado ? "Counted as 1: already done when tracking started." : "",
+      b.semeado ? t("boss.semeado") : "",
     ].filter(Boolean).join(" "),
-    resumo: (d) => "The game keeps no per-boss kill count: the flags are only done or not done. " +
-      "This counts every time a boss goes from undone to done, which is what happens on each NG+." +
+    resumo: (d) => t("boss.resumo") +
       (d.filter((b) => b.semeado).length
-        ? " " + d.filter((b) => b.semeado).length + " were already done when tracking started, so this is a floor."
+        ? " " + t("boss.semeados", { n: d.filter((b) => b.semeado).length })
         : ""),
   });
 }
@@ -4819,9 +7357,8 @@ function renderHeadlessConta() {
     total: (d) => d.filter((h) => h.defeated).length,
     feito: (h) => h.defeated,
     marca: (h) => (h.defeated ? "✓" : "—"),
-    dica: (h) => (h.drop ? "drops " + h.drop : ""),
-    resumo: (d) => "Headless leave no readable flag, so each one is confirmed by the Spiritfall it drops — " +
-      "a permanent, exclusive item. " + d.filter((h) => h.defeated).length + " of " + d.length + " down.",
+    dica: (h) => (h.drop ? t("drop", { item: h.drop }) : ""),
+    resumo: (d) => t("headless.resumo", { n: d.filter((h) => h.defeated).length, total: d.length }),
   });
 }
 
@@ -4879,12 +7416,12 @@ function renderSyncLine() {
     dot.classList.add("off");
     // Não mandar rodar nada: o serviço sobe sozinho no login. Se esta linha
     // aparece, ou o PC está desligado/dormindo, ou o serviço caiu.
-    text.textContent = "not syncing — the service is not responding";
+    text.textContent = t("sinc.parado");
     return;
   }
   if (!sync.ok) {
     dot.classList.add("off");
-    text.textContent = "save not read: " + (sync.message || sync.error || "erro");
+    text.textContent = t("sinc.naoLido", { motivo: sync.message || sync.error || t("sinc.erro") });
     return;
   }
   if (sync.stale) {
@@ -4896,7 +7433,7 @@ function renderSyncLine() {
      * jogou por outro nome. O aviso que importa é que o número é velho, e esse
      * cabe sem data nenhuma.
      */
-    text.textContent = "save unavailable — showing the last known reading";
+    text.textContent = t("sinc.velho");
     return;
   }
   dot.classList.add("on");
@@ -4914,7 +7451,7 @@ function renderSyncLine() {
    * sincronizado, e de qual slot — continua inteiro.
    */
   const slot = sync.source ? sync.source.slot : "?";
-  text.textContent = "synced with the save · slot " + slot;
+  text.textContent = t("sinc.ok", { slot });
 }
 
 // O rótulo do botão acompanha o texto escondido. Envolver é o jeito certo:
@@ -4925,7 +7462,7 @@ renderSyncLine = function () {
   renderSyncLineCru();
   const dot = document.getElementById("syncDot");
   const text = document.getElementById("syncText");
-  dot.setAttribute("aria-label", "Sync status: " + text.textContent);
+  dot.setAttribute("aria-label", t("sinc.status", { texto: text.textContent }));
   dot.title = text.textContent;
 };
 
@@ -4959,7 +7496,7 @@ function renderEssentials() {
   header.className = "cat-header";
   header.innerHTML = `
     <div class="cat-title-group">
-      <span class="cat-title">Essential Items</span>
+      <span class="cat-title">${rotuloTopico("Essential Items")}</span>
       <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${(temSync() && prog.total ? prog.done / prog.total * 100 : 0)}%"></div></div>
     </div>
     <span class="cat-progress-text">${temSync() ? prog.done : "—"}/${prog.total}</span>
@@ -4975,7 +7512,7 @@ function renderEssentials() {
     if (row.group) {
       const g = document.createElement("div");
       g.className = "sub-head";
-      g.textContent = row.group;
+      g.textContent = t(row.group);
       itemsWrap.appendChild(g);
       continue;
     }
@@ -4985,9 +7522,9 @@ function renderEssentials() {
     const el = document.createElement("div");
     el.className = "item counter";
     el.innerHTML = `
-      <label>${row.label}${row.hint ? `<span class="loc">${row.hint}</span>` : ""}</label>
-      <span class="tag auto">auto</span>
-      ${novas.contadores.has(row.label) ? `<span class="novo" title="changed since your last visit"></span>` : ""}
+      <label>${row.key === "gourdCharges" ? t("ess.rotulo.gourdCharges") : row.label}${row.hint ? `<span class="loc">${t("ess.dica." + row.key)}</span>` : ""}</label>
+      <span class="tag auto">${t("tag.auto")}</span>
+      ${novas.contadores.has(row.label) ? `<span class="novo" title="${t("novo.mudou")}"></span>` : ""}
       <div class="count-ctl">
         <span class="count-val">${auto === null ? "—" : auto}</span>
         <span class="of">${row.total ? "/ " + row.total : ""}</span>
@@ -5086,18 +7623,18 @@ function fazerPinos(g) {
 
   const inst = document.createElement("span");
   inst.className = "pino pino-instalado" + (g.instalado ? " on" : "");
-  inst.innerHTML = SVG_PINO + "<span>" + (g.instalado ? "installed" : "not installed") + "</span>";
-  inst.title = g.instalado ? "Installed on this computer." : "Not found on this computer.";
+  inst.innerHTML = SVG_PINO + "<span>" + (g.instalado ? t("pino.instalado") : t("pino.naoInstalado")) + "</span>";
+  inst.title = g.instalado ? t("pino.instaladoDica") : t("pino.naoInstaladoDica");
   caixa.appendChild(inst);
 
   const local = daMaquinaLocal();
   const vig = document.createElement(local ? "button" : "span");
   if (local) vig.type = "button";
   vig.className = "pino pino-vigiado" + (g.vigiado ? " on" : "");
-  vig.innerHTML = SVG_OLHO + "<span>" + (g.vigiado ? "watched" : "not watched") + "</span>";
+  vig.innerHTML = SVG_OLHO + "<span>" + (g.vigiado ? t("pino.vigiado") : t("pino.naoVigiado")) + "</span>";
   vig.title = g.vigiado
-    ? "Watched: the app lights up in the tray when this game starts."
-    : "Not watched." + (local ? " Tap to watch it." : "");
+    ? t("pino.vigiadoDica")
+    : t("pino.naoVigiadoDica") + (local ? " " + t("pino.tocarVigiar") : "");
   if (local) {
     vig.addEventListener("click", (ev) => {
       if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -5123,7 +7660,7 @@ function alternarVigia(chave) {
     renderJogos();
   }).catch(() => {
     const n = document.getElementById("hubNota");
-    if (n) n.textContent = "Could not save the choice. Is the service running?";
+    if (n) n.textContent = t("hub.falhaEscolha");
   });
 }
 
@@ -5190,6 +7727,7 @@ function arteVazia(g, grande) {
   const d = document.createElement("div");
   d.className = "arte-vazia" + (grande ? " grande" : "");
   d.style.setProperty("--h", matizDe(g.nome));
+  d.setAttribute("translate", "no");
   const t = document.createElement("span");
   t.textContent = g.nome || "?";
   d.appendChild(t);
@@ -5262,6 +7800,7 @@ function mostrarNoPalco(g) {
   marca.innerHTML = "";
   const nome = document.createElement("h2");
   nome.className = "palco-nome";
+  nome.setAttribute("translate", "no");
   nome.textContent = g.nome;
   const logos = (arteDe(g).logo || []).slice();
   if (logos.length) {
@@ -5280,9 +7819,9 @@ function mostrarNoPalco(g) {
   const extra = document.createElement("div");
   extra.className = "palco-extra";
   const selo = (txt) => { const s = document.createElement("span"); s.textContent = txt; extra.appendChild(s); };
-  selo(g.leitura === "completa" ? "full progress tracking" : "launch detection");
-  if (g.popular) selo("#" + g.popular + " most played");
-  if (g.naSteam) selo("in the Steam library");
+  selo(g.leitura === "completa" ? t("hub.rastreio") : t("hub.soAbertura"));
+  if (g.popular) selo(t("hub.popular", { n: g.popular }));
+  if (g.naSteam) selo(t("hub.naSteam"));
   meta.appendChild(extra);
 
   const abre = document.getElementById("palcoAbre");
@@ -5297,7 +7836,8 @@ function renderHub() {
   ligarRelogio();
   // A leitura chega a cada poucos segundos; só redesenha quando algo mudou,
   // para não recarregar as artes nem perder a rolagem do trilho.
-  const assinatura = v + "|" + JSON.stringify(lista) + "|" + daMaquinaLocal();
+  // O idioma entra na assinatura: trocá-lo tem de redesenhar os rótulos.
+  const assinatura = v + "|" + JSON.stringify(lista) + "|" + daMaquinaLocal() + "|" + idiomaAtual;
   if (renderHub.ultima === assinatura) return;
   renderHub.ultima = assinatura;
 
@@ -5328,11 +7868,12 @@ function renderHub() {
         s.innerHTML = svg;
         selos.appendChild(s);
       };
-      if (g.instalado) selo("selo-inst", "Installed", SVG_PINO);
-      if (g.vigiado) selo("selo-vig", "Watched", SVG_OLHO);
+      if (g.instalado) selo("selo-inst", t("selo.instalado"), SVG_PINO);
+      if (g.vigiado) selo("selo-vig", t("selo.vigiado"), SVG_OLHO);
       card.appendChild(selos);
       const nome = document.createElement("div");
       nome.className = "jogo-card-nome";
+      nome.setAttribute("translate", "no");
       nome.textContent = g.nome;
       card.appendChild(nome);
       const abrir = () => {
@@ -5351,8 +7892,8 @@ function renderHub() {
     const nota = document.getElementById("hubNota");
     if (nota) {
       const var_ = sync.jogosVigiados.varredura;
-      nota.textContent = mostrar.length ? "" : "No games found yet. The search runs a minute after the service starts.";
-      if (var_ && var_.comSteam === false) nota.textContent += (nota.textContent ? " " : "") + "Searched without Steam.";
+      nota.textContent = mostrar.length ? "" : t("hub.nenhum");
+      if (var_ && var_.comSteam === false) nota.textContent += (nota.textContent ? " " : "") + t("hub.semSteam");
     }
     const bt = document.getElementById("hubTodos");
     if (bt && !bt.dataset.ligado) {
@@ -5373,15 +7914,15 @@ function renderHub() {
       probe.addEventListener("load", () => ambienteCom(probe.currentSrc || probe.src));
     }
     const grupos = [
-      ["On this computer", lista.filter((g) => g.instalado)],
-      ["In the Steam library", lista.filter((g) => g.naSteam && !g.instalado)],
+      ["bibli.noPc", lista.filter((g) => g.instalado)],
+      ["bibli.naSteam", lista.filter((g) => g.naSteam && !g.instalado)],
     ];
     for (const [titulo, jogos] of grupos) {
       const grupo = document.createElement("div");
       grupo.className = "bibli-grupo";
       const h = document.createElement("h2");
       const rot = document.createElement("span");
-      rot.textContent = titulo;
+      rot.textContent = t(titulo);
       const num = document.createElement("b");
       num.textContent = String(jogos.length);
       h.appendChild(rot);
@@ -5390,7 +7931,7 @@ function renderHub() {
       if (!jogos.length) {
         const p = document.createElement("p");
         p.className = "bibli-vazio";
-        p.textContent = titulo === "On this computer" ? "Nothing found on the disks yet." : "No Steam library on this computer, or nothing beyond what is installed.";
+        p.textContent = titulo === "bibli.noPc" ? t("bibli.vazioPc") : t("bibli.vazioSteam");
         grupo.appendChild(p);
       }
       for (const g of jogos.slice().sort((a, b) => String(a.nome).localeCompare(String(b.nome)))) {
@@ -5399,6 +7940,7 @@ function renderHub() {
         linha.appendChild(fazerCapa(g, "faixa"));
         const nome = document.createElement("span");
         nome.className = "bibli-nome";
+        nome.setAttribute("translate", "no");
         nome.textContent = g.nome;
         linha.appendChild(nome);
         linha.appendChild(fazerPinos(g));
@@ -5406,7 +7948,7 @@ function renderHub() {
           const abre = document.createElement("button");
           abre.type = "button";
           abre.className = "bibli-abre";
-          abre.textContent = "Progress →";
+          abre.textContent = t("bibli.progresso");
           abre.addEventListener("click", () => irPara(g.chave));
           linha.appendChild(abre);
         }
@@ -5422,7 +7964,7 @@ function renderHub() {
         varrer.addEventListener("click", () => {
           fetch("/varrer", { method: "POST" }).then(() => {
             const n = document.getElementById("bibliNota");
-            if (n) n.textContent = "Searching between two reads; the list updates by itself.";
+            if (n) n.textContent = t("bibli.varrendo");
           }).catch(() => {});
         });
       }
@@ -5513,10 +8055,10 @@ function render() {
     header.className = "cat-header";
     header.innerHTML = `
       <div class="cat-title-group">
-        <span class="cat-title">${cat.name}</span>
+        <span class="cat-title">${rotuloTopico(cat.name)}</span>
         <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${(temSync() && (doneInCat/cat.items.length*100))||0}%"></div></div>
       </div>
-      ${novasNaCat ? `<span class="cat-novo">${novasNaCat} new</span>` : ""}
+      ${novasNaCat ? `<span class="cat-novo">${t("cat.novos", { n: novasNaCat })}</span>` : ""}
       <span class="cat-progress-text">${temSync() ? doneInCat : "—"}/${cat.items.length}</span>
       <span class="chevron">▸</span>
     `;
@@ -5530,7 +8072,10 @@ function render() {
       const [name, loc, tag, autoKey] = item;
       const id = slug(ci, ii);
       const drop = autoKey ? drops[autoKey] : null;
-      const detalhe = [loc, drop ? "drops " + drop : ""].filter(Boolean).join(" · ");
+      // "X upgrade" é texto da página em volta de um nome do jogo: só a moldura se traduz.
+      const melhoria = /^(.+) upgrade$/.exec(loc || "");
+      const lugar = melhoria ? t("item.melhoria", { item: melhoria[1] }) : loc;
+      const detalhe = [lugar, drop ? t("drop", { item: drop }) : ""].filter(Boolean).join(" · ");
       const checked = isDone(ii);
       const row = document.createElement("div");
       row.className = "item" + (checked ? " done" : "");
@@ -5540,8 +8085,8 @@ function render() {
         <input type="checkbox" id="${id}" ${checked ? "checked" : ""} disabled>
         <label for="${id}">${name}${detalhe ? `<span class="loc">${detalhe}</span>` : ""}</label>
         ${tag ? `<span class="tag">${tag}</span>` : ""}
-        ${autoKey ? `<span class="tag auto">auto</span>` : ""}
-        ${autoKey && novas.linhas.has(autoKey) ? `<span class="novo" title="new since your last visit"></span>` : ""}
+        ${autoKey ? `<span class="tag auto">${t("tag.auto")}</span>` : ""}
+        ${autoKey && novas.linhas.has(autoKey) ? `<span class="novo" title="${t("novo.desdeVisita")}"></span>` : ""}
       `;
       itemsWrap.appendChild(row);
     });
@@ -5565,7 +8110,7 @@ function render() {
   const pct = ok && todas ? feitas / todas * 100 : 0;
   document.getElementById("overallPct").textContent = ok ? Math.round(pct) + "%" : "—";
   document.getElementById("overallCount").textContent = ok ? feitas + " / " + todas : "";
-  document.getElementById("overallLabel").textContent = ok ? "achievements" : "waiting for the save";
+  document.getElementById("overallLabel").textContent = ok ? t("anel.conquistas") : t("anel.esperando");
   // O anel anda pelo offset: o traço inteiro mede 263.89 (2πr, r=42), e o que
   // sobra é o que falta. Sem save lido, fica vazio em vez de fechado em zero.
   const VOLTA = 263.89;
@@ -5599,7 +8144,7 @@ function renderKaiden(completo) {
   selo.hidden = !completo;
   if (!completo) return;
 
-  selo.title = "皆伝 — every achievement unlocked.";
+  selo.title = t("kaiden.dica");
   if (selo.dataset.ligado) return;
   selo.dataset.ligado = "1";
   selo.addEventListener("click", tocarKaiden);
@@ -5664,9 +8209,9 @@ function renderConquistas(conq) {
    * inteira, sem inventar uma classificação.
    */
   const FAIXAS = [
-    ["facil", "easy"],
-    ["media", "medium"],
-    ["dificil", "hard"],
+    ["facil", t("conq.facil")],
+    ["media", t("conq.media")],
+    ["dificil", t("conq.dificil")],
   ];
   const temFaixa = itens.some((c) => c.dificuldade);
 
@@ -5690,6 +8235,7 @@ function renderConquistas(conq) {
     texto.className = "conq-texto";
     const nome = document.createElement("div");
     nome.className = "conq-nome";
+    nome.setAttribute("translate", "no");
     nome.textContent = c.nome || c.chave;
     texto.appendChild(nome);
 
@@ -5698,9 +8244,9 @@ function renderConquistas(conq) {
     // mostraria — é a descrição do mesmo troféu no PlayStation.
     const desc = document.createElement("div");
     desc.className = "conq-desc" + (c.descricaoOculta ? " segredo" : "");
+    desc.setAttribute("translate", "no");
     desc.textContent = c.descricao || "";
-    if (c.descricaoOculta) desc.title = "The game hides this one's text until you unlock it; "
-      + "this is the same trophy's description on PlayStation.";
+    if (c.descricaoOculta) desc.title = t("conq.oculta");
     if (desc.textContent) texto.appendChild(desc);
     /*
      * De onde veio a resposta. As conquistas saem do save; a Steam, quando
@@ -5708,17 +8254,17 @@ function renderConquistas(conq) {
      * tem como provar esta (e não há Steam para dizer), e os dois discordam.
      */
     let origem = "";
-    if (c.incerta) origem = "not provable from the save";
-    else if (c.confere === false) origem = c.conquistada ? "Steam has it; this save does not" : "the save has it; Steam does not";
+    if (c.incerta) origem = t("conq.incerta");
+    else if (c.confere === false) origem = c.conquistada ? t("conq.soSteam") : t("conq.soSave");
     if (origem) {
       const o = document.createElement("div");
       o.className = "conq-origem";
       o.textContent = origem;
       texto.appendChild(o);
     }
-    el.title = c.fonte === "ambos" ? "Proven by the save, confirmed by Steam."
-      : c.fonte === "save" ? "Proven by the save."
-      : c.fonte === "steam" ? "Unlocked on Steam; the save alone cannot show it."
+    el.title = c.fonte === "ambos" ? t("conq.ambos")
+      : c.fonte === "save" ? t("conq.save")
+      : c.fonte === "steam" ? t("conq.steam")
       : "";
     el.appendChild(texto);
 
@@ -5727,7 +8273,7 @@ function renderConquistas(conq) {
       const tag = document.createElement("span");
       tag.className = "conq-tag";
       tag.textContent = "shinobi";
-      tag.title = "The rarest of them all — and it asks for every other one";
+      tag.title = t("conq.shinobi");
       el.appendChild(tag);
     }
 
@@ -5735,7 +8281,7 @@ function renderConquistas(conq) {
       const r = document.createElement("span");
       r.className = "conq-raridade";
       r.textContent = c.raridade.toFixed(0) + "%";
-      r.title = c.raridade.toFixed(1) + "% of players have this one";
+      r.title = t("conq.raridade", { p: decimal(c.raridade, 1) });
       el.appendChild(r);
     }
     return el;
@@ -5921,12 +8467,11 @@ function renderEfeitos() {
   const anel = document.getElementById("anelPanel");
   const mortes = document.getElementById("deaths");
 
-  const horas = (s) => (s / 3600).toFixed(1);
+  const horas = (s) => decimal(s / 3600, 1);
   if (anel) {
     const pegando = ef.fogo > 0;
     anel.classList.toggle("anel-pegando", pegando);
-    if (pegando) anel.title = `On fire: two or more achievements fell this session. `
-      + `${horas(ef.fogo)} h left.`;
+    if (pegando) anel.title = t("efeito.fogo", { h: horas(ef.fogo) });
     else anel.removeAttribute("title");
   }
   if (mortes) {
@@ -5936,8 +8481,8 @@ function renderEfeitos() {
     // mais, não um substituto da explicação de onde vem a contagem.
     const ressalva = mortes.dataset.ressalva || "";
     if (podre) {
-      mortes.title = `Dragonrot: five or more deaths this session. `
-        + `${horas(ef.podridao)} h left.` + (ressalva ? String.fromCharCode(10) + ressalva : "");
+      mortes.title = t("efeito.podridao", { h: horas(ef.podridao) })
+        + (ressalva ? String.fromCharCode(10) + ressalva : "");
     } else if (ressalva) {
       mortes.title = ressalva;
     } else {
@@ -5964,8 +8509,7 @@ function applyTheme(t) {
   const efetivo = t === "light" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", efetivo);
   const botao = document.getElementById("themeToggle");
-  const proximo = efetivo === "light" ? "dark" : "light";
-  botao.title = "Switch to " + proximo + " mode";
+  botao.title = efetivo === "light" ? tr("tema.paraEscuro") : tr("tema.paraClaro");
   botao.setAttribute("aria-label", botao.title);
   const cor = document.querySelector('meta[name="theme-color"]');
   if (cor) cor.setAttribute("content", naTelaDeJogos() ? (efetivo === "light" ? "#f2f3f9" : "#090b12") : (efetivo === "light" ? "#ece4d3" : "#16130f"));
@@ -6048,8 +8592,27 @@ document.addEventListener("click", (ev) => {
 
 // open first category by default
 openState.add("essentials");
+// O idioma entra antes do primeiro desenho, para a página não nascer em inglês
+// e trocar meio segundo depois.
+if (document.documentElement) document.documentElement.lang = idiomaAtual;
+traduzirMarcacao();
+ligarIdiomas();
 render();
 pollProgress();
+/*
+ * Sem escolha neste aparelho, vale a que o serviço guardou — feita no globo
+ * de outro navegador, ou pela bandeja. Pelo link público a rota não existe e
+ * a pergunta simplesmente falha; o idioma do sistema continua valendo.
+ */
+if (guardado(IDIOMA_CHAVE) === null && typeof fetch === "function") {
+  fetch("/idioma")
+    .then((r) => (r && r.ok ? r.json() : null))
+    .then((j) => {
+      const codigo = j ? idiomaSuportado(j.idioma) : null;
+      if (codigo && !idiomaPerguntado && codigo !== idiomaEscolhido) aplicarIdioma(codigo);
+    })
+    .catch(() => {});
+}
 // Na rede local o progress.json muda em segundos, e vale perguntar sempre. No
 // GitHub Pages ele só muda quando o serviço publica, e vem de CDN com cache:
 // perguntar de 5 em 5 segundos ali seria gastar rede da pessoa à toa.
