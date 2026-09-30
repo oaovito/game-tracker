@@ -540,6 +540,8 @@ async function pollOnce() {
        */
       syncNow('jogo fechado');
       fecharBandeja();
+      // A atualização que esperou o jogo fechar roda já na próxima folga.
+      conferirLogo();
     }
   }
 }
@@ -549,8 +551,12 @@ async function pollOnce() {
 // Primeira conferência pouco depois de subir: no logon a rede costuma chegar
 // segundos depois do serviço, e perguntar antes disso só produziria um erro.
 const ATUALIZAR_PRIMEIRA_MS = 20 * 1000;
-const ATUALIZAR_MS = 15 * 60 * 1000;
-const ATUALIZAR_ERRO_MS = 10 * 60 * 1000;
+// Uma versão publicada chega em poucos minutos: a release só sai depois que a
+// instalação completa passou num Windows limpo, e /releases/latest nunca
+// aponta para rascunho ou pré-lançamento. Doze consultas por hora cabem na
+// cota anônima da API, e a página de releases cobre quando ela acaba.
+const ATUALIZAR_MS = 5 * 60 * 1000;
+const ATUALIZAR_ERRO_MS = 5 * 60 * 1000;
 let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
 // Pedida à mão, pelo menu da bandeja: roda na próxima folga entre rodadas,
 // mesmo com o jogo aberto, porque foi a pessoa quem pediu.
