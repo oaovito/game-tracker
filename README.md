@@ -1072,6 +1072,18 @@ abre com a última leitura. Links para outros sites abrem no navegador do
 telefone. O aplicativo apenas lê: não envia nenhum pedido que altere o
 computador, e não pede outra permissão além das de rede e Wi-Fi.
 
+**Os gestos de navegação** funcionam nos dois. Voltar primeiro fecha o que
+estiver aberto por cima da página (uma janela de detalhe, a janela do código
+QR, o painel do celular, a lista de idiomas, a busca) e só então volta de
+tela; sem tela anterior, o aplicativo de Android sai, como qualquer outro. No
+Android, isso vale para o botão de voltar e para o gesto da borda do sistema:
+o aplicativo pergunta à página (`window.trackeroaoVoltar`) antes de voltar no
+histórico. No iPhone, a página adicionada à Tela de Início abre sem o Safari
+em volta, e portanto sem o deslizar da borda do navegador; ali a própria página
+faz o gesto: da borda esquerda para a direita volta, da borda direita para a
+esquerda avança, com uma seta discreta acompanhando o dedo. No Safari comum o
+gesto continua sendo o do navegador, e a página não interfere.
+
 O aplicativo de Android chega ao celular por dois caminhos, nenhum deles uma
 loja: pelo próprio computador, cujo painel do celular, ao lado do globo da
 tela inicial, mostra no botão do Android o código QR do endereço de onde

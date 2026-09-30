@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -107,10 +108,40 @@ public final class Principal extends Activity {
         super.onDestroy();
     }
 
+    /*
+     * Voltar (o botão ou o gesto da borda) pergunta primeiro à página: se
+     * havia algo aberto por cima dela (uma janela de detalhe, o código QR, uma
+     * lista), ela fecha isso e o voltar para aí. Senão, volta de tela no
+     * histórico, e sem tela anterior o aplicativo sai, como sempre.
+     */
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
+        web.evaluateJavascript(
+            "(function(){try{return !!(window.trackeroaoVoltar&&window.trackeroaoVoltar());}catch(e){return false;}})()",
+            new Resposta(this));
+    }
+
+    void voltarDeTela() {
         if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        else sair();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void sair() {
+        super.onBackPressed();
+    }
+
+    private static final class Resposta implements ValueCallback<String> {
+        private final Principal dono;
+
+        Resposta(Principal dono) {
+            this.dono = dono;
+        }
+
+        @Override
+        public void onReceiveValue(String valor) {
+            if (!"true".equals(valor)) dono.voltarDeTela();
+        }
     }
 }

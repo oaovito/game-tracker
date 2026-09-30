@@ -67,7 +67,11 @@ final class Ponte {
                 if (b.status >= 200 && b.status < 300) guardar(caminho, b.tipo, b.corpo);
                 // A página não precisa ver redirecionamento; e o WebView recusa 3xx aqui.
                 if (b.status >= 300 && b.status < 400) break;
-                return resposta(b.status, "OK", b.tipo, b.corpo);
+                WebResourceResponse r = resposta(b.status, "OK", b.tipo, b.corpo);
+                // A versão da página que o computador serve: com ela a página
+                // aberta no aplicativo se recarrega sozinha depois de uma atualização.
+                if (b.pagina != null) r.getResponseHeaders().put("x-trackeroao-pagina", b.pagina);
+                return r;
             } catch (IOException e) {
                 localizador.esquecer(ip);
             }
@@ -87,6 +91,7 @@ final class Ponte {
     private static final class Busca {
         int status;
         String tipo;
+        String pagina;
         byte[] corpo;
     }
 
@@ -101,6 +106,7 @@ final class Ponte {
             Busca b = new Busca();
             b.status = c.getResponseCode();
             b.tipo = c.getContentType();
+            b.pagina = c.getHeaderField("x-trackeroao-pagina");
             InputStream in = b.status >= 400 ? c.getErrorStream() : c.getInputStream();
             b.corpo = in == null ? new byte[0] : tudo(in);
             return b;

@@ -3403,6 +3403,17 @@
     body:not(.vista-hub):not(.vista-bibli) .wrap > .deaths-panel ~ .dois-quadrados { grid-row: 4; grid-column: 2; justify-content: flex-start; }
   }
 
+  /* A seta do gesto de voltar e avançar no iPhone (ver ligarGestos). */
+  .gesto-seta {
+    position: fixed; top: 50%; z-index: 80; pointer-events: none;
+    width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(20, 22, 29, 0.85); border: 1px solid rgba(255, 255, 255, 0.14);
+    opacity: 0; transform: translate3d(0, -50%, 0); transition: opacity 0.15s ease;
+  }
+  .gesto-seta[data-lado="esq"] { left: 6px; }
+  .gesto-seta[data-lado="dir"] { right: 6px; }
+  .gesto-seta[data-lado="dir"] svg { transform: scaleX(-1); }
+  .gesto-seta svg { width: 16px; height: 16px; fill: none; stroke: #f5f6f8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   a, button, input { -webkit-tap-highlight-color: transparent; }
   ::selection { background: var(--blood); color: var(--paper); }
 </style>
@@ -9514,6 +9525,93 @@ function atualizarNavegacao(v) {
     window.addEventListener("hashchange", trocou);
     window.addEventListener("popstate", trocou);
   }
+})();
+
+/*
+ * Os gestos de navegação do celular.
+ *
+ * Voltar primeiro fecha o que estiver aberto por cima da página (uma janela
+ * de detalhe, a janela do código QR, o painel do celular, a lista de idiomas,
+ * a busca) e só depois volta de tela. É o que o botão e o gesto de voltar do
+ * Android chamam, pelo aplicativo (window.trackeroaoVoltar), e o que o
+ * deslizar da borda chama no iPhone.
+ *
+ * No iPhone, a página adicionada à Tela de Início abre sem o Safari em volta,
+ * e com isso sem o deslizar da borda para voltar. Ali, e só ali, a página faz
+ * o gesto ela mesma: da borda esquerda para a direita volta, da direita para
+ * a esquerda avança. No Safari comum o gesto é do próprio navegador, e a
+ * página não se mete. A seta que acompanha o dedo se move só por transform.
+ */
+function fecharSobreposicao() {
+  if (typeof document === "undefined") return false;
+  const dialogo = [...document.querySelectorAll("dialog[open]")].pop();
+  if (dialogo) { dialogo.close(); return true; }
+  const esc = (alvo) => alvo.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  const modal = document.getElementById("celModal");
+  if (modal && !modal.hidden) { esc(document); return true; }
+  for (const id of ["celularCaixa", "idiomaLista"]) {
+    const el = document.getElementById(id);
+    if (el && !el.hidden) { esc(document); return true; }
+  }
+  const busca = document.getElementById("bibliBusca");
+  const campo = document.getElementById("bibliBuscaCampo");
+  if (busca && !busca.hidden && campo && vistaAtual() === "bibli") { esc(campo); return true; }
+  return false;
+}
+if (typeof window !== "undefined") {
+  // O aplicativo de Android pergunta aqui antes de voltar no histórico:
+  // true quer dizer que algo foi fechado e o voltar já foi usado.
+  window.trackeroaoVoltar = () => fecharSobreposicao();
+}
+
+(function ligarGestos() {
+  if (typeof window === "undefined" || typeof document === "undefined" || !window.addEventListener) return;
+  const semSafari = window.navigator && window.navigator.standalone === true;
+  if (!semSafari) return;
+  const BORDA = 24, MINIMO = 70;
+  let ini = null;
+  let seta = null;
+  const mostrarSeta = (lado, dx) => {
+    if (!seta) {
+      seta = document.createElement("div");
+      seta.className = "gesto-seta";
+      seta.setAttribute("aria-hidden", "true");
+      seta.innerHTML = '<svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg>';
+      document.body.appendChild(seta);
+    }
+    const quanto = Math.min(1, Math.abs(dx) / MINIMO);
+    seta.dataset.lado = lado;
+    seta.style.opacity = String(quanto);
+    seta.style.transform = "translate3d(" + (lado === "esq" ? Math.min(dx, MINIMO) * 0.6 : Math.max(dx, -MINIMO) * 0.6) + "px, -50%, 0)";
+  };
+  const esconderSeta = () => { if (seta) { seta.style.opacity = "0"; seta.style.transform = ""; } };
+  window.addEventListener("touchstart", (ev) => {
+    const tq = ev.touches && ev.touches[0];
+    ini = null;
+    if (!tq || ev.touches.length !== 1) return;
+    const lado = tq.clientX <= BORDA ? "esq" : tq.clientX >= window.innerWidth - BORDA ? "dir" : null;
+    if (lado) ini = { x: tq.clientX, y: tq.clientY, lado };
+  }, { passive: true });
+  window.addEventListener("touchmove", (ev) => {
+    const tq = ev.touches && ev.touches[0];
+    if (!ini || !tq) return;
+    const dx = tq.clientX - ini.x, dy = tq.clientY - ini.y;
+    if (Math.abs(dy) > Math.abs(dx)) { ini = null; esconderSeta(); return; }
+    if ((ini.lado === "esq" && dx > 0) || (ini.lado === "dir" && dx < 0)) mostrarSeta(ini.lado, dx);
+  }, { passive: true });
+  const fim = (ev) => {
+    const tq = ev.changedTouches && ev.changedTouches[0];
+    const g = ini;
+    ini = null;
+    esconderSeta();
+    if (!g || !tq) return;
+    const dx = tq.clientX - g.x, dy = tq.clientY - g.y;
+    if (Math.abs(dx) < MINIMO || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    if (g.lado === "esq" && dx > 0) { if (!fecharSobreposicao()) history.back(); }
+    else if (g.lado === "dir" && dx < 0) history.forward();
+  };
+  window.addEventListener("touchend", fim, { passive: true });
+  window.addEventListener("touchcancel", () => { ini = null; esconderSeta(); }, { passive: true });
 })();
 
 /* ------------------------------------------------------------ checklists */
