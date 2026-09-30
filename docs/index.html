@@ -6148,7 +6148,8 @@ let idiomaPerguntado = false;
  */
 function ligarCelular() {
   if (typeof document === "undefined" || typeof location === "undefined") return;
-  if (!/^(localhost|127\.)/.test(location.hostname)) return;
+  const naMaquina = /^(localhost|127\.)/.test(location.hostname) || window.TRACKEROAO_NA_MAQUINA === true;
+  if (!naMaquina) return;
   const caixa = document.getElementById("celular");
   const bt = document.getElementById("celularBt");
   const lista = document.getElementById("celularCaixa");
