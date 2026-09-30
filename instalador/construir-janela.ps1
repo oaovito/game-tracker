@@ -60,7 +60,7 @@ try {
 
   $exe = Join-Path $Saida 'Trackeroao.exe'
   & $csc.FullName /nologo /target:winexe /platform:x86 /optimize+ "/out:$exe" "/win32icon:$icone" `
-    /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll "/r:$core" "/r:$forms" `
+    /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll "/r:$core" "/r:$forms" `
     (Join-Path $raiz 'janela\Trackeroao.cs')
   if ($LASTEXITCODE -ne 0) { throw "csc falhou com codigo $LASTEXITCODE" }
   Write-Host "janela gerada em $Saida" -ForegroundColor Green

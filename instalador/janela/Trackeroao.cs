@@ -494,6 +494,147 @@ class Barra : Control {
 }
 
 /*
+ * O consumo do Trackeroao: a soma dos processos dele -- o servico (node), os
+ * Trackeroao.exe (a janela e este icone) e tudo o que eles abriram, como o
+ * motor da pagina (msedgewebview2). CPU pela diferenca do tempo de
+ * processador entre duas medidas; GPU pelos contadores "GPU Engine" do
+ * Windows, o mesmo numero do Gerenciador de Tarefas; RAM pelo conjunto de
+ * trabalho. So mede com o menu aberto: fechado, nao custa nada.
+ */
+class Consumo {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  struct Entrada {
+    public uint Tamanho, Uso, Pid;
+    public IntPtr Heap;
+    public uint Modulo, Threads, Pai;
+    public int Prioridade;
+    public uint Flags;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string Exe;
+  }
+  [DllImport("kernel32.dll", SetLastError = true)]
+  static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint pid);
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+  static extern bool Process32FirstW(IntPtr snap, ref Entrada e);
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+  static extern bool Process32NextW(IntPtr snap, ref Entrada e);
+  [DllImport("kernel32.dll")]
+  static extern bool CloseHandle(IntPtr h);
+
+  readonly int servico;
+  readonly System.Collections.Generic.Dictionary<int, TimeSpan> antes = new System.Collections.Generic.Dictionary<int, TimeSpan>();
+  DateTime quando;
+  System.Collections.Generic.List<PerformanceCounter> placas;
+  DateTime placasDe;
+  public string Cpu = "...", Gpu = "...", Ram = "...";
+
+  public Consumo(int servico) { this.servico = servico; }
+
+  // Os processos do Trackeroao: as raizes e todos os descendentes delas.
+  System.Collections.Generic.HashSet<int> Nossos() {
+    System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<int>> filhos =
+      new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<int>>();
+    System.Collections.Generic.HashSet<int> raiz = new System.Collections.Generic.HashSet<int>();
+    if (servico > 0) raiz.Add(servico);
+    raiz.Add(Process.GetCurrentProcess().Id);
+    IntPtr snap = CreateToolhelp32Snapshot(2, 0);
+    if (snap != IntPtr.Zero && snap != new IntPtr(-1)) {
+      try {
+        Entrada e = new Entrada();
+        e.Tamanho = (uint)Marshal.SizeOf(typeof(Entrada));
+        for (bool ok = Process32FirstW(snap, ref e); ok; ok = Process32NextW(snap, ref e)) {
+          int pid = (int)e.Pid, pai = (int)e.Pai;
+          if (String.Equals(e.Exe, "Trackeroao.exe", StringComparison.OrdinalIgnoreCase)) raiz.Add(pid);
+          if (pid == pai) continue;
+          System.Collections.Generic.List<int> l;
+          if (!filhos.TryGetValue(pai, out l)) { l = new System.Collections.Generic.List<int>(); filhos[pai] = l; }
+          l.Add(pid);
+        }
+      } finally { CloseHandle(snap); }
+    }
+    System.Collections.Generic.HashSet<int> todos = new System.Collections.Generic.HashSet<int>();
+    System.Collections.Generic.Queue<int> fila = new System.Collections.Generic.Queue<int>(raiz);
+    while (fila.Count > 0) {
+      int p = fila.Dequeue();
+      if (!todos.Add(p)) continue;
+      System.Collections.Generic.List<int> l;
+      if (filhos.TryGetValue(p, out l)) foreach (int f in l) fila.Enqueue(f);
+    }
+    return todos;
+  }
+
+  public void Zerar() { antes.Clear(); Cpu = Gpu = Ram = "..."; }
+
+  public void Soltar() {
+    if (placas != null) foreach (PerformanceCounter c in placas) c.Dispose();
+    placas = null;
+  }
+
+  public void Medir() {
+    System.Collections.Generic.HashSet<int> nossos = Nossos();
+    DateTime agora = DateTime.UtcNow;
+    double cpuMs = 0; long bytes = 0;
+    System.Collections.Generic.Dictionary<int, TimeSpan> novo = new System.Collections.Generic.Dictionary<int, TimeSpan>();
+    foreach (int pid in nossos) {
+      try {
+        using (Process p = Process.GetProcessById(pid)) {
+          bytes += p.WorkingSet64;
+          TimeSpan t = p.TotalProcessorTime;
+          novo[pid] = t;
+          TimeSpan a;
+          if (antes.TryGetValue(pid, out a)) cpuMs += (t - a).TotalMilliseconds;
+        }
+      } catch { }
+    }
+    double passou = (agora - quando).TotalMilliseconds;
+    bool temAntes = antes.Count > 0 && passou > 0;
+    antes.Clear();
+    foreach (System.Collections.Generic.KeyValuePair<int, TimeSpan> kv in novo) antes[kv.Key] = kv.Value;
+    quando = agora;
+    if (temAntes) Cpu = (Math.Max(0, cpuMs) / passou / Environment.ProcessorCount * 100).ToString("0.0") + "%";
+    Ram = (bytes / 1048576.0).ToString("0") + " MB";
+    Gpu = MedirGpu(nossos, temAntes);
+  }
+
+  string MedirGpu(System.Collections.Generic.HashSet<int> nossos, bool temAntes) {
+    try {
+      // A lista de motores muda quando um processo abre ou fecha: refeita a cada 5 s.
+      if (placas == null || (DateTime.UtcNow - placasDe).TotalSeconds > 5) {
+        Soltar();
+        placas = new System.Collections.Generic.List<PerformanceCounter>();
+        placasDe = DateTime.UtcNow;
+        PerformanceCounterCategory cat = new PerformanceCounterCategory("GPU Engine");
+        foreach (string inst in cat.GetInstanceNames()) {
+          Match m = Regex.Match(inst, "^pid_(\\d+)_");
+          if (!m.Success || !nossos.Contains(int.Parse(m.Groups[1].Value))) continue;
+          PerformanceCounter c = new PerformanceCounter("GPU Engine", "Utilization Percentage", inst, true);
+          c.NextValue();
+          placas.Add(c);
+        }
+        // Os contadores novos so dao numero na proxima medida.
+        return temAntes ? Gpu : "...";
+      }
+      // Como o Gerenciador de Tarefas: por tipo de motor, a soma dos
+      // processos; o numero e o do motor mais ocupado.
+      System.Collections.Generic.Dictionary<string, double> porTipo = new System.Collections.Generic.Dictionary<string, double>();
+      foreach (PerformanceCounter c in placas) {
+        Match m = Regex.Match(c.InstanceName, "engtype_(.+)$");
+        string tipo = m.Success ? m.Groups[1].Value : "";
+        double v = 0;
+        try { v = c.NextValue(); } catch { }
+        double s;
+        porTipo.TryGetValue(tipo, out s);
+        porTipo[tipo] = s + v;
+      }
+      double maior = 0;
+      foreach (double v in porTipo.Values) if (v > maior) maior = v;
+      return Math.Min(100, maior).ToString("0.0") + "%";
+    } catch {
+      return "-";
+    }
+  }
+}
+
+/*
  * O icone da bandeja (Trackeroao.exe /bandeja /porta=8777 /pai=<pid>).
  *
  * Aparece quando um jogo escolhido abre, ou quando o Trackeroao e aberto a
@@ -580,6 +721,26 @@ static class Bandeja {
     versao.Enabled = false;
     menu.Items.Add(new ToolStripSeparator());
     menu.Opening += delegate { string n = nome(); versao.Text = n; icone.Text = n; };
+
+    // O que o Trackeroao inteiro gasta agora (servico, janela, este icone e
+    // o motor da pagina), medido so enquanto o menu esta aberto.
+    ToolStripItem cpu = menu.Items.Add("CPU");
+    ToolStripItem gpu = menu.Items.Add("GPU");
+    ToolStripItem ram = menu.Items.Add("RAM");
+    cpu.Enabled = gpu.Enabled = ram.Enabled = false;
+    menu.Items.Add(new ToolStripSeparator());
+    Consumo consumo = new Consumo(pai);
+    System.Windows.Forms.Timer medir = new System.Windows.Forms.Timer();
+    medir.Interval = 1000;
+    Action mostrar = delegate {
+      try { consumo.Medir(); } catch { }
+      cpu.Text = "CPU   " + consumo.Cpu;
+      gpu.Text = "GPU   " + consumo.Gpu;
+      ram.Text = "RAM   " + consumo.Ram;
+    };
+    medir.Tick += delegate { mostrar(); };
+    menu.Opening += delegate { consumo.Zerar(); mostrar(); medir.Start(); };
+    menu.Closed += delegate { medir.Stop(); consumo.Soltar(); };
     ToolStripItem atualizar = menu.Items.Add(t[1]);
     atualizar.Click += delegate {
       /*

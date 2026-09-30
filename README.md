@@ -159,11 +159,25 @@ padrão, e os dois cliques na bandeja fazem o mesmo.
 
 ### O ícone da bandeja
 
-O ícone na área de notificação, a chama azul do Ídolo, é o sinal de que a
-aplicação está aberta. Ele aparece sozinho quando um jogo vigiado começa, e
-também quando a janela é aberta; com o jogo fechado, sai depois da última
-leitura da sessão. Dois cliques nele abrem a janela. O clique com o botão
-direito oferece duas ações:
+O ícone na área de notificação, com o desenho do Trackeroao, é o sinal de
+que a aplicação está aberta. Ele aparece sozinho quando um jogo vigiado
+começa, e também quando a janela é aberta; com o jogo fechado, sai depois da
+última leitura da sessão. Dois cliques nele abrem a janela. Ao passar o mouse,
+ele mostra o nome e a versão instalada ("Trackeroao 1.7.1").
+
+O clique com o botão direito abre um menu que começa pela mesma linha de nome
+e versão e, abaixo dela, pelo consumo do próprio Trackeroao naquele momento:
+CPU, GPU e RAM. O número soma todos os processos da aplicação: o serviço
+(`node`), os `Trackeroao.exe` da janela e do ícone, e os processos que eles
+abriram, como o motor da página (`msedgewebview2`). A CPU é a fração do
+processador inteiro, calculada pela diferença do tempo de processador entre
+duas medidas; a GPU vem dos contadores "GPU Engine" do Windows, a mesma fonte
+do Gerenciador de Tarefas, e mostra o motor mais ocupado; a RAM é o conjunto de
+trabalho somado. Os números se renovam a cada segundo enquanto o menu está
+aberto, e nada é medido com ele fechado. O consumo do computador como um todo
+não aparece aqui: para isso existe o Gerenciador de Tarefas.
+
+Abaixo do consumo vêm duas ações:
 
 - **Forçar atualização** pede ao serviço, pela rota `POST /atualizar`, que
   confira a release mais nova naquele instante, sem esperar a próxima rodada e
