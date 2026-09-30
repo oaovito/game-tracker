@@ -320,7 +320,21 @@ try {
   $rel = Invoke-RestMethod -Uri "$apiRepo/releases/latest" -UseBasicParsing -Headers @{ 'User-Agent' = 'trackeroao' }
   if ($rel.tag_name) { $tag = $rel.tag_name; $origem = "$Repo/archive/refs/tags/$tag.zip" }
 } catch {
-  Nota 'nao consegui consultar a ultima release; instalando a main'
+  <#
+    A API tem cota por endereco, e uma rede compartilhada a gasta sem culpa de
+    ninguem. A pagina da release nao tem essa cota: ela redireciona para a tag,
+    e o nome vem no endereco.
+  #>
+  try {
+    $pedido = [System.Net.WebRequest]::Create("$Repo/releases/latest")
+    $pedido.AllowAutoRedirect = $false
+    $pedido.UserAgent = 'trackeroao'
+    $resposta = $pedido.GetResponse()
+    $local = $resposta.Headers['Location']
+    $resposta.Close()
+    if ($local -match '/releases/tag/([^/?#]+)') { $tag = [uri]::UnescapeDataString($Matches[1]); $origem = "$Repo/archive/refs/tags/$tag.zip" }
+  } catch { }
+  if ($tag -eq 'main') { Nota 'nao consegui consultar a ultima release; instalando a main' }
 }
 try {
   Invoke-WebRequest -Uri $origem -OutFile $zip -UseBasicParsing
