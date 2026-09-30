@@ -2821,12 +2821,18 @@
   }
   .celular-caixa b { font-weight: 600; font-size: 0.86rem; }
   .celular-caixa p { margin: 0; color: var(--j-apagado); }
-  .celular-caixa code {
-    display: block; padding: 7px 10px; border-radius: 10px; background: var(--j-vidro);
-    font-size: 0.78rem; color: var(--j-texto); user-select: all; overflow-wrap: anywhere;
+  .cel-botoes { display: flex; gap: 8px; }
+  .cel-bt {
+    flex: 1; appearance: none; cursor: pointer; border: 1px solid var(--j-borda); border-radius: 999px;
+    background: var(--j-vidro); color: var(--j-texto); padding: 8px 12px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.02em;
   }
-  #celAndroid { display: flex; flex-direction: column; gap: 8px; }
-  #celAndroid[hidden] { display: none; }
+  .cel-bt[hidden] { display: none; }
+  .cel-bt[aria-pressed="true"] { background: var(--j-sinal); color: var(--j-sinal-tinta); border-color: transparent; }
+  .cel-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .cel-qr[hidden] { display: none; }
+  .cel-qr img { width: 176px; height: 176px; border-radius: 12px; background: #fff; image-rendering: pixelated; }
+  .cel-qr p { text-align: center; }
 
   /* O palco. */
   .palco {
@@ -3113,11 +3119,13 @@
           <div class="idioma-lista celular-caixa" id="celularCaixa" hidden>
             <b data-i18n="cel.titulo">On your phone</b>
             <p data-i18n="cel.rede">Connect the phone to the same Wi-Fi as this computer. You only do this once.</p>
-            <p data-i18n="cel.iphone">iPhone: open this address in Safari, tap Share, then Add to Home Screen.</p>
-            <code translate="no" id="celEndereco">http://trackeroao.local:8777</code>
-            <div id="celAndroid" hidden>
-              <p data-i18n="cel.android">Android: open this address in the phone's browser and install the app.</p>
-              <code translate="no" id="celApk"></code>
+            <div class="cel-botoes">
+              <button class="cel-bt" type="button" data-cel="pagina" data-i18n="cel.btIphone">iPhone</button>
+              <button class="cel-bt" type="button" data-cel="android" id="celAndroidBt" hidden data-i18n="cel.btAndroid">Android</button>
+            </div>
+            <div class="cel-qr" id="celQr" hidden>
+              <img id="celQrImg" alt="" width="176" height="176">
+              <p id="celQrDica"></p>
             </div>
           </div>
         </div>
@@ -3753,8 +3761,10 @@ const I18N = {
     "cel.rotulo": "Phone",
     "cel.titulo": "On your phone",
     "cel.rede": "Connect the phone to the same Wi-Fi as this computer. You only do this once.",
-    "cel.iphone": "iPhone: open this address in Safari, tap Share, then Add to Home Screen.",
-    "cel.android": "Android: open this address in the phone's browser and install the app.",
+    "cel.iphone": "Point the iPhone camera at the code, open it in Safari, tap Share, then Add to Home Screen.",
+    "cel.android": "Point the Android camera at the code to download and install the app.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "System language",
     "sinc.procurando": "looking for the save…",
     "sinc.parado": "not syncing — the service is not responding",
@@ -3959,8 +3969,10 @@ const I18N = {
     "cel.rotulo": "Celular",
     "cel.titulo": "No celular",
     "cel.rede": "Conecte o celular no mesmo Wi-Fi deste computador. Isso é feito uma vez só.",
-    "cel.iphone": "iPhone: abra este endereço no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
-    "cel.android": "Android: abra este endereço no navegador do celular e instale o aplicativo.",
+    "cel.iphone": "Aponte a câmera do iPhone para o código, abra no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
+    "cel.android": "Aponte a câmera do Android para o código para baixar e instalar o aplicativo.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Idioma do sistema",
     "sinc.procurando": "procurando o save…",
     "sinc.parado": "sem sincronizar — o serviço não responde",
@@ -4165,8 +4177,10 @@ const I18N = {
     "cel.rotulo": "Móvil",
     "cel.titulo": "En el móvil",
     "cel.rede": "Conecta el móvil a la misma red Wi-Fi que este ordenador. Solo se hace una vez.",
-    "cel.iphone": "iPhone: abre esta dirección en Safari, toca Compartir y luego Añadir a pantalla de inicio.",
-    "cel.android": "Android: abre esta dirección en el navegador del móvil e instala la aplicación.",
+    "cel.iphone": "Apunta la cámara del iPhone al código, ábrelo en Safari, toca Compartir y luego Añadir a pantalla de inicio.",
+    "cel.android": "Apunta la cámara del Android al código para descargar e instalar la aplicación.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Idioma del sistema",
     "sinc.procurando": "buscando la partida guardada…",
     "sinc.parado": "sin sincronizar — el servicio no responde",
@@ -4371,8 +4385,10 @@ const I18N = {
     "cel.rotulo": "Téléphone",
     "cel.titulo": "Sur le téléphone",
     "cel.rede": "Connectez le téléphone au même Wi-Fi que cet ordinateur. Cela ne se fait qu’une fois.",
-    "cel.iphone": "iPhone : ouvrez cette adresse dans Safari, touchez Partager, puis Sur l’écran d’accueil.",
-    "cel.android": "Android : ouvrez cette adresse dans le navigateur du téléphone et installez l’application.",
+    "cel.iphone": "Pointez l’appareil photo de l’iPhone vers le code, ouvrez-le dans Safari, touchez Partager, puis Sur l’écran d’accueil.",
+    "cel.android": "Pointez l’appareil photo de l’Android vers le code pour télécharger et installer l’application.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Langue du système",
     "sinc.procurando": "recherche de la sauvegarde…",
     "sinc.parado": "pas de synchronisation — le service ne répond pas",
@@ -4577,8 +4593,10 @@ const I18N = {
     "cel.rotulo": "Handy",
     "cel.titulo": "Auf dem Handy",
     "cel.rede": "Verbinde das Handy mit demselben WLAN wie diesen Computer. Das ist nur einmal nötig.",
-    "cel.iphone": "iPhone: Öffne diese Adresse in Safari, tippe auf Teilen und dann auf Zum Home-Bildschirm.",
-    "cel.android": "Android: Öffne diese Adresse im Browser des Handys und installiere die App.",
+    "cel.iphone": "Richte die iPhone-Kamera auf den Code, öffne ihn in Safari, tippe auf Teilen und dann auf Zum Home-Bildschirm.",
+    "cel.android": "Richte die Android-Kamera auf den Code, um die App herunterzuladen und zu installieren.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Systemsprache",
     "sinc.procurando": "Spielstand wird gesucht…",
     "sinc.parado": "keine Synchronisierung — der Dienst antwortet nicht",
@@ -4783,8 +4801,10 @@ const I18N = {
     "cel.rotulo": "Telefono",
     "cel.titulo": "Sul telefono",
     "cel.rede": "Collega il telefono alla stessa rete Wi-Fi di questo computer. Si fa una volta sola.",
-    "cel.iphone": "iPhone: apri questo indirizzo in Safari, tocca Condividi e poi Aggiungi alla schermata Home.",
-    "cel.android": "Android: apri questo indirizzo nel browser del telefono e installa l’app.",
+    "cel.iphone": "Inquadra il codice con la fotocamera dell’iPhone, aprilo in Safari, tocca Condividi e poi Aggiungi alla schermata Home.",
+    "cel.android": "Inquadra il codice con la fotocamera dell’Android per scaricare e installare l’app.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Lingua di sistema",
     "sinc.procurando": "ricerca del salvataggio…",
     "sinc.parado": "nessuna sincronizzazione — il servizio non risponde",
@@ -4989,8 +5009,10 @@ const I18N = {
     "cel.rotulo": "Телефон",
     "cel.titulo": "На телефоне",
     "cel.rede": "Подключите телефон к той же сети Wi-Fi, что и этот компьютер. Это делается один раз.",
-    "cel.iphone": "iPhone: откройте этот адрес в Safari, нажмите «Поделиться», затем «На экран «Домой»».",
-    "cel.android": "Android: откройте этот адрес в браузере телефона и установите приложение.",
+    "cel.iphone": "Наведите камеру iPhone на код, откройте его в Safari, нажмите «Поделиться», затем «На экран «Домой»».",
+    "cel.android": "Наведите камеру Android на код, чтобы скачать и установить приложение.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Язык системы",
     "sinc.procurando": "ищем сохранение…",
     "sinc.parado": "нет синхронизации — служба не отвечает",
@@ -5195,8 +5217,10 @@ const I18N = {
     "cel.rotulo": "Telefon",
     "cel.titulo": "Na telefonie",
     "cel.rede": "Połącz telefon z tą samą siecią Wi-Fi co ten komputer. Robi się to tylko raz.",
-    "cel.iphone": "iPhone: otwórz ten adres w Safari, stuknij Udostępnij, a potem Do ekranu początkowego.",
-    "cel.android": "Android: otwórz ten adres w przeglądarce telefonu i zainstaluj aplikację.",
+    "cel.iphone": "Skieruj aparat iPhone’a na kod, otwórz go w Safari, stuknij Udostępnij, a potem Do ekranu początkowego.",
+    "cel.android": "Skieruj aparat Androida na kod, aby pobrać i zainstalować aplikację.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Język systemu",
     "sinc.procurando": "szukam zapisu gry…",
     "sinc.parado": "brak synchronizacji — usługa nie odpowiada",
@@ -5401,8 +5425,10 @@ const I18N = {
     "cel.rotulo": "Telefon",
     "cel.titulo": "Telefonda",
     "cel.rede": "Telefonu bu bilgisayarla aynı Wi-Fi ağına bağlayın. Bu yalnızca bir kez yapılır.",
-    "cel.iphone": "iPhone: Bu adresi Safari’de açın, Paylaş’a ve ardından Ana Ekrana Ekle’ye dokunun.",
-    "cel.android": "Android: Bu adresi telefonun tarayıcısında açın ve uygulamayı yükleyin.",
+    "cel.iphone": "iPhone kamerasını koda tutun, Safari’de açın, Paylaş’a ve ardından Ana Ekrana Ekle’ye dokunun.",
+    "cel.android": "Uygulamayı indirip yüklemek için Android kamerasını koda tutun.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "Sistem dili",
     "sinc.procurando": "kayıt dosyası aranıyor…",
     "sinc.parado": "eşitleme yok — hizmet yanıt vermiyor",
@@ -5607,8 +5633,10 @@ const I18N = {
     "cel.rotulo": "スマホ",
     "cel.titulo": "スマホで",
     "cel.rede": "スマホをこのパソコンと同じWi-Fiにつなぎます。設定は一度だけです。",
-    "cel.iphone": "iPhone：Safariでこのアドレスを開き、共有をタップしてから「ホーム画面に追加」をタップします。",
-    "cel.android": "Android：スマホのブラウザでこのアドレスを開き、アプリをインストールします。",
+    "cel.iphone": "iPhoneのカメラをコードに向け、Safariで開いて共有をタップし、「ホーム画面に追加」をタップします。",
+    "cel.android": "Androidのカメラをコードに向けて、アプリをダウンロードしてインストールします。",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "システムの言語",
     "sinc.procurando": "セーブデータを探しています…",
     "sinc.parado": "同期していません — サービスが応答しません",
@@ -5813,8 +5841,10 @@ const I18N = {
     "cel.rotulo": "휴대폰",
     "cel.titulo": "휴대폰에서",
     "cel.rede": "휴대폰을 이 컴퓨터와 같은 Wi-Fi에 연결하세요. 한 번만 하면 됩니다.",
-    "cel.iphone": "iPhone: Safari에서 이 주소를 열고 공유를 누른 다음 홈 화면에 추가를 누르세요.",
-    "cel.android": "Android: 휴대폰 브라우저에서 이 주소를 열고 앱을 설치하세요.",
+    "cel.iphone": "iPhone 카메라를 코드에 비추고 Safari에서 연 다음 공유와 홈 화면에 추가를 누르세요.",
+    "cel.android": "Android 카메라를 코드에 비추면 앱을 내려받아 설치할 수 있습니다.",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "시스템 언어",
     "sinc.procurando": "세이브 파일을 찾는 중…",
     "sinc.parado": "동기화 안 됨 — 서비스가 응답하지 않습니다",
@@ -6019,8 +6049,10 @@ const I18N = {
     "cel.rotulo": "手机",
     "cel.titulo": "在手机上",
     "cel.rede": "让手机连接到与这台电脑相同的 Wi-Fi。只需设置一次。",
-    "cel.iphone": "iPhone：在 Safari 中打开此地址，点按“共享”，再点按“添加到主屏幕”。",
-    "cel.android": "Android：在手机浏览器中打开此地址并安装应用。",
+    "cel.iphone": "用 iPhone 相机对准二维码，在 Safari 中打开，点按“共享”，再点按“添加到主屏幕”。",
+    "cel.android": "用 Android 相机对准二维码，下载并安装应用。",
+    "cel.btIphone": "iPhone",
+    "cel.btAndroid": "Android",
     "idioma.sistema": "系统语言",
     "sinc.procurando": "正在查找存档…",
     "sinc.parado": "未同步 — 服务没有响应",
@@ -6397,16 +6429,30 @@ function ligarCelular() {
   bt.addEventListener("click", (ev) => { ev.stopPropagation(); abrir(lista.hidden); });
   document.addEventListener("click", (ev) => { if (!caixa.contains(ev.target)) abrir(false); });
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") abrir(false); });
+  /*
+   * Cada botão mostra um código QR com o endereço desta máquina na rede em que
+   * ela está agora, montado pelo serviço na hora: o endereço muda de pessoa
+   * para pessoa e de rede para rede, e ninguém precisa copiá-lo.
+   */
+  const qr = document.getElementById("celQr");
+  const img = document.getElementById("celQrImg");
+  const dica = document.getElementById("celQrDica");
+  lista.querySelectorAll(".cel-bt").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const ja = b.getAttribute("aria-pressed") === "true";
+      lista.querySelectorAll(".cel-bt").forEach((o) => o.setAttribute("aria-pressed", "false"));
+      if (ja) { qr.hidden = true; return; }
+      b.setAttribute("aria-pressed", "true");
+      img.src = "/qr.svg?para=" + b.dataset.cel + "&t=" + Date.now();
+      img.alt = t(b.dataset.cel === "android" ? "cel.android" : "cel.iphone");
+      dica.textContent = t(b.dataset.cel === "android" ? "cel.android" : "cel.iphone");
+      qr.hidden = false;
+    });
+  });
   if (typeof fetch !== "function") return;
   fetch("/android.apk", { method: "HEAD" })
-    .then((r) => {
-      if (!r.ok) return;
-      return fetch("/rede").then((x) => (x.ok ? x.json() : null)).catch(() => null).then((rede) => {
-        const base = rede && rede.ip ? "http://" + rede.ip + ":" + (rede.porta || 8777) : "http://trackeroao.local:8777";
-        document.getElementById("celApk").textContent = base + "/android.apk";
-        document.getElementById("celAndroid").hidden = false;
-      });
-    })
+    .then((r) => { if (r.ok) document.getElementById("celAndroidBt").hidden = false; })
     .catch(() => {});
 }
 

@@ -317,9 +317,11 @@ por mDNS (a lista está em `NOMES_REDE`, em `sync/main.js`; os demais nomes
 dela ficam para quem já usava os antigos). É por esse nome que o iPhone chega
 à página e o aplicativo de Android encontra o computador, de modo que a troca
 de endereço que o roteador faz num reinício, por causa do DHCP, não quebra
-nada. Dois endereços do servidor existem por causa do celular: `/rede`
-responde o IP e a porta da máquina, que o passo a passo da página mostra, e
-`/android.apk` entrega o aplicativo de Android guardado em
+nada. Três endereços do servidor existem por causa do celular: `/rede`
+responde o IP e a porta da máquina; `/qr.svg` devolve, só para a própria
+máquina, um código QR montado na hora com o endereço dela na rede atual
+(`?para=pagina` ou `?para=android`, gerado por `sync/qr.js`, sem dependência
+externa); e `/android.apk` entrega o aplicativo de Android guardado em
 `<instalação>\app\trackeroao.apk`. O restante da pasta `app`, que é a janela
 do Windows, não é servido.
 
@@ -833,9 +835,14 @@ O progresso chega ao celular pela rede de casa, a partir do próprio
 computador, e não por um site. Na janela do computador, o ícone de celular ao
 lado do globo mostra o passo a passo, que começa sempre pelo mesmo ponto: o
 telefone precisa estar no mesmo Wi-Fi que o computador, o que se faz uma
-única vez.
+única vez. Nenhum endereço aparece escrito na tela, para ser copiado: o painel
+tem um botão para o iPhone e outro para o Android, e cada um mostra um código
+QR com o endereço deste computador na rede em que ele está naquele momento.
+O endereço varia de pessoa para pessoa e de rede para rede, e o código é
+montado pelo serviço a cada vez que o botão é tocado; basta apontar a câmera
+do telefone para ele.
 
-**No iPhone**, abre-se `http://trackeroao.local:8777` no Safari, toca-se em
+**No iPhone**, lê-se o código com a câmera, abre-se o endereço no Safari, toca-se em
 Compartilhar e depois em "Adicionar à Tela de Início". O Trackeroao passa a
 abrir como um aplicativo à parte, com o ícone do Trackeroao e sem a barra
 do navegador. Em casa, ele mostra a leitura corrente, atualizada a cada cinco
@@ -864,8 +871,8 @@ computador, e não pede outra permissão além das de rede e Wi-Fi.
 
 O aplicativo de Android chega ao celular por dois caminhos, nenhum deles uma
 loja: pelo próprio computador, cujo painel do celular, ao lado do globo da
-tela inicial, mostra o endereço de onde baixá-lo, na forma
-`http://<IP do computador>:8777/android.apk`; ou pela página da release, onde
+tela inicial, mostra no botão do Android o código QR do endereço de onde
+baixá-lo, na forma `http://<IP do computador>:8777/android.apk`; ou pela página da release, onde
 o mesmo `trackeroao.apk` fica ao lado do instalador do Windows. Usa-se o IP, e não o nome
 `.local`, porque nem todo navegador de Android resolve esse nome; o
 aplicativo, depois de instalado, resolve.

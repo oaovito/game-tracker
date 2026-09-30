@@ -159,6 +159,24 @@ function createServer(options) {
       return;
     }
 
+    /*
+     * O código QR do celular, montado na hora com o endereço desta máquina na
+     * rede em que ela está agora. Só para a própria máquina: é ela que mostra
+     * o código ao celular.
+     */
+    if (urlPath === '/qr.svg') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina) { res.writeHead(403).end('forbidden'); return; }
+      const addrs = localAddresses();
+      const host = addrs.length ? addrs[0].address : 'trackeroao.local';
+      const base = 'http://' + host + ':' + (req.socket.localPort || 8777);
+      const para = new URL(req.url, 'http://x').searchParams.get('para');
+      const alvo = para === 'android' ? base + '/android.apk' : base + '/';
+      res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' });
+      res.end(require('./qr').svg(alvo));
+      return;
+    }
+
     if (urlPath === '/idioma') {
       const idioma = require('./idioma');
       if (req.method === 'GET') {
