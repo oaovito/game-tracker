@@ -785,13 +785,33 @@ pasta, a resposta permanece "não sei", e "não sei" jamais aciona a hibernaçã
 ## A tela de jogos
 
 Antes da página de progresso há uma tela com os jogos desta máquina. Cada jogo
-aparece com dois pinos: instalado neste computador e vigiado, isto é, capaz de
-acender a aplicação na bandeja quando abre. Os jogos que o tracker sabe ler por
-inteiro, hoje só o Sekiro, levam à página de progresso; os demais servem para a
-detecção de abertura. O botão "All games" leva à lista completa, dividida entre
-o que está no computador e o que está na biblioteca da Steam. No computador que
-roda o serviço, tocar no pino de vigia liga e desliga a vigia daquele jogo, e
-"Search again" pede uma nova varredura.
+mostra se está instalado neste computador; a vigia (a capacidade de acender a
+aplicação na bandeja quando o jogo abre) continua funcionando, mas não tem
+indicador em tela nenhuma. Os jogos que o tracker sabe ler por inteiro, hoje só
+o Sekiro, levam à página de progresso por um botão preenchido em verde-limão;
+os demais servem para a detecção de abertura. O botão "All games" leva à lista
+completa, dividida entre o que está no computador e o que não está. No
+computador que roda o serviço, o botão com o ícone de recarregar, abaixo das
+listas, pede uma nova varredura.
+
+No canto de cima da lista completa, "Search games" abre um campo de busca pelo
+nome. A busca é feita pelo serviço (`/buscar.json`, em `sync/busca.js`) e cobre
+tudo o que o aplicativo conhece: os jogos desta máquina, a biblioteca da Steam,
+a base de jogos da release e o catálogo geral da Steam guardado em cache, sem
+consultar a rede. Os jogos desta máquina e da biblioteca vêm primeiro, depois
+os populares, e em cada nível o nome que começa pelo que foi digitado. A base
+tem perto de duzentos mil nomes; ela só entra na memória na primeira busca e
+sai sozinha um minuto depois da última. Os resultados ocupam o lugar das duas
+listas, em duas colunas e em páginas, e a lista de sempre volta quando a busca
+fecha (pelo ✕ ou pela tecla Esc).
+
+Quando o tracker lê algo novo no save desde a última vez que a pessoa abriu a
+página do jogo (um chefe, um ídolo, uma prótese, uma arte, uma conta de oração,
+uma semente ou uma conquista), o pôster do jogo ganha um selo verde-limão,
+"New", no canto de baixo à esquerda, que pulsa devagar. Ele some quando a página
+do jogo é aberta. A comparação usa só o que já é lido do save, e a lista do que
+foi visto fica no próprio navegador; na primeira vez não há com o que
+comparar, então nada aparece.
 
 No alto de todas as páginas há três botões de navegação: voltar, avançar e
 início. Voltar e avançar percorrem o histórico do próprio navegador, que

@@ -150,6 +150,18 @@ function createServer(options) {
       return;
     }
 
+    // A busca de jogos pelo nome, em tudo o que o aplicativo conhece.
+    if (urlPath === '/buscar.json') {
+      let achados = [];
+      try {
+        const q = new URL(req.url, 'http://x').searchParams.get('q') || '';
+        achados = require('./busca').buscar(q.slice(0, 80), 60);
+      } catch (e) { achados = []; }
+      res.writeHead(200, { 'content-type': MIME['.json'], 'cache-control': 'no-store' });
+      res.end(JSON.stringify({ lista: achados }));
+      return;
+    }
+
     /*
      * Os jogos do topo do menu da bandeja: os instalados ou vigiados, do
      * jogado por ultimo ao mais antigo, cinco no maximo. Uma linha por jogo,

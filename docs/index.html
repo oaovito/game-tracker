@@ -3009,6 +3009,33 @@
   }
   .jogo-capa img.pronta, .jogo-faixa img.pronta { opacity: 1; }
   .jogo-card:hover .jogo-capa { transform: translateY(-3px); }
+  /* Novidade desbloqueada: um selo no canto de baixo, à esquerda, que pulsa
+     devagar (só transform e opacity, e para fora de foco com o resto). */
+  .selo-novo {
+    position: absolute; left: 8px; bottom: 8px; z-index: 2; pointer-events: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--j-sinal); color: var(--j-sinal-tinta); border-radius: 999px; padding: 3px 9px 3px 7px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    animation: selo-pulsa 2.6s ease-in-out infinite; will-change: transform;
+  }
+  .selo-novo::before {
+    content: ""; position: absolute; inset: -4px; border-radius: inherit; z-index: -1;
+    background: var(--j-sinal); opacity: 0; filter: blur(6px);
+    animation: selo-halo 2.6s ease-in-out infinite; will-change: opacity, transform;
+  }
+  .selo-novo i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; display: block; }
+  /* no jogo: o brilho lento que marca um item recém-obtido no inventário, até ser visto */
+  @keyframes selo-pulsa {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  /* no jogo: o halo que respira em volta do item novo no menu, chamando o olhar sem pressa */
+  @keyframes selo-halo {
+    0%, 100% { opacity: 0; transform: scale(0.9); }
+    50% { opacity: 0.55; transform: scale(1.15); }
+  }
+  @media (prefers-reduced-motion: reduce) { .selo-novo, .selo-novo::before { animation: none; } }
   /* O jogo em foco sobe um pouco e ganha sombra; nada de moldura em volta. */
   .jogo-card.ativo .jogo-capa, .jogo-card:focus-visible .jogo-capa {
     transform: translateY(-6px);
@@ -3068,6 +3095,38 @@
   .hub-acoes { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 8px; }
   .hub-nota { text-align: center; font-size: 0.78rem; color: var(--j-apagado); margin-top: 12px; }
 
+  /* A busca de jogos pelo nome, e o botão só com o ícone. */
+  .hub-bt-icone { padding: 9px; display: inline-grid; place-items: center; }
+  .hub-bt-icone svg { width: 18px; height: 18px; display: block; }
+  .bibli-busca-bt { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bibli-busca-bt svg { width: 15px; height: 15px; }
+  .bibli-busca-bt[aria-expanded="true"] { border-color: var(--j-anel); color: var(--j-anel); }
+  .bibli-busca {
+    display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 4px 8px 4px 18px;
+    background: var(--j-vidro); border: 1px solid var(--j-anel); border-radius: 999px;
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); color: var(--j-texto);
+  }
+  .bibli-busca[hidden] { display: none; }
+  .bibli-busca > svg { width: 18px; height: 18px; flex: none; color: var(--j-anel); }
+  .bibli-busca input {
+    flex: 1; min-width: 0; appearance: none; background: none; border: 0; outline: 0; color: inherit;
+    font-family: var(--font-body, inherit); font-size: 0.98rem; padding: 10px 0;
+  }
+  .bibli-busca input::-webkit-search-cancel-button { display: none; }
+  .bibli-busca input::placeholder { color: var(--j-apagado); }
+  .bibli-busca-fecha {
+    appearance: none; border: 0; background: none; color: var(--j-apagado); cursor: pointer;
+    width: 34px; height: 34px; border-radius: 50%; font-size: 0.9rem;
+  }
+  .bibli-busca-fecha:hover, .bibli-busca-fecha:focus-visible { outline: 0; color: var(--j-texto); background: var(--j-vidro-forte); }
+  @media (min-width: 641px) and (min-height: 480px) {
+    .vista-bibli .bibli-grupo.busca { grid-column: 1 / -1; }
+    .vista-bibli .bibli-grupo.busca .bibli-lista {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; align-content: start;
+    }
+    .vista-bibli .bibli-grupo.busca .bibli-linha:last-child { border-bottom: 1px solid var(--j-borda); }
+  }
+
   /* Todos os jogos. */
   .bibli-grupo {
     margin-bottom: 20px; padding: 8px 20px 10px;
@@ -3096,10 +3155,12 @@
   .bibli-nome { min-width: 0; overflow-wrap: anywhere; font-size: 0.92rem; font-weight: 600; }
   .bibli-vazio { font-size: 0.82rem; color: var(--j-apagado); margin: 12px 0; }
   .bibli-abre {
-    justify-self: end; appearance: none; background: none; border: 0; cursor: pointer; padding: 4px 2px;
-    font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; color: var(--j-anel);
+    justify-self: end; appearance: none; border: 0; cursor: pointer; white-space: nowrap;
+    background: var(--j-sinal); color: var(--j-sinal-tinta); border-radius: 999px; padding: 6px 14px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.02em;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .bibli-abre:hover { text-decoration: underline; }
+  .bibli-abre:hover, .bibli-abre:focus-visible { outline: 0; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(216, 255, 60, 0.35); }
 
   @media (max-width: 640px) {
     .hub-titulo { font-size: 1.75rem; }
@@ -3240,7 +3301,7 @@
     }
     .vista-bibli .topbar { flex: none; }
     .vista-bibli #bibli { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-    .vista-bibli #bibli .hub-topo, .vista-bibli #bibliSub, .vista-bibli #bibli .hub-acoes, .vista-bibli #bibliNota { flex: none; }
+    .vista-bibli #bibli .hub-topo, .vista-bibli #bibliBusca, .vista-bibli #bibli .hub-acoes, .vista-bibli #bibliNota { flex: none; }
     .vista-bibli #bibli .hub-topo { margin-bottom: clamp(8px, 1.4vh, 22px); }
     .vista-bibli #bibli .hub-acoes { margin: clamp(8px, 1.6vh, 26px) 0 0; }
     .vista-bibli #bibliNota:empty { display: none; }
@@ -3377,11 +3438,16 @@
   <section class="bibli" id="bibli" hidden>
     <div class="hub-topo">
       <h1 class="hub-titulo" id="bibliTitulo" translate="no">All <span>games</span></h1>
+      <button class="hub-bt bibli-busca-bt" id="bibliBuscaBt" type="button" aria-expanded="false" aria-controls="bibliBusca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span data-i18n="bibli.buscar">Search games</span></button>
     </div>
-    <div class="hub-sub" id="bibliSub" data-i18n="bibli.subTodos">every game the app knows about</div>
+    <div class="bibli-busca" id="bibliBusca" role="search" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+      <input id="bibliBuscaCampo" type="search" autocomplete="off" spellcheck="false" placeholder="Type a game name" data-i18n-placeholder="bibli.buscarDica" aria-label="Search games" data-i18n-aria="bibli.buscar">
+      <button class="bibli-busca-fecha" id="bibliBuscaFecha" type="button" aria-label="Close" data-i18n-aria="janela.fechar">✕</button>
+    </div>
     <div id="bibliGrupos"></div>
     <div class="hub-acoes">
-      <button class="hub-bt" id="bibliVarrer" type="button" hidden data-i18n="bibli.varrer">Search again</button>
+      <button class="hub-bt hub-bt-icone" id="bibliVarrer" type="button" hidden title="Search again" aria-label="Search again" data-i18n-title="bibli.varrer" data-i18n-aria="bibli.varrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="hub-nota" id="bibliNota"></div>
   </section>
@@ -4021,6 +4087,8 @@ const I18N = {
     "pino.tocarVigiar": "Tap to watch it.",
     "selo.instalado": "Installed",
     "selo.vigiado": "Watched",
+    "selo.novo": "New",
+    "selo.novoDica": "Something new unlocked since you last opened this game",
     "bibli.sub": "on this computer and in the Steam library",
     "bibli.noPc": "On this computer",
     "bibli.naSteam": "In the Steam library",
@@ -4028,6 +4096,11 @@ const I18N = {
     "bibli.vazioSteam": "No Steam library on this computer, or nothing beyond what is installed.",
     "bibli.progresso": "Progress →",
     "bibli.varrer": "Search again",
+    "bibli.buscar": "Search games",
+    "bibli.buscarDica": "Type a game name",
+    "bibli.resultados": "Results",
+    "bibli.nada": "No game found",
+    "bibli.buscaSemApp": "Search works in the Trackeroao app",
     "bibli.varrendo": "Searching between two reads; the list updates by itself.",
     "janela.fechar": "Close",
     "janela.jogos": "games watched",
@@ -4229,6 +4302,8 @@ const I18N = {
     "pino.tocarVigiar": "Toque para vigiar.",
     "selo.instalado": "Instalado",
     "selo.vigiado": "Vigiado",
+    "selo.novo": "Novidade",
+    "selo.novoDica": "Novidade desbloqueada desde a última vez que você abriu este jogo",
     "bibli.sub": "neste computador e na biblioteca da Steam",
     "bibli.noPc": "Neste computador",
     "bibli.naSteam": "Na biblioteca da Steam",
@@ -4236,6 +4311,11 @@ const I18N = {
     "bibli.vazioSteam": "Sem biblioteca da Steam neste computador, ou nada além do que está instalado.",
     "bibli.progresso": "Progresso →",
     "bibli.varrer": "Buscar de novo",
+    "bibli.buscar": "Buscar jogos",
+    "bibli.buscarDica": "Digite o nome de um jogo",
+    "bibli.resultados": "Resultados",
+    "bibli.nada": "Nenhum jogo encontrado",
+    "bibli.buscaSemApp": "A busca funciona no aplicativo Trackeroao",
     "bibli.varrendo": "Buscando entre duas leituras; a lista se atualiza sozinha.",
     "janela.fechar": "Fechar",
     "janela.jogos": "jogos vigiados",
@@ -4437,6 +4517,8 @@ const I18N = {
     "pino.tocarVigiar": "Toca para vigilarlo.",
     "selo.instalado": "Instalado",
     "selo.vigiado": "Vigilado",
+    "selo.novo": "Novedad",
+    "selo.novoDica": "Novedad desbloqueada desde la última vez que abriste este juego",
     "bibli.sub": "en este equipo y en la biblioteca de Steam",
     "bibli.noPc": "En este equipo",
     "bibli.naSteam": "En la biblioteca de Steam",
@@ -4444,6 +4526,11 @@ const I18N = {
     "bibli.vazioSteam": "No hay biblioteca de Steam en este equipo, o nada aparte de lo instalado.",
     "bibli.progresso": "Progreso →",
     "bibli.varrer": "Buscar de nuevo",
+    "bibli.buscar": "Buscar juegos",
+    "bibli.buscarDica": "Escribe el nombre de un juego",
+    "bibli.resultados": "Resultados",
+    "bibli.nada": "No se encontró ningún juego",
+    "bibli.buscaSemApp": "La búsqueda funciona en la aplicación Trackeroao",
     "bibli.varrendo": "Buscando entre dos lecturas; la lista se actualiza sola.",
     "janela.fechar": "Cerrar",
     "janela.jogos": "juegos vigilados",
@@ -4645,6 +4732,8 @@ const I18N = {
     "pino.tocarVigiar": "Touchez pour le surveiller.",
     "selo.instalado": "Installé",
     "selo.vigiado": "Surveillé",
+    "selo.novo": "Nouveau",
+    "selo.novoDica": "Nouveauté débloquée depuis votre dernière visite",
     "bibli.sub": "sur cet ordinateur et dans la bibliothèque Steam",
     "bibli.noPc": "Sur cet ordinateur",
     "bibli.naSteam": "Dans la bibliothèque Steam",
@@ -4652,6 +4741,11 @@ const I18N = {
     "bibli.vazioSteam": "Pas de bibliothèque Steam sur cet ordinateur, ou rien de plus que ce qui est installé.",
     "bibli.progresso": "Progression →",
     "bibli.varrer": "Relancer la recherche",
+    "bibli.buscar": "Rechercher des jeux",
+    "bibli.buscarDica": "Tapez le nom d'un jeu",
+    "bibli.resultados": "Résultats",
+    "bibli.nada": "Aucun jeu trouvé",
+    "bibli.buscaSemApp": "La recherche fonctionne dans l'application Trackeroao",
     "bibli.varrendo": "Recherche entre deux lectures ; la liste se met à jour toute seule.",
     "janela.fechar": "Fermer",
     "janela.jogos": "jeux surveillés",
@@ -4853,6 +4947,8 @@ const I18N = {
     "pino.tocarVigiar": "Tippen, um es zu beobachten.",
     "selo.instalado": "Installiert",
     "selo.vigiado": "Beobachtet",
+    "selo.novo": "Neu",
+    "selo.novoDica": "Seit dem letzten Öffnen etwas Neues freigeschaltet",
     "bibli.sub": "auf diesem Computer und in der Steam-Bibliothek",
     "bibli.noPc": "Auf diesem Computer",
     "bibli.naSteam": "In der Steam-Bibliothek",
@@ -4860,6 +4956,11 @@ const I18N = {
     "bibli.vazioSteam": "Keine Steam-Bibliothek auf diesem Computer, oder nichts über das Installierte hinaus.",
     "bibli.progresso": "Fortschritt →",
     "bibli.varrer": "Erneut suchen",
+    "bibli.buscar": "Spiele suchen",
+    "bibli.buscarDica": "Spielnamen eingeben",
+    "bibli.resultados": "Ergebnisse",
+    "bibli.nada": "Kein Spiel gefunden",
+    "bibli.buscaSemApp": "Die Suche funktioniert in der Trackeroao-App",
     "bibli.varrendo": "Suche zwischen zwei Lesungen; die Liste aktualisiert sich selbst.",
     "janela.fechar": "Schließen",
     "janela.jogos": "beobachtete Spiele",
@@ -5061,6 +5162,8 @@ const I18N = {
     "pino.tocarVigiar": "Tocca per osservarlo.",
     "selo.instalado": "Installato",
     "selo.vigiado": "Osservato",
+    "selo.novo": "Novità",
+    "selo.novoDica": "Novità sbloccata dall'ultima apertura di questo gioco",
     "bibli.sub": "su questo computer e nella libreria di Steam",
     "bibli.noPc": "Su questo computer",
     "bibli.naSteam": "Nella libreria di Steam",
@@ -5068,6 +5171,11 @@ const I18N = {
     "bibli.vazioSteam": "Nessuna libreria di Steam su questo computer, o niente oltre a ciò che è installato.",
     "bibli.progresso": "Progressi →",
     "bibli.varrer": "Cerca di nuovo",
+    "bibli.buscar": "Cerca giochi",
+    "bibli.buscarDica": "Scrivi il nome di un gioco",
+    "bibli.resultados": "Risultati",
+    "bibli.nada": "Nessun gioco trovato",
+    "bibli.buscaSemApp": "La ricerca funziona nell'app Trackeroao",
     "bibli.varrendo": "Ricerca tra due letture; l’elenco si aggiorna da solo.",
     "janela.fechar": "Chiudi",
     "janela.jogos": "giochi osservati",
@@ -5269,6 +5377,8 @@ const I18N = {
     "pino.tocarVigiar": "Нажмите, чтобы отслеживать.",
     "selo.instalado": "Установлена",
     "selo.vigiado": "Отслеживается",
+    "selo.novo": "Новое",
+    "selo.novoDica": "С прошлого раза открыто что-то новое",
     "bibli.sub": "на этом компьютере и в библиотеке Steam",
     "bibli.noPc": "На этом компьютере",
     "bibli.naSteam": "В библиотеке Steam",
@@ -5276,6 +5386,11 @@ const I18N = {
     "bibli.vazioSteam": "На этом компьютере нет библиотеки Steam или в ней нет ничего сверх установленного.",
     "bibli.progresso": "Прогресс →",
     "bibli.varrer": "Искать снова",
+    "bibli.buscar": "Поиск игр",
+    "bibli.buscarDica": "Введите название игры",
+    "bibli.resultados": "Результаты",
+    "bibli.nada": "Игры не найдены",
+    "bibli.buscaSemApp": "Поиск работает в приложении Trackeroao",
     "bibli.varrendo": "Поиск идёт между двумя чтениями; список обновится сам.",
     "janela.fechar": "Закрыть",
     "janela.jogos": "отслеживаемые игры",
@@ -5477,6 +5592,8 @@ const I18N = {
     "pino.tocarVigiar": "Dotknij, aby obserwować.",
     "selo.instalado": "Zainstalowana",
     "selo.vigiado": "Obserwowana",
+    "selo.novo": "Nowość",
+    "selo.novoDica": "Od ostatniego otwarcia odblokowano coś nowego",
     "bibli.sub": "na tym komputerze i w bibliotece Steam",
     "bibli.noPc": "Na tym komputerze",
     "bibli.naSteam": "W bibliotece Steam",
@@ -5484,6 +5601,11 @@ const I18N = {
     "bibli.vazioSteam": "Brak biblioteki Steam na tym komputerze albo nic poza tym, co zainstalowane.",
     "bibli.progresso": "Postęp →",
     "bibli.varrer": "Szukaj ponownie",
+    "bibli.buscar": "Szukaj gier",
+    "bibli.buscarDica": "Wpisz nazwę gry",
+    "bibli.resultados": "Wyniki",
+    "bibli.nada": "Nie znaleziono gry",
+    "bibli.buscaSemApp": "Wyszukiwanie działa w aplikacji Trackeroao",
     "bibli.varrendo": "Szukam między dwoma odczytami; lista zaktualizuje się sama.",
     "janela.fechar": "Zamknij",
     "janela.jogos": "obserwowane gry",
@@ -5685,6 +5807,8 @@ const I18N = {
     "pino.tocarVigiar": "İzlemek için dokun.",
     "selo.instalado": "Yüklü",
     "selo.vigiado": "İzleniyor",
+    "selo.novo": "Yeni",
+    "selo.novoDica": "Son açılıştan beri yeni bir şey açıldı",
     "bibli.sub": "bu bilgisayarda ve Steam kütüphanesinde",
     "bibli.noPc": "Bu bilgisayarda",
     "bibli.naSteam": "Steam kütüphanesinde",
@@ -5692,6 +5816,11 @@ const I18N = {
     "bibli.vazioSteam": "Bu bilgisayarda Steam kütüphanesi yok ya da yüklü olanların dışında bir şey yok.",
     "bibli.progresso": "İlerleme →",
     "bibli.varrer": "Yeniden ara",
+    "bibli.buscar": "Oyun ara",
+    "bibli.buscarDica": "Bir oyun adı yazın",
+    "bibli.resultados": "Sonuçlar",
+    "bibli.nada": "Oyun bulunamadı",
+    "bibli.buscaSemApp": "Arama Trackeroao uygulamasında çalışır",
     "bibli.varrendo": "İki okuma arasında aranıyor; liste kendiliğinden güncellenir.",
     "janela.fechar": "Kapat",
     "janela.jogos": "izlenen oyunlar",
@@ -5893,6 +6022,8 @@ const I18N = {
     "pino.tocarVigiar": "タップで監視します。",
     "selo.instalado": "インストール済み",
     "selo.vigiado": "監視中",
+    "selo.novo": "新着",
+    "selo.novoDica": "前回から新しいものが解放されました",
     "bibli.sub": "このコンピューターと Steam ライブラリ",
     "bibli.noPc": "このコンピューター",
     "bibli.naSteam": "Steam ライブラリ",
@@ -5900,6 +6031,11 @@ const I18N = {
     "bibli.vazioSteam": "このコンピューターに Steam ライブラリがないか、インストール済み以外に何もありません。",
     "bibli.progresso": "進捗 →",
     "bibli.varrer": "再検索",
+    "bibli.buscar": "ゲームを検索",
+    "bibli.buscarDica": "ゲーム名を入力",
+    "bibli.resultados": "検索結果",
+    "bibli.nada": "ゲームが見つかりません",
+    "bibli.buscaSemApp": "検索は Trackeroao アプリで使えます",
     "bibli.varrendo": "次の読み取りまでに検索します。一覧は自動で更新されます。",
     "janela.fechar": "閉じる",
     "janela.jogos": "監視中のゲーム",
@@ -6101,6 +6237,8 @@ const I18N = {
     "pino.tocarVigiar": "탭하면 감시합니다.",
     "selo.instalado": "설치됨",
     "selo.vigiado": "감시 중",
+    "selo.novo": "새 소식",
+    "selo.novoDica": "지난번 이후 새로운 것이 해금되었습니다",
     "bibli.sub": "이 컴퓨터와 Steam 라이브러리",
     "bibli.noPc": "이 컴퓨터",
     "bibli.naSteam": "Steam 라이브러리",
@@ -6108,6 +6246,11 @@ const I18N = {
     "bibli.vazioSteam": "이 컴퓨터에 Steam 라이브러리가 없거나, 설치된 것 외에는 없습니다.",
     "bibli.progresso": "진행 상황 →",
     "bibli.varrer": "다시 검색",
+    "bibli.buscar": "게임 검색",
+    "bibli.buscarDica": "게임 이름을 입력하세요",
+    "bibli.resultados": "검색 결과",
+    "bibli.nada": "게임을 찾을 수 없습니다",
+    "bibli.buscaSemApp": "검색은 Trackeroao 앱에서 작동합니다",
     "bibli.varrendo": "두 번의 읽기 사이에 검색합니다. 목록은 자동으로 갱신됩니다.",
     "janela.fechar": "닫기",
     "janela.jogos": "감시 중인 게임",
@@ -6309,6 +6452,8 @@ const I18N = {
     "pino.tocarVigiar": "点按以监视。",
     "selo.instalado": "已安装",
     "selo.vigiado": "已监视",
+    "selo.novo": "新内容",
+    "selo.novoDica": "自上次打开以来解锁了新内容",
     "bibli.sub": "这台电脑上和 Steam 库中",
     "bibli.noPc": "这台电脑上",
     "bibli.naSteam": "Steam 库中",
@@ -6316,6 +6461,11 @@ const I18N = {
     "bibli.vazioSteam": "这台电脑上没有 Steam 库，或除已安装的之外没有其他内容。",
     "bibli.progresso": "进度 →",
     "bibli.varrer": "重新搜索",
+    "bibli.buscar": "搜索游戏",
+    "bibli.buscarDica": "输入游戏名称",
+    "bibli.resultados": "搜索结果",
+    "bibli.nada": "未找到游戏",
+    "bibli.buscaSemApp": "搜索在 Trackeroao 应用中可用",
     "bibli.varrendo": "将在两次读取之间搜索；列表会自动更新。",
     "janela.fechar": "关闭",
     "janela.jogos": "监视的游戏",
@@ -6541,6 +6691,7 @@ function traduzirMarcacao() {
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.getAttribute("data-i18n"));
   for (const el of document.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
   for (const el of document.querySelectorAll("[data-i18n-title]")) el.setAttribute("title", t(el.getAttribute("data-i18n-title")));
+  for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
 }
 
 /**
@@ -8419,21 +8570,8 @@ function fazerPinos(g) {
   inst.title = g.instalado ? t("pino.instaladoDica") : t("pino.naoInstaladoDica");
   caixa.appendChild(inst);
 
-  const local = daMaquinaLocal();
-  const vig = document.createElement(local ? "button" : "span");
-  if (local) vig.type = "button";
-  vig.className = "pino pino-vigiado" + (g.vigiado ? " on" : "");
-  vig.innerHTML = SVG_OLHO + "<span>" + (g.vigiado ? t("pino.vigiado") : t("pino.naoVigiado")) + "</span>";
-  vig.title = g.vigiado
-    ? t("pino.vigiadoDica")
-    : t("pino.naoVigiadoDica") + (local ? " " + t("pino.tocarVigiar") : "");
-  if (local) {
-    vig.addEventListener("click", (ev) => {
-      if (ev && ev.stopPropagation) ev.stopPropagation();
-      alternarVigia(g.chave);
-    });
-  }
-  caixa.appendChild(vig);
+  // O indicador de vigia não aparece em página nenhuma (pedido do dono do
+  // projeto); a vigia continua funcionando por trás.
 
   // O ponto de sincronia, só no jogo que está sendo lido de fato, e em dia.
   if (sincronizado(g)) {
@@ -8568,6 +8706,54 @@ function arteVazia(g, grande) {
 }
 
 /* Capa em pé (trilho) ou faixa deitada (lista), sempre com reserva. */
+/*
+ * Novidade desbloqueada. O que o tracker já lê do save (chefes, ídolos,
+ * próteses, artes, contas, sementes e conquistas) vira uma lista de chaves;
+ * a lista da última vez que a pessoa abriu o jogo fica guardada neste
+ * navegador. Chave nova é novidade, e o selo some quando o jogo é aberto. Na
+ * primeira vez não há com o que comparar, então nada aparece.
+ */
+const VISTO_CHAVE = "visto";
+function desbloqueados() {
+  if (!sync || !sync.ok) return null;
+  const s = [];
+  const add = (lista, campo, pre) => { for (const x of lista || []) if (x && x[campo]) s.push(pre + (x.key || x.label)); };
+  add(sync.bosses, "defeated", "b:");
+  add(sync.miniBosses, "defeated", "m:");
+  add(sync.headless, "defeated", "h:");
+  add(sync.idols, "unlocked", "i:");
+  add(sync.tools, "unlocked", "t:");
+  add(sync.arts, "unlocked", "a:");
+  add(sync.prayerBeadList, "collected", "p:");
+  add(sync.gourdSeedList, "collected", "g:");
+  for (const c of (sync.achievements && sync.achievements.lista) || []) if (c && c.conquistada) s.push("c:" + c.nome);
+  return s;
+}
+function vistos() {
+  try { const v = JSON.parse(guardado(VISTO_CHAVE) || "null"); return Array.isArray(v) ? v : null; } catch (e) { return null; }
+}
+function temNovidade(g) {
+  if (!g || g.leitura !== "completa") return false;
+  const agora = desbloqueados();
+  if (!agora) return false;
+  const antes = vistos();
+  if (!antes) { guardar(VISTO_CHAVE, JSON.stringify(agora)); return false; }
+  const ja = new Set(antes);
+  return agora.some((k) => !ja.has(k));
+}
+function marcarVisto() {
+  const agora = desbloqueados();
+  if (agora) guardar(VISTO_CHAVE, JSON.stringify(agora));
+}
+function seloNovo() {
+  const selo = document.createElement("span");
+  selo.className = "selo-novo";
+  selo.title = t("selo.novoDica");
+  selo.innerHTML = '<i aria-hidden="true"></i>';
+  selo.appendChild(document.createTextNode(t("selo.novo")));
+  return selo;
+}
+
 function fazerCapa(g, tipo) {
   const capa = document.createElement("div");
   capa.className = tipo === "faixa" ? "jogo-faixa" : "jogo-capa";
@@ -8719,18 +8905,13 @@ function renderHub() {
       card.setAttribute("role", "button");
       card.setAttribute("aria-label", g.nome);
       card.tabIndex = 0;
-      card.appendChild(fazerCapa(g, "capa"));
-      // A capa fica limpa, sem nada por cima: o "vigiado" vai junto do nome.
+      const capaDoCard = fazerCapa(g, "capa");
+      if (temNovidade(g)) capaDoCard.appendChild(seloNovo());
+      card.appendChild(capaDoCard);
+      // A capa fica limpa, sem indicador de vigia; só a novidade aparece nela.
       const nome = document.createElement("div");
       nome.className = "jogo-card-nome";
       nome.setAttribute("translate", "no");
-      if (g.vigiado) {
-        const olho = document.createElement("span");
-        olho.className = "selo-vig";
-        olho.title = t("selo.vigiado");
-        olho.innerHTML = SVG_OLHO;
-        nome.appendChild(olho);
-      }
       nome.appendChild(document.createTextNode(g.nome));
       card.appendChild(nome);
       const abrir = () => {
@@ -8780,11 +8961,9 @@ function renderHub() {
     const soSteam = (location.hash || "").replace(/^#/, "") === "steam";
     const titulo = document.getElementById("bibliTitulo");
     if (titulo) titulo.innerHTML = soSteam ? "Steam <span>library</span>" : "All <span>games</span>";
-    const sub = document.getElementById("bibliSub");
-    if (sub) {
-      sub.setAttribute("data-i18n", soSteam ? "bibli.subSteam" : "bibli.subTodos");
-      sub.textContent = t(soSteam ? "bibli.subSteam" : "bibli.subTodos");
-    }
+    ligarBusca();
+    // Com uma busca na tela, a lista de sempre espera ela fechar.
+    if (buscaNaTela()) return;
     const base = soSteam ? lista.filter((g) => g.naSteam) : lista;
     const grupos = [
       ["bibli.noPc", base.filter((g) => g.instalado)],
@@ -8849,6 +9028,102 @@ function renderHub() {
       }
     }
   }
+}
+
+/*
+ * A busca de jogos pelo nome. O botão do canto abre o campo; o que se digita
+ * vai ao serviço (/buscar.json), que procura em tudo o que o aplicativo
+ * conhece: os jogos desta máquina, a biblioteca da Steam e o catálogo inteiro.
+ * Os resultados ocupam o lugar das duas listas até a busca fechar.
+ */
+let buscaPedido = 0;
+function buscaNaTela() {
+  const b = document.getElementById("bibliBusca");
+  const c = document.getElementById("bibliBuscaCampo");
+  return !!(b && !b.hidden && c && String(c.value || "").trim().length >= 2);
+}
+function ligarBusca() {
+  const bt = document.getElementById("bibliBuscaBt");
+  const caixa = document.getElementById("bibliBusca");
+  const campo = document.getElementById("bibliBuscaCampo");
+  const fecha = document.getElementById("bibliBuscaFecha");
+  if (!bt || !caixa || !campo || bt.dataset.ligado) return;
+  bt.dataset.ligado = "1";
+  const fechar = () => {
+    caixa.hidden = true;
+    bt.setAttribute("aria-expanded", "false");
+    campo.value = "";
+    buscaPedido++;
+    renderHub();
+  };
+  bt.addEventListener("click", () => {
+    if (!caixa.hidden) { fechar(); return; }
+    caixa.hidden = false;
+    bt.setAttribute("aria-expanded", "true");
+    campo.focus();
+  });
+  if (fecha) fecha.addEventListener("click", fechar);
+  campo.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { ev.preventDefault(); fechar(); } });
+  let espera = null;
+  campo.addEventListener("input", () => {
+    clearTimeout(espera);
+    espera = setTimeout(() => buscarJogos(String(campo.value || "").trim()), 220);
+  });
+}
+function buscarJogos(q) {
+  const pedido = ++buscaPedido;
+  if (q.length < 2) { renderHub(); return; }
+  fetch("/buscar.json?q=" + encodeURIComponent(q), { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((d) => { if (pedido === buscaPedido) mostrarBusca((d && d.lista) || [], null); })
+    .catch(() => { if (pedido === buscaPedido) mostrarBusca([], t("bibli.buscaSemApp")); });
+}
+function mostrarBusca(jogos, aviso) {
+  const caixa = document.getElementById("bibliGrupos");
+  if (!caixa) return;
+  caixa.innerHTML = "";
+  const grupo = document.createElement("div");
+  grupo.className = "bibli-grupo busca";
+  const h = document.createElement("h2");
+  const rot = document.createElement("span");
+  rot.textContent = t("bibli.resultados");
+  const num = document.createElement("b");
+  num.textContent = String(jogos.length);
+  h.appendChild(rot);
+  h.appendChild(num);
+  grupo.appendChild(h);
+  const lista = document.createElement("div");
+  lista.className = "bibli-lista";
+  grupo.appendChild(lista);
+  if (!jogos.length) {
+    const p = document.createElement("p");
+    p.className = "bibli-vazio";
+    p.textContent = aviso || t("bibli.nada");
+    lista.appendChild(p);
+  }
+  for (const g of jogos) {
+    const linha = document.createElement("div");
+    linha.className = "bibli-linha";
+    linha.appendChild(fazerCapa(g, "faixa"));
+    const nome = document.createElement("span");
+    nome.className = "bibli-nome";
+    nome.setAttribute("translate", "no");
+    nome.textContent = g.nome;
+    linha.appendChild(nome);
+    linha.appendChild(fazerPinos(g));
+    if (g.leitura === "completa") {
+      const abre = document.createElement("button");
+      abre.type = "button";
+      abre.className = "bibli-abre";
+      abre.textContent = t("bibli.progresso");
+      abre.addEventListener("click", () => irPara(g.chave));
+      linha.appendChild(abre);
+    }
+    lista.appendChild(linha);
+  }
+  caixa.appendChild(grupo);
+  paginarBibli();
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => paginarBibli(true));
 }
 
 /*
@@ -8935,7 +9210,8 @@ function paginarBibli(manter) {
     linhas.forEach((l) => { l.hidden = false; });
     if (pag) pag.hidden = true;
     if (!naMesa() || !linhas.length) return;
-    const cabe = Math.max(1, Math.floor(lista.clientHeight / Math.max(1, linhas[0].offsetHeight)));
+    const colunas = grupo.classList.contains("busca") ? 2 : 1;
+    const cabe = colunas * Math.max(1, Math.floor(lista.clientHeight / Math.max(1, linhas[0].offsetHeight)));
     const total = Math.ceil(linhas.length / cabe);
     if (total < 2) return;
     if (!pag) {
@@ -9026,6 +9302,8 @@ function render() {
   renderAssinatura();
   renderEstados();
   renderJogos();
+  // Com a página do jogo à vista, o que ela mostra já foi visto.
+  if (vistaAtual() === "jogo") marcarVisto();
   renderHub();
   renderDeaths();
   renderTempo();
