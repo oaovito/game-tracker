@@ -1467,6 +1467,18 @@ function exigeGit() {
   return rastreados;
 }
 
+/*
+ * A raiz do repositório tem no máximo oito itens: é a lista que o GitHub mostra
+ * primeiro, e ela cabe de uma vez. O que passar disso entra numa das pastas que
+ * já existem (windows/, docs/, .github/), a não ser que seja uma necessidade.
+ */
+check('a raiz do repositório tem no máximo oito itens', () => {
+  exigeGit();
+  const raiz = [...new Set(rastreados.map((a) => a.split('/')[0]))].sort();
+  assert(raiz.length <= 8, raiz.length + ' itens na raiz: ' + raiz.join(', '));
+  return raiz.length + ' itens: ' + raiz.join(', ');
+});
+
 check('o projeto inteiro está versionado, não só a página', () => {
   exigeGit();
   const porExt = {};
