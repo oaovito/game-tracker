@@ -11,11 +11,10 @@ projeto nao tem dependencia nenhuma e nao vai ganhar uma por causa de um
 icone. O NotifyIcon do System.Windows.Forms ja vem no Windows desde sempre e
 faz exatamente isto.
 
-O icone e desenhado aqui, e nao carregado de um .ico: um arquivo a mais seria
-uma coisa a mais para sumir no caminho, e o desenho cabe em vinte linhas. E a
-chama azul do Idolo do Escultor, a mesma que a pagina usa a esquerda do numero
-de mortes -- o mesmo simbolo nos dois lugares, para quem ve um reconhecer o
-outro.
+O icone e o do Trackeroao: o mesmo instalador\icone\trackeroao.ico que vai
+na janela e no instalador, para quem ve um reconhecer o outro. Se o arquivo
+faltar, o mesmo desenho (anel de progresso e um T) e feito aqui em memoria --
+icone nenhum na bandeja seria pior que um icone desenhado a mao.
 
 O processo morre junto com quem o abriu: o -ProcessoPai e vigiado, e sem ele o
 icone sai da bandeja. Icone orfao seria pior que icone nenhum, porque prometeria
@@ -33,52 +32,64 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 <#
-  A chama, desenhada em memoria.
+  O icone do Trackeroao, no tamanho que o Windows usa na bandeja.
 
-  32x32 porque e o tamanho que o Windows pede em tela comum; em tela de alta
-  densidade ele reduz de 32 melhor do que amplia de 16.
+  O .ico traz de 16 a 256; pedir o SmallIconSize faz o Windows receber o
+  desenho feito para aquele tamanho, e nao um reduzido de outro.
 #>
-function Nova-Chama {
+function Novo-Icone {
+  $tam = [System.Windows.Forms.SystemInformation]::SmallIconSize
+  $arquivo = Join-Path (Split-Path $PSScriptRoot -Parent) 'instalador\icone\trackeroao.ico'
+  if (Test-Path $arquivo) {
+    try { return (New-Object System.Drawing.Icon -ArgumentList $arquivo, $tam.Width, $tam.Height) } catch { }
+  }
+  return (Desenhar-Icone)
+}
+
+<#
+  A reserva: o mesmo desenho, feito em memoria.
+
+  Quadrado escuro de cantos redondos, tres quartos de anel verde-limao e um T
+  branco no meio. 32x32 porque e o tamanho que o Windows pede em tela comum;
+  em tela de alta densidade ele reduz de 32 melhor do que amplia de 16.
+#>
+function Desenhar-Icone {
   $bmp = New-Object System.Drawing.Bitmap 32, 32
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'
   $g.Clear([System.Drawing.Color]::Transparent)
 
-  # O corpo da chama: mesma silhueta do desenho da pagina, em curva fechada.
-  $corpo = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $pontos = @(
-    (New-Object System.Drawing.Point 16, 2),
-    (New-Object System.Drawing.Point 25, 13),
-    (New-Object System.Drawing.Point 24, 22),
-    (New-Object System.Drawing.Point 16, 30),
-    (New-Object System.Drawing.Point 8, 22),
-    (New-Object System.Drawing.Point 7, 13)
-  )
-  $corpo.AddClosedCurve($pontos, 0.6)
+  # O fundo: quadrado de cantos redondos, no escuro da pagina.
+  $fundo = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $r = 14
+  $fundo.AddArc(0, 0, $r, $r, 180, 90)
+  $fundo.AddArc(31 - $r, 0, $r, $r, 270, 90)
+  $fundo.AddArc(31 - $r, 31 - $r, $r, $r, 0, 90)
+  $fundo.AddArc(0, 31 - $r, $r, $r, 90, 90)
+  $fundo.CloseFigure()
+  $escuro = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 11, 13, 18))
+  $g.FillPath($escuro, $fundo)
 
-  # Degrade de baixo para cima: azul fundo na base, turquesa no meio. O branco
-  # do nucleo entra depois, por cima, para nao ser lavado pelo degrade.
-  $pincel = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-    (New-Object System.Drawing.Point 0, 32),
-    (New-Object System.Drawing.Point 0, 0),
-    [System.Drawing.Color]::FromArgb(210, 29, 95, 138),
-    [System.Drawing.Color]::FromArgb(255, 200, 244, 255))
-  $g.FillPath($pincel, $corpo)
+  # O anel: comeca no alto e anda tres quartos no sentido do relogio.
+  $limao = [System.Drawing.Color]::FromArgb(255, 216, 255, 60)
+  $caneta = New-Object System.Drawing.Pen($limao, [single]3.5)
+  $caneta.StartCap = 'Round'
+  $caneta.EndCap = 'Round'
+  $g.DrawArc($caneta, [single]6.5, [single]6.5, [single]19, [single]19, [single]-90, [single]270)
 
-  $nucleo = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $nucleo.AddEllipse(12, 14, 8, 12)
-  $brancoDentro = New-Object System.Drawing.Drawing2D.PathGradientBrush($nucleo)
-  $brancoDentro.CenterColor = [System.Drawing.Color]::FromArgb(235, 255, 255, 255)
-  $brancoDentro.SurroundColors = @([System.Drawing.Color]::FromArgb(0, 165, 233, 255))
-  $g.FillPath($brancoDentro, $nucleo)
+  # O T: barra de cima e haste, retangulos cheios.
+  $branco = [System.Drawing.Brushes]::White
+  $g.FillRectangle($branco, 11, 11, 10, 3)
+  $g.FillRectangle($branco, 14, 11, 4, 10)
 
+  $caneta.Dispose(); $escuro.Dispose(); $fundo.Dispose()
   $g.Dispose()
   $icone = [System.Drawing.Icon]::FromHandle($bmp.GetHicon())
   return $icone
 }
 
 $icone = New-Object System.Windows.Forms.NotifyIcon
-$icone.Icon = Nova-Chama
+$icone.Icon = Novo-Icone
 $icone.Text = $Titulo          # o balao do hover; o Windows corta em 63 caracteres
 $icone.Visible = $true
 
@@ -118,7 +129,7 @@ function Idioma-Atual {
 $t = $textos[(Idioma-Atual)] | ForEach-Object { [regex]::Unescape($_) }
 
 <#
-  Abrir e so com dois cliques: na chama, ou no icone da area de trabalho. A
+  Abrir e so com dois cliques: no icone da bandeja, ou no da area de trabalho. A
   janela do Trackeroao, quando instalada; sem ela, a pagina local.
 #>
 function Abrir-Trackeroao {
@@ -133,8 +144,8 @@ $atualizar = $menu.Items.Add($t[0])
 $atualizar.add_Click({
   <#
     O servico confere a release agora. Ja na ultima versao, um aviso pequeno
-    sai ao lado desta chama e some sozinho. Havendo versao nova, ela e
-    aplicada em silencio: o servico se reinicia e esta chama volta junto.
+    sai ao lado deste icone e some sozinho. Havendo versao nova, ela e
+    aplicada em silencio: o servico se reinicia e este icone volta junto.
   #>
   try {
     $wc = New-Object Net.WebClient
@@ -151,7 +162,7 @@ $menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
 $fechar = $menu.Items.Add($t[1])
 $fechar.add_Click({
   <#
-    Fecha tudo de verdade: a janela do Trackeroao, esta chama e o servico.
+    Fecha tudo de verdade: a janela do Trackeroao, este icone e o servico.
     Nada disso volta sozinho -- nem no logon, nem com o jogo -- ate a pessoa
     abrir o Trackeroao pelo atalho.
   #>
@@ -171,7 +182,7 @@ $icone.add_MouseDoubleClick({ Abrir-Trackeroao })
 <#
   A vigia do processo que abriu este icone.
 
-  Sem ela, encerrar o servico deixaria a chama acesa na bandeja prometendo uma
+  Sem ela, encerrar o servico deixaria o icone aceso na bandeja prometendo uma
   aplicacao que nao existe mais. Dois segundos e frequencia de sobra para algo
   que so precisa perceber um encerramento.
 #>

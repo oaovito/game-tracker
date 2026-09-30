@@ -2692,6 +2692,54 @@
     text-transform: none; color: var(--j-texto); margin: 0;
   }
   .hub-titulo span { color: var(--j-anel); }
+
+  /* O título vivo: as letras sobem uma a uma ao abrir, e depois o "oao"
+     respira de tempos em tempos, com a mesma cor e o mesmo brilho do anel
+     que marca o jogo em foco. */
+  .titulo-vivo { white-space: nowrap; }
+  .titulo-vivo .l {
+    /* Em linha, e não em bloco: letra em bloco perde o kerning da fonte e o
+       título se espalha. O movimento vem de `top`, que vale em linha. */
+    position: relative; font-weight: inherit;
+    animation: titulo-entra 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 45ms);
+  }
+  .titulo-vivo span .l {
+    animation: titulo-entra 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, titulo-oao 7s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 45ms), calc(1.4s + var(--o) * 140ms);
+  }
+  /* no jogo: nenhum; é da identidade do Trackeroao, as letras chegando como um jogo que carrega. */
+  @keyframes titulo-entra {
+    from { opacity: 0; top: 0.45em; filter: blur(6px); }
+    to { opacity: 1; top: 0; filter: none; }
+  }
+  /* no jogo: nenhum; é da identidade do Trackeroao, o "oao" com o brilho do anel de foco. */
+  @keyframes titulo-oao {
+    0%, 82%, 100% { top: 0; text-shadow: none; }
+    88% { top: -0.12em; text-shadow: 0 0 0.45em var(--j-sinal); }
+    94% { top: 0; text-shadow: 0 0 0.2em var(--j-sinal); }
+  }
+
+  /* A trama de "oao" no fundo da tela inicial: quase invisível, deslizando
+     na diagonal. É uma máscara, para a cor seguir o tema. */
+  .oao-fundo { display: none; }
+  .vista-hub .oao-fundo {
+    display: block; position: fixed; inset: -60%; z-index: 0; pointer-events: none;
+    transform: rotate(-12deg);
+    background: var(--j-texto); opacity: 0.022;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2734%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3Eoao%3C/text%3E%3Ctext x=%27128%27 y=%27104%27%3Eoao%3C/text%3E%3C/g%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Cg font-family=%27Arial Black,Arial,sans-serif%27 font-weight=%27900%27 font-size=%2734%27 letter-spacing=%271%27%3E%3Ctext x=%278%27 y=%2744%27%3Eoao%3C/text%3E%3Ctext x=%27128%27 y=%27104%27%3Eoao%3C/text%3E%3C/g%3E%3C/svg%3E");
+    -webkit-mask-size: 240px 120px; mask-size: 240px 120px;
+    animation: oao-desliza 48s linear infinite;
+  }
+  /* no jogo: nenhum; é da identidade do Trackeroao, a trama de "oao" do fundo da tela inicial. */
+  @keyframes oao-desliza {
+    from { -webkit-mask-position: 0 0; mask-position: 0 0; }
+    to { -webkit-mask-position: 240px 120px; mask-position: 240px 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .titulo-vivo .l, .titulo-vivo span .l, .vista-hub .oao-fundo { animation: none; }
+  }
   .hub-relogio {
     font-family: var(--font-display); font-weight: 500; font-size: 1.5rem;
     font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--j-apagado);
@@ -2968,6 +3016,8 @@
 <body>
 <!-- O fundo da tela de jogos: a arte do jogo em foco, desfocada. -->
 <div class="ambiente" aria-hidden="true"><img id="ambienteImg" alt=""></div>
+<!-- O fundo da tela inicial: "oao" em trama, deslizando devagar. -->
+<div class="oao-fundo" aria-hidden="true"></div>
 <div class="wrap">
 
   <!-- Faixa só para o botão de tema, no extremo topo à direita: fora do
@@ -2992,7 +3042,8 @@
   <!-- A tela de jogos, antes da página de cada um. Ver o CSS "tela de jogos". -->
   <section class="hub" id="hub" hidden>
     <div class="hub-topo">
-      <h1 class="hub-titulo" translate="no">Tracker<span>oao</span></h1>
+      <!-- Letra por letra, para a animação do título (ver "título vivo"). -->
+      <h1 class="hub-titulo titulo-vivo" translate="no" aria-label="Trackeroao"><b class="l" style="--i:0">T</b><b class="l" style="--i:1">r</b><b class="l" style="--i:2">a</b><b class="l" style="--i:3">c</b><b class="l" style="--i:4">k</b><b class="l" style="--i:5">e</b><b class="l" style="--i:6">r</b><span aria-hidden="true"><b class="l" style="--i:7;--o:0">o</b><b class="l" style="--i:8;--o:1">a</b><b class="l" style="--i:9;--o:2">o</b></span></h1>
       <!-- O globo do idioma fica ao lado do relógio: discreto, e só aqui, na
            tela inicial. A lista se monta no script, a partir de IDIOMAS. -->
       <div class="hub-canto">

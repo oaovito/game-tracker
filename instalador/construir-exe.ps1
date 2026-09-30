@@ -91,20 +91,12 @@ $tmp = Join-Path $env:TEMP ("trackeroao-exe-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 
 <#
-  O icone: a chama do aplicativo (docs/app/icone-192.png), dentro de um .ico.
-  Desde o Vista um .ico pode carregar um PNG inteiro, entao o arquivo e so um
-  cabecalho de 22 bytes seguido do proprio PNG, sem conversao nem perda.
+  O icone: o do Trackeroao, ja pronto em instalador/icone/trackeroao.ico, com
+  todos os tamanhos que o Windows pede (16 a 256). O desenho vive em SVG na
+  mesma pasta; o .ico e so a forma que o compilador aceita.
 #>
-$icone = Join-Path $tmp 'trackeroao.ico'
-$png = [IO.File]::ReadAllBytes((Join-Path $projeto 'docs\app\icone-192.png'))
-$ms = New-Object IO.MemoryStream
-$bw = New-Object IO.BinaryWriter($ms)
-$bw.Write([UInt16]0); $bw.Write([UInt16]1); $bw.Write([UInt16]1)
-$bw.Write([Byte]192); $bw.Write([Byte]192); $bw.Write([Byte]0); $bw.Write([Byte]0)
-$bw.Write([UInt16]1); $bw.Write([UInt16]32); $bw.Write([UInt32]$png.Length); $bw.Write([UInt32]22)
-$bw.Write($png)
-$bw.Flush()
-[IO.File]::WriteAllBytes($icone, $ms.ToArray())
+$icone = Join-Path $projeto 'instalador\icone\trackeroao.ico'
+if (-not (Test-Path $icone)) { throw "faltou o icone: $icone" }
 
 $manifesto = Join-Path $tmp 'trackeroao.manifest'
 @'

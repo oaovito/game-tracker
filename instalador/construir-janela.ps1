@@ -51,17 +51,9 @@ try {
   Copy-Item (Join-Path $sdk 'runtimes\win-x86\native\WebView2Loader.dll') (Join-Path $Saida 'WebView2Loader.dll')
   Copy-Item (Join-Path $sdk 'LICENSE.txt') (Join-Path $Saida 'LICENSE-WebView2.txt')
 
-  # O icone: a mesma chama do aplicativo, num .ico que so embrulha o PNG.
-  $icone = Join-Path $tmp 'trackeroao.ico'
-  $png = [IO.File]::ReadAllBytes((Join-Path $projeto 'docs\app\icone-192.png'))
-  $ms = New-Object IO.MemoryStream
-  $bw = New-Object IO.BinaryWriter($ms)
-  $bw.Write([UInt16]0); $bw.Write([UInt16]1); $bw.Write([UInt16]1)
-  $bw.Write([Byte]192); $bw.Write([Byte]192); $bw.Write([Byte]0); $bw.Write([Byte]0)
-  $bw.Write([UInt16]1); $bw.Write([UInt16]32); $bw.Write([UInt32]$png.Length); $bw.Write([UInt32]22)
-  $bw.Write($png)
-  $bw.Flush()
-  [IO.File]::WriteAllBytes($icone, $ms.ToArray())
+  # O icone: o do Trackeroao, ja em .ico com todos os tamanhos (16 a 256).
+  $icone = Join-Path $projeto 'instalador\icone\trackeroao.ico'
+  if (-not (Test-Path $icone)) { throw "faltou o icone: $icone" }
 
   $exe = Join-Path $Saida 'Trackeroao.exe'
   & $csc.FullName /nologo /target:winexe /platform:x86 /optimize+ "/out:$exe" "/win32icon:$icone" `
