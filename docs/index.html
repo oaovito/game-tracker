@@ -2833,7 +2833,8 @@
   .palco-nome {
     margin: 0; font-family: var(--font-display); font-weight: 800;
     font-size: clamp(1.6rem, 3.4vw, 2.6rem); line-height: 1.05; letter-spacing: -0.02em;
-    text-wrap: balance; overflow-wrap: anywhere; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+    min-width: 0; max-width: 100%; text-wrap: balance; overflow-wrap: normal; word-break: keep-all; hyphens: manual;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
   }
   .palco-meta { display: flex; flex-direction: column; gap: 10px; }
   .palco .pino {
@@ -2921,8 +2922,10 @@
   }
   .arte-vazia span {
     font-family: 'Unbounded', 'Segoe UI', system-ui, sans-serif; font-weight: 800;
+    display: block; max-width: 100%;
     font-size: 1.05rem; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase;
-    overflow-wrap: anywhere; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    overflow-wrap: normal; word-break: keep-all; hyphens: manual;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
   }
   .arte-vazia.grande { align-items: center; justify-content: flex-end; padding: 6% 7%; }
   .arte-vazia.grande span { font-size: clamp(2.4rem, 7vw, 5.5rem); opacity: 0.22; text-align: right; }
@@ -8050,14 +8053,98 @@ function matizDe(nome) {
   for (const c of String(nome || "")) h = (h * 31 + c.charCodeAt(0)) % 360;
   return h;
 }
+/* O nome que cabe num pôster: o apelido popular do jogo, ou o nome sem o
+   subtítulo quando ele tem palavras demais. O nome inteiro continua embaixo. */
+const NOMES_CURTOS = {
+  "sekiro shadows die twice": "Sekiro",
+  "the elder scrolls v skyrim": "Skyrim",
+  "the elder scrolls v skyrim special edition": "Skyrim",
+  "the elder scrolls v skyrim anniversary edition": "Skyrim",
+  "grand theft auto v": "GTA V",
+  "grand theft auto v legacy": "GTA V",
+  "grand theft auto v enhanced": "GTA V",
+  "grand theft auto iv": "GTA IV",
+  "grand theft auto san andreas": "GTA San Andreas",
+  "playerunknowns battlegrounds": "PUBG",
+  "pubg battlegrounds": "PUBG",
+  "counter strike 2": "CS2",
+  "counter strike global offensive": "CS:GO",
+  "tom clancys rainbow six siege": "Rainbow Six Siege",
+  "metal gear solid v the phantom pain": "MGS V",
+  "the witcher 3 wild hunt": "The Witcher 3",
+  "red dead redemption 2": "RDR2",
+  "baldurs gate 3": "Baldur's Gate 3",
+  "league of legends": "LoL",
+  "world of warcraft": "WoW",
+  "final fantasy vii remake": "FF VII Remake",
+  "final fantasy xiv online": "FF XIV",
+  "monster hunter world": "MH World",
+  "monster hunter rise": "MH Rise",
+  "call of duty modern warfare": "Modern Warfare",
+  "call of duty black ops 6": "Black Ops 6",
+  "dark souls remastered": "Dark Souls",
+  "dark souls ii scholar of the first sin": "Dark Souls II",
+  "hellblade senuas sacrifice": "Hellblade",
+  "star wars jedi fallen order": "Jedi Fallen Order",
+  "star wars jedi survivor": "Jedi Survivor",
+  "warhammer 40 000 space marine 2": "Space Marine 2",
+  "microsoft flight simulator 2024": "MSFS 2024",
+  "microsoft flight simulator": "MSFS",
+  "kingdom come deliverance ii": "KCD2",
+  "kingdom come deliverance": "Kingdom Come",
+};
+function chaveDeNome(nome) {
+  return String(nome || "").toLowerCase()
+    .replace(/[\u2122\u00ae\u00a9]/g, "").replace(/['\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, " ").trim();
+}
+function nomeCurto(nome) {
+  const cheio = String(nome || "").replace(/[\u2122\u00ae\u00a9]/g, "").trim();
+  const conhecido = NOMES_CURTOS[chaveDeNome(cheio)];
+  if (conhecido) return conhecido;
+  if (cheio.split(/\s+/).length <= 3) return cheio;
+  const antes = cheio.split(/\s*(?::|\s[-\u2013\u2014]\s)\s*/)[0];
+  return antes && antes.length >= 3 ? antes : cheio;
+}
+
+/* Nenhuma palavra se parte no meio: quando a mais comprida não cabe na
+   largura do bloco, a letra diminui até caber. O bloco nunca cresce. */
+const caberDe = new WeakMap();
+const caberObs = typeof ResizeObserver === "function"
+  ? new ResizeObserver((itens) => itens.forEach((it) => caberTexto(caberDe.get(it.target))))
+  : null;
+function caberTexto(el) {
+  if (!el || !el.isConnected) return;
+  el.style.fontSize = "";
+  if (!el.clientWidth || typeof getComputedStyle !== "function") return;
+  let tam = parseFloat(getComputedStyle(el).fontSize);
+  for (let i = 0; i < 4 && el.scrollWidth > el.clientWidth + 0.5; i++) {
+    tam = Math.floor(tam * (el.clientWidth / el.scrollWidth) * 0.98 * 10) / 10;
+    el.style.fontSize = tam + "px";
+  }
+}
+// A fonte do pôster chega depois do primeiro desenho e muda a largura das palavras.
+if (document.fonts && typeof document.fonts.addEventListener === "function") {
+  document.fonts.addEventListener("loadingdone", () =>
+    document.querySelectorAll(".arte-vazia span, .palco-nome").forEach(caberTexto));
+}
+function vigiarCaber(el) {
+  const pai = el.parentElement;
+  if (caberObs && pai) { caberDe.set(pai, el); caberObs.observe(pai); }
+  const depois = (typeof requestAnimationFrame === "function") ? requestAnimationFrame : (f) => setTimeout(f, 0);
+  depois(() => caberTexto(el));
+}
+
 function arteVazia(g, grande) {
   const d = document.createElement("div");
   d.className = "arte-vazia" + (grande ? " grande" : "");
   d.style.setProperty("--h", matizDe(g.nome));
   d.setAttribute("translate", "no");
   const t = document.createElement("span");
-  t.textContent = g.nome || "?";
+  t.textContent = nomeCurto(g.nome) || "?";
+  if (g.nome && t.textContent !== g.nome) t.title = g.nome;
   d.appendChild(t);
+  vigiarCaber(t);
   return d;
 }
 
@@ -8129,6 +8216,7 @@ function mostrarNoPalco(g) {
   nome.className = "palco-nome";
   nome.setAttribute("translate", "no");
   nome.textContent = g.nome;
+  vigiarCaber(nome);
   const logos = (arteDe(g).logo || []).slice();
   if (logos.length) {
     const logo = document.createElement("img");
