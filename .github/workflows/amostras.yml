@@ -1,0 +1,51 @@
+# As imagens de amostra do README, tiradas da página a cada mudança nela.
+#
+# O push feito aqui não dispara outra rodada (o GitHub não encadeia pushes do
+# próprio token), e só há commit quando alguma imagem mudou.
+
+name: amostras
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - trackeroao.html
+      - docs/progress.json
+      - .github/amostras.js
+      - .github/workflows/amostras.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amostras
+  cancel-in-progress: true
+
+jobs:
+  amostras:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Navegador
+        run: |
+          npm install --no-save --no-package-lock playwright@1.47.2
+          npx playwright install --with-deps chromium
+      - name: Tirar as imagens
+        run: node .github/amostras.js
+      - name: Guardar, se mudaram
+        shell: bash
+        run: |
+          git add docs/amostras
+          if git diff --cached --quiet; then echo "nenhuma imagem mudou"; exit 0; fi
+          git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Imagens de amostra do README"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

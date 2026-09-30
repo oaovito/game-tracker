@@ -21,6 +21,22 @@ precisa para funcionar — a versão mais nova do próprio programa, a arte dos
 jogos e os catálogos de nomes descritos adiante —, e nenhum desses pedidos
 leva dado do save.
 
+## Como ele se parece
+
+As imagens abaixo são tiradas da própria página a cada mudança nela, por
+`.github/workflows/amostras.yml`, com o progresso de `docs/progress.json` e uma
+lista fixa de jogos populares, para que as telas mostrem arte de verdade.
+
+![A tela inicial, com o jogo em foco no alto e os jogos instalados abaixo](docs/amostras/inicio.png)
+
+![A página de progresso do Sekiro](docs/amostras/sekiro.png)
+
+![A lista completa de jogos, dividida entre os que estão no computador e os que não estão](docs/amostras/todos.png)
+
+![A janela do código QR para levar o Trackeroao ao celular](docs/amostras/celular-qr.png)
+
+<img src="docs/amostras/celular.png" alt="A página de progresso do Sekiro no celular" width="320">
+
 ## Instalando
 
 O projeto não tem dependência nenhuma. Não existe `npm install` aqui, nada é
@@ -120,7 +136,9 @@ abrem no navegador da pessoa, e dentro da janela fica somente o Trackeroao.
 
 A moldura da janela também é do Trackeroao, e não a do Windows: uma barra fina
 com o ícone, o nome e os botões de minimizar, maximizar e fechar, no estilo dos
-aplicativos de jogo. A barra toma a cor do fundo da página, que é a cor das
+aplicativos de jogo. Os três botões seguem o desenho do Discord: traços finos e
+arredondados, sem moldura, e, ao passar o mouse, uma pastilha de cantos
+redondos por trás do botão, vermelha no de fechar. A barra toma a cor do fundo da página, que é a cor das
 pontas da tela, e o contorno da janela a acompanha. Quando a página muda, por
 exemplo da tela inicial para a do Sekiro ou do tema escuro para o claro, a
 página informa a nova cor à janela, e a barra passa de uma cor para a outra
@@ -197,7 +215,12 @@ janela escondida, porque é por ele que a janela escondida volta. Um clique nele
 abre a janela. Ao passar o mouse, ele mostra o nome e a versão instalada
 ("Trackeroao 1.7.8").
 
-O desenho do ícone é um T branco dentro de um anel verde-limão fechado. O anel
+O desenho do ícone é um T branco dentro de um anel verde-limão fechado, sem
+fundo: o anel ocupa o quadro inteiro, e o que fica fora dele é transparente,
+tanto na bandeja quanto no atalho da área de trabalho. Um aro escuro fino em
+volta do anel e do T mantém o desenho legível também na barra de tarefas clara.
+Os tamanhos pequenos (16, 20 e 24 pixels) são desenhados à parte, alinhados ao
+pixel, em `instalador/icone/`. O anel
 aberto em arco fica reservado para um único estado: enquanto uma atualização
 pedida pela bandeja está em andamento, o arco gira no lugar do anel, e o ícone
 volta ao normal quando ela termina (ou em até três minutos, se o serviço não
@@ -777,8 +800,11 @@ Na página do Sekiro, o tempo de jogo aparece numa barra única, dividida em
 oito trechos iguais até o limite da escala, preenchida na proporção exata das
 horas jogadas, com a escala marcada no começo, no meio e no fim. Tudo o que se
 abre com um clique (os quadros de progresso, os anéis e o seletor de estado)
-leva um "+" dourado bem visível no canto, que gira quando o detalhe está
-aberto.
+leva um "+" no canto, que gira e vira "x" quando o detalhe está aberto. Ele é
+fino, no mesmo ouro dos traços da página: um aro de um pixel com uma cruz de
+dois fios, sem disco cheio. Aparece o bastante para dizer que o bloco abre,
+sem pesar sobre a estética do jogo, e acende com um brilho leve ao passar o
+mouse.
 
 A **detecção de que o jogo foi desinstalado**, que leva à hibernação, também
 tem caminho sem Steam. A varredura de jogos registra a pasta em que o Sekiro
@@ -788,8 +814,13 @@ pasta, a resposta permanece "não sei", e "não sei" jamais aciona a hibernaçã
 
 ## A tela de jogos
 
-Antes da página de progresso há uma tela com os jogos desta máquina. Cada jogo
-mostra se está instalado neste computador; a vigia (a capacidade de acender a
+Antes da página de progresso há uma tela com os jogos desta máquina. Na tela
+inicial, o trilho de pôsteres se chama "Installed games" e mostra só os jogos
+instalados neste computador; o botão da biblioteca da Steam se chama "My
+games". Um jogo instalado leva um pequeno ícone de computador, sem palavra; o
+que não está instalado não leva nada. Um jogo aberto nos últimos sete dias
+leva a marca "In progress"; passados sete dias sem ele ser aberto, a marca dá
+lugar a um ícone de lua, de parado. A vigia (a capacidade de acender a
 aplicação na bandeja quando o jogo abre) continua funcionando, mas não tem
 indicador em tela nenhuma. Os jogos que o tracker sabe ler por inteiro, hoje só
 o Sekiro, levam à página de progresso por um botão preenchido em verde-limão;
@@ -808,6 +839,16 @@ tem perto de duzentos mil nomes; ela só entra na memória na primeira busca e
 sai sozinha um minuto depois da última. Os resultados ocupam o lugar das duas
 listas, em duas colunas e em páginas, e a lista de sempre volta quando a busca
 fecha (pelo ✕ ou pela tecla Esc).
+
+Um jogo instalado há pouco aparece na tela inicial logo depois da instalação,
+sem esperar a varredura do dia seguinte. O serviço vigia as pastas onde um jogo
+novo surge (a `steamapps` de cada biblioteca da Steam, os manifestos da Epic, as
+pastas de jogos e a raiz de cada disco), sem descer por elas, o que não custa
+nada enquanto ninguém instala; quando uma delas muda, a varredura roda na volta
+seguinte do ciclo. O pôster do jogo novo ganha a etiqueta "New" no canto de
+cima, até o primeiro clique nele. A lista dos instalados já conhecidos fica no
+próprio navegador; na primeira vez ela nasce com tudo o que já está
+instalado, e nada ganha a etiqueta.
 
 Quando o tracker lê algo novo no save desde a última vez que a pessoa abriu a
 página do jogo (um chefe, um ídolo, uma prótese, uma arte, uma conta de oração,
@@ -846,6 +887,16 @@ que a cor venha dos jogos e não da página. A tipografia é a Unbounded nos
 títulos e a Sora no texto. A tela abre sempre no modo escuro, e o botão de
 tema no canto alterna para o claro; a escolha é guardada à parte da página do
 Sekiro.
+
+No palco, o nome do jogo (ou o logotipo, quando há) ocupa o maior espaço
+possível sem mudar a disposição da tela, e não há frases de apoio abaixo dele,
+só as marcas descritas acima e o botão de progresso.
+
+A troca de uma tela para outra entra com um esmaecer curto e um leve deslizar
+para cima, e a janela do código QR abre e fecha da mesma forma. As transições
+usam só opacidade e deslocamento, animados pelo compositor do navegador, sem
+recalcular a disposição nem repintar a página a cada quadro; com a opção de
+reduzir movimento do sistema, elas não acontecem.
 
 No computador, a tela inicial cabe inteira na janela, sem barra de rolagem: o
 palco ocupa a altura que sobra, e os pôsteres são medidos também pela altura da
@@ -936,8 +987,9 @@ aceitam apenas jogos da biblioteca da pessoa e populares, para que um programa
 vendido também na Steam não seja tomado por jogo. De cada jogo
 instalado, o executável é o maior `.exe` da pasta que não seja instalador,
 atualizador, anti-cheat ou relatório de erro. A varredura roda um pouco depois
-de o serviço subir e, daí em diante, uma vez por dia, sempre entre duas rodadas
-de verificação e nunca com um jogo aberto. O resultado fica em
+de o serviço subir e, daí em diante, uma vez por dia ou quando uma pasta de
+instalação muda, sempre entre duas rodadas de verificação e nunca com um jogo
+aberto. O resultado fica em
 `biblioteca.json`, fora do git. Para rodá-la à mão, `npm run jogos`.
 
 ## Idiomas
@@ -972,8 +1024,11 @@ computador, e não por um site. Na janela do computador, o ícone de celular ao
 lado do globo mostra o passo a passo, que começa sempre pelo mesmo ponto: o
 telefone precisa estar no mesmo Wi-Fi que o computador, o que se faz uma
 única vez. Nenhum endereço aparece escrito na tela, para ser copiado: o painel
-tem um botão para o iPhone e outro para o Android, e cada um mostra um código
-QR com o endereço deste computador na rede em que ele está naquele momento.
+tem um botão "iOS", com o símbolo da Apple, e outro "Android", com o do
+Android, e cada um abre, dentro do próprio aplicativo, uma janela com um código
+QR do endereço deste computador na rede em que ele está naquele momento. A
+janela segue o visual do aplicativo, abre e fecha com uma transição sutil, e
+fecha com um clique fora dela ou com a tecla Esc.
 O endereço varia de pessoa para pessoa e de rede para rede, e o código é
 montado pelo serviço a cada vez que o botão é tocado; basta apontar a câmera
 do telefone para ele.

@@ -608,6 +608,22 @@ const VARRER_MS = 24 * 60 * 60 * 1000;
 let proximaVarredura = Date.now() + VARRER_PRIMEIRA_MS;
 function pedirVarredura() { proximaVarredura = 0; }
 
+/*
+ * Um jogo instalado agora aparece na tela inicial logo, sem esperar a volta
+ * do dia: as pastas de instalação são vigiadas (ver vigiarInstalacoes) e,
+ * quando mudam, a próxima volta do ciclo já varre. As vigias são refeitas a
+ * cada varredura, porque uma biblioteca nova da Steam muda a lista de pastas.
+ */
+let pararVigiasDeJogo = null;
+function vigiarJogosNovos() {
+  if (pararVigiasDeJogo) pararVigiasDeJogo();
+  try {
+    pararVigiasDeJogo = require('./biblioteca').vigiarInstalacoes(() => {
+      proximaVarredura = Math.min(proximaVarredura, Date.now());
+    });
+  } catch (e) { pararVigiasDeJogo = null; }
+}
+
 async function passoDeVarredura() {
   if (gameWasRunning || Date.now() < proximaVarredura) return;
   proximaVarredura = Date.now() + VARRER_MS;
@@ -617,6 +633,7 @@ async function passoDeVarredura() {
   } catch (e) {
     console.log('  [jogos] a varredura falhou: ' + e.message);
   }
+  vigiarJogosNovos();
 }
 
 /**
@@ -783,6 +800,7 @@ async function run() {
 
   vigiarRede(null, null, (novo) => nomeador.ipMudou(novo));
   vigiarInstalacao(hibernarAgora);
+  vigiarJogosNovos();
 
   /*
    * O ciclo se reagenda no fim de cada volta, em vez de um setInterval: é o

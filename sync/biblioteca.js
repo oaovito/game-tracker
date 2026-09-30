@@ -573,13 +573,63 @@ async function varrer(opts) {
   return resultado;
 }
 
+/**
+ * Olha as pastas onde um jogo novo aparece ao ser instalado e avisa quando
+ * algo muda nelas, para a varredura rodar logo em vez de esperar o dia
+ * seguinte. Nada é recursivo: cada pasta é uma inscrição só no sistema, sem
+ * custo enquanto ninguém instala nada.
+ *
+ * - steamapps de cada biblioteca da Steam: um appmanifest novo por jogo;
+ * - os manifestos da Epic: um .item novo por jogo;
+ * - as pastas de jogos e a raiz de cada disco: uma pasta nova.
+ *
+ * Devolve a função que desliga tudo.
+ */
+function vigiarInstalacoes(aoMudar, opts) {
+  const o = opts || {};
+  const pastas = [];
+  try {
+    const instalacao = require('./instalacao');
+    const steam = o.steam !== undefined ? o.steam : instalacao.steamPath();
+    if (steam) for (const lib of instalacao.bibliotecas(steam)) pastas.push({ dir: path.join(lib, 'steamapps'), filtro: /^appmanifest_\d+\.acf$/i });
+  } catch (e) { /* sem Steam, segue sem ela */ }
+  if (process.platform === 'win32') {
+    pastas.push({ dir: path.join(process.env.ProgramData || 'C:\\ProgramData', 'Epic', 'EpicGamesLauncher', 'Data', 'Manifests'), filtro: /\.item$/i });
+  }
+  for (const r of (o.raizes || raizesDoDisco())) if (r.tipo !== 'programa') pastas.push({ dir: r.pasta, filtro: null });
+
+  const vigias = [];
+  let espera = null;
+  const avisar = () => {
+    clearTimeout(espera);
+    // Uma instalação escreve muita coisa seguida; um aviso só, depois que acalma.
+    espera = setTimeout(aoMudar, o.esperaMs || 4000);
+    if (espera.unref) espera.unref();
+  };
+  for (const p of pastas) {
+    try {
+      if (!fs.existsSync(p.dir)) continue;
+      const w = fs.watch(p.dir, { persistent: false }, (tipo, nome) => {
+        if (!nome) return avisar();
+        if (p.filtro ? p.filtro.test(String(nome)) : tipo === 'rename') avisar();
+      });
+      w.on('error', () => { try { w.close(); } catch (e) { /* já fechado */ } });
+      vigias.push(w);
+    } catch (e) { /* pasta sem permissão: fica de fora */ }
+  }
+  return () => {
+    clearTimeout(espera);
+    for (const w of vigias) { try { w.close(); } catch (e) { /* já fechado */ } }
+  };
+}
+
 /** A última varredura gravada, ou null. */
 function ultima() {
   return lerJson(ARQUIVO);
 }
 
 module.exports = {
-  varrer, ultima, normalizar, chaveDe, lerVdf, steamInstalados, steamConta, steamRecentes, executaveis,
+  varrer, ultima, vigiarInstalacoes, normalizar, chaveDe, lerVdf, steamInstalados, steamConta, steamRecentes, executaveis,
   catalogoGeral, populares, ARQUIVO, NAO_JOGO,
 };
 

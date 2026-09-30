@@ -182,7 +182,12 @@ function ordemRecente(lista) {
     .sort((a, b) => b.t - a.t);
   const pos = {};
   quando.forEach((x, i) => { pos[x.chave] = i + 1; });
-  return pos;
+  // Em andamento: jogado nos últimos sete dias. A página recebe só isso (sim
+  // ou não), e não a data.
+  const semana = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const andamento = {};
+  quando.forEach((x) => { andamento[x.chave] = x.t >= semana; });
+  return { pos, andamento };
 }
 
 /** O que a pagina precisa saber para desenhar a escolha. */
@@ -201,7 +206,9 @@ function paraProgresso() {
       semSteam: (g.fontes || []).some((f) => !/^steam/.test(f)),
       popular: g.popular || null,
       arte: g.arte || null,
-      recente: recente[g.chave] || null,
+      recente: recente.pos[g.chave] || null,
+      // true: jogado na última semana; false: jogado antes disso; null: nunca.
+      andamento: g.chave in recente.andamento ? recente.andamento[g.chave] : null,
     })),
     // Distingue "nunca escolheu" de "escolheu nenhum", que tem efeitos opostos.
     escolheu: esc !== null,

@@ -2897,12 +2897,36 @@
     background: var(--j-vidro); color: var(--j-texto); padding: 8px 12px;
     font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.02em;
   }
+  .cel-bt { display: inline-flex; align-items: center; justify-content: center; gap: 7px; transition: border-color 0.15s ease, color 0.15s ease; }
+  .cel-bt:hover, .cel-bt:focus-visible { outline: 0; border-color: var(--j-anel); color: var(--j-anel); }
   .cel-bt[hidden] { display: none; }
-  .cel-bt[aria-pressed="true"] { background: var(--j-sinal); color: var(--j-sinal-tinta); border-color: transparent; }
-  .cel-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .cel-qr[hidden] { display: none; }
-  .cel-qr img { width: 176px; height: 176px; border-radius: 12px; background: #fff; image-rendering: pixelated; }
-  .cel-qr p { text-align: center; }
+  .cel-marca { width: 15px; height: 15px; display: block; flex: none; }
+
+  /* A janela do código QR: vidro escuro sobre a tela, entrando e saindo só
+     com opacidade e escala, que o compositor faz sem redesenhar a página. */
+  .cel-modal {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px;
+    background: rgba(4, 5, 8, 0.62); opacity: 0; transition: opacity 0.2s ease;
+  }
+  .cel-modal[hidden] { display: none; }
+  .cel-modal.aberta { opacity: 1; }
+  .cel-janela {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    width: min(19rem, 100%); padding: 22px 22px 20px; border-radius: 22px;
+    background: rgba(20, 22, 29, 0.94); border: 1px solid rgba(255, 255, 255, 0.1); color: #f5f6f8;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; text-align: center;
+    transform: translateY(10px) scale(0.96); transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .cel-modal.aberta .cel-janela { transform: none; }
+  .cel-janela-titulo {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em;
+  }
+  .cel-janela-titulo .cel-marca { width: 18px; height: 18px; color: #d8ff3c; }
+  .cel-janela img { width: 208px; height: 208px; border-radius: 14px; background: #fff; padding: 8px; image-rendering: pixelated; }
+  .cel-janela p { margin: 0; color: rgba(245, 246, 248, 0.62); }
+  @media (prefers-reduced-motion: reduce) { .cel-modal, .cel-janela { transition: none; } }
 
   /* O palco. */
   .palco {
@@ -2956,8 +2980,9 @@
     background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
-  .palco .pino-instalado.on { color: #7ff0bd; }
-  .palco .pino-vigiado.on { color: #8fe0ff; }
+  .palco .pino-andamento.on { color: #8fe0ff; }
+  .palco .pino-icone { background: rgba(255, 255, 255, 0.1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .palco .pino-instalado { color: #7ff0bd; }
   .palco .pino-sinc.on { color: #d8ff3c; }
   .palco-extra { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.72); }
   .palco-extra span + span::before { content: "·"; margin-right: 14px; color: rgba(255, 255, 255, 0.4); }
@@ -2973,8 +2998,8 @@
   /* O trilho de pôsteres. */
   .trilho-cabeca { display: flex; align-items: center; gap: 10px; margin: 30px 0 4px; flex-wrap: wrap; }
   .trilho-rotulo {
-    font-family: var(--font-display); font-weight: 600; font-size: 0.76rem;
-    letter-spacing: 0.16em; text-transform: uppercase; color: var(--j-texto);
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--j-texto);
   }
   .trilho-conta {
     font-family: var(--font-display); font-size: 0.7rem; font-weight: 600;
@@ -3036,6 +3061,13 @@
     50% { opacity: 0.55; transform: scale(1.15); }
   }
   @media (prefers-reduced-motion: reduce) { .selo-novo, .selo-novo::before { animation: none; } }
+  /* Jogo recém-instalado: uma etiqueta parada no canto de cima, até o primeiro clique. */
+  .marca-jogo-novo {
+    position: absolute; left: 8px; top: 8px; z-index: 2; pointer-events: none;
+    background: var(--j-sinal); color: var(--j-sinal-tinta); border-radius: 6px; padding: 3px 7px;
+    font-family: var(--font-display); font-weight: 800; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  }
   /* O jogo em foco sobe um pouco e ganha sombra; nada de moldura em volta. */
   .jogo-card.ativo .jogo-capa, .jogo-card:focus-visible .jogo-capa {
     transform: translateY(-6px);
@@ -3076,8 +3108,14 @@
   }
   .pino svg { width: 12px; height: 12px; display: block; }
   .pino.on { opacity: 1; }
-  .pino-instalado.on { color: var(--j-verde); }
-  .pino-vigiado.on { color: var(--j-ciano); }
+  .pino-andamento.on { color: var(--j-ciano); }
+  .pino-icone {
+    display: inline-grid; place-items: center; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--j-vidro);
+  }
+  .pino-icone svg { width: 13px; height: 13px; display: block; }
+  .pino-instalado { color: var(--j-verde); }
+  .pino-ocioso { color: var(--j-apagado); }
   .pino-sinc.on { color: var(--j-sinal); }
   .pino-ponto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: block; margin: 0 3px; }
   button.pino { cursor: pointer; }
@@ -3196,8 +3234,11 @@
     .vista-hub .palco { flex: 1 1 auto; min-height: 6rem; }
     .vista-hub .palco-info { gap: clamp(8px, 1.4vh, 14px); padding: clamp(14px, 2.6vh, 36px) clamp(20px, 3vw, 36px); }
     .vista-hub .palco-marca { min-height: 0; }
-    .vista-hub .palco-logo { max-height: min(7.5rem, 11vh); }
-    .vista-hub .palco-nome { font-size: clamp(1.3rem, min(3.4vw, 4.6vh), 2.6rem); }
+    /* O título do jogo em foco toma todo o espaço que o palco dá. */
+    .vista-hub .palco-info { max-width: min(46rem, 62%); }
+    .vista-hub .palco-marca { width: 100%; }
+    .vista-hub .palco-logo { max-height: min(15rem, 24vh); max-width: 100%; }
+    .vista-hub .palco-nome { font-size: clamp(2rem, min(6vw, 9vh), 5.4rem); }
     /* O título ocupa a faixa que era do ponto de sincronia, sem tirar a tela
        de dentro da janela: cresce com a largura e com a altura, o que for menor. */
     .vista-hub .hub-titulo { font-size: clamp(2.3rem, min(4.6vw, 7.2vh), 4.2rem); }
@@ -3221,30 +3262,34 @@
   }
 
   /*
-   * O que abre alguma coisa leva um "+": um disco dourado no canto, o mesmo
-   * em todos os blocos que abrem lista (chefes, Headless, conquistas e a
-   * podridão). A seta miúda de antes quase não se via, e nada dizia que o
-   * número era um botão. O disco fica por cima do canto, sem ocupar lugar
-   * no bloco, e gira para virar "x" enquanto a lista está aberta.
+   * O que abre alguma coisa leva um "+" no canto, o mesmo em todos os blocos
+   * que abrem lista (chefes, Headless, conquistas e a podridão). É fino, como
+   * os traços de ouro das molduras do próprio jogo: um aro de um pixel e uma
+   * cruz desenhada com dois fios, sem disco cheio nem letra grossa. Aparece o
+   * bastante para dizer que o bloco abre, e acende só ao passar o mouse. Gira
+   * para virar "x" enquanto a lista está aberta.
    */
   .quadro-botao::after, .quadro-anel::after, .estado-rot-bt::after {
-    content: "+";
-    position: absolute; top: 8px; right: 8px; bottom: auto; z-index: 3;
-    width: 1.55rem; height: 1.55rem; border-radius: 50%;
-    display: grid; place-items: center;
-    background: var(--gold); color: #120e08; opacity: 1;
-    font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35), 0 0 14px rgba(201, 164, 90, 0.55);
+    content: "";
+    position: absolute; top: 9px; right: 9px; bottom: auto; z-index: 3;
+    width: 1.1rem; height: 1.1rem; border-radius: 50%;
+    border: 1px solid rgba(201, 164, 90, 0.7);
+    background:
+      linear-gradient(var(--gold), var(--gold)) center / 46% 1px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) center / 1px 46% no-repeat,
+      rgba(10, 8, 5, 0.35);
+    opacity: 0.85; font-size: 0;
     pointer-events: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.25s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   }
-  .quadro-botao:hover::after, .quadro-anel:hover::after, .estado-rot-bt:hover::after {
-    transform: scale(1.12);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35), 0 0 20px rgba(201, 164, 90, 0.85);
+  .quadro-botao:hover::after, .quadro-anel:hover::after, .estado-rot-bt:hover::after,
+  .quadro-botao:focus-visible::after, .estado-rot-bt:focus-visible::after {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(201, 164, 90, 0.45);
   }
   .quadro-botao.aberto::after, .quadro-anel.aberto::after { transform: rotate(45deg); }
   .estado-rot-bt { position: relative; }
-  .estado-rot-bt::after { top: -6px; right: -12px; width: 1.2rem; height: 1.2rem; font-size: 0.9rem; }
+  .estado-rot-bt::after { top: -4px; right: -14px; width: 0.9rem; height: 0.9rem; }
   .estado-rot-bt.off::after { display: none; }
 
   /*
@@ -3396,12 +3441,8 @@
             <b data-i18n="cel.titulo">On your phone</b>
             <p data-i18n="cel.rede">Connect the phone to the same Wi-Fi as this computer. You only do this once.</p>
             <div class="cel-botoes">
-              <button class="cel-bt" type="button" data-cel="pagina" data-i18n="cel.btIphone">iPhone</button>
-              <button class="cel-bt" type="button" data-cel="android" id="celAndroidBt" hidden data-i18n="cel.btAndroid">Android</button>
-            </div>
-            <div class="cel-qr" id="celQr" hidden>
-              <img id="celQrImg" alt="" width="176" height="176">
-              <p id="celQrDica"></p>
+              <button class="cel-bt" type="button" data-cel="pagina"><svg class="cel-marca" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.54c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.41 1.2-2.47-.03-.01-2.3-.88-2.32-3.52zM14.2 6.07c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.3-.56.64-1.05 1.67-.92 2.66.97.08 1.96-.49 2.56-1.2z"/></svg><span data-i18n="cel.btIphone">iOS</span></button>
+              <button class="cel-bt" type="button" data-cel="android" id="celAndroidBt" hidden><svg class="cel-marca" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.87 3.23A11.4 11.4 0 0 0 12 8.1c-1.77 0-3.43.38-4.9 1.05L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48C3.3 11.18 1.2 14.3 1 18h22c-.2-3.7-2.3-6.82-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg><span data-i18n="cel.btAndroid">Android</span></button>
             </div>
           </div>
         </div>
@@ -3421,7 +3462,7 @@
       </div>
     </div>
     <div class="trilho-cabeca">
-      <span class="trilho-rotulo" data-i18n="hub.instalados">Installed</span>
+      <span class="trilho-rotulo" data-i18n="hub.instalados">Installed games</span>
       <span class="trilho-conta" id="hubConta"></span>
     </div>
     <div class="trilho" id="hubGrade"></div>
@@ -3429,7 +3470,7 @@
     <!-- Terceira faixa: a biblioteca da Steam e todos os jogos que o
          aplicativo conhece. -->
     <div class="hub-acoes hub-atalhos">
-      <button class="hub-bt" id="hubSteam" type="button" data-i18n="hub.steam">Steam library</button>
+      <button class="hub-bt" id="hubSteam" type="button" data-i18n="hub.steam">My games</button>
       <button class="hub-bt" id="hubTodos" type="button" data-i18n="hub.todos">All games</button>
     </div>
   </section>
@@ -3909,6 +3950,15 @@
 
 </div>
 
+<!-- O código QR do celular, numa janela dentro do aplicativo. Clicar fora dela fecha. -->
+<div class="cel-modal" id="celModal" hidden>
+  <div class="cel-janela" role="dialog" aria-modal="true" aria-labelledby="celModalTitulo">
+    <b class="cel-janela-titulo" id="celModalTitulo"><span id="celModalMarca"></span><span id="celModalNome" translate="no"></span></b>
+    <img id="celQrImg" alt="" width="208" height="208">
+    <p id="celQrDica"></p>
+  </div>
+</div>
+
 <script>
 // O 4º campo de cada item é a chave de sincronização: "<chave>" para memória de
 // chefe, "flag:" para event flag, "tool:"/"art:" para registro de arma e
@@ -4044,7 +4094,7 @@ const I18N = {
     "cel.rede": "Connect the phone to the same Wi-Fi as this computer. You only do this once.",
     "cel.iphone": "Point the iPhone camera at the code, open it in Safari, tap Share, then Add to Home Screen.",
     "cel.android": "Point the Android camera at the code to download and install the app.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "System language",
     "sinc.procurando": "looking for the save…",
@@ -4059,8 +4109,12 @@ const I18N = {
     "hub.abrir": "Open progress",
     "hub.seusJogos": "Your games",
     "hub.todos": "All games",
-    "hub.instalados": "Installed",
-    "hub.steam": "Steam library",
+    "hub.instalados": "Installed games",
+    "pino.andamento": "In progress",
+    "pino.andamentoDica": "Played in the last 7 days",
+    "pino.ocioso": "Idle",
+    "pino.ociosoDica": "Not played in the last 7 days",
+    "hub.steam": "My games",
     "hub.nenhumInstalado": "No installed games found yet.",
     "hub.recente": "played most recently",
     "bibli.subTodos": "every game the app knows about",
@@ -4089,6 +4143,8 @@ const I18N = {
     "selo.vigiado": "Watched",
     "selo.novo": "New",
     "selo.novoDica": "Something new unlocked since you last opened this game",
+    "selo.jogoNovo": "New",
+    "selo.jogoNovoDica": "Installed recently. The tag goes away once you open it",
     "bibli.sub": "on this computer and in the Steam library",
     "bibli.noPc": "On this computer",
     "bibli.naSteam": "In the Steam library",
@@ -4259,7 +4315,7 @@ const I18N = {
     "cel.rede": "Conecte o celular no mesmo Wi-Fi deste computador. Isso é feito uma vez só.",
     "cel.iphone": "Aponte a câmera do iPhone para o código, abra no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
     "cel.android": "Aponte a câmera do Android para o código para baixar e instalar o aplicativo.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Idioma do sistema",
     "sinc.procurando": "procurando o save…",
@@ -4274,8 +4330,12 @@ const I18N = {
     "hub.abrir": "Abrir progresso",
     "hub.seusJogos": "Seus jogos",
     "hub.todos": "Todos os jogos",
-    "hub.instalados": "Instalados",
-    "hub.steam": "Biblioteca da Steam",
+    "hub.instalados": "Jogos instalados",
+    "pino.andamento": "Em andamento",
+    "pino.andamentoDica": "Jogado nos últimos 7 dias",
+    "pino.ocioso": "Parado",
+    "pino.ociosoDica": "Sem jogar há mais de 7 dias",
+    "hub.steam": "Meus jogos",
     "hub.nenhumInstalado": "Nenhum jogo instalado encontrado ainda.",
     "hub.recente": "jogado por último",
     "bibli.subTodos": "todos os jogos que o aplicativo conhece",
@@ -4304,6 +4364,8 @@ const I18N = {
     "selo.vigiado": "Vigiado",
     "selo.novo": "Novidade",
     "selo.novoDica": "Novidade desbloqueada desde a última vez que você abriu este jogo",
+    "selo.jogoNovo": "Novo",
+    "selo.jogoNovoDica": "Instalado há pouco. A marca some quando você o abrir",
     "bibli.sub": "neste computador e na biblioteca da Steam",
     "bibli.noPc": "Neste computador",
     "bibli.naSteam": "Na biblioteca da Steam",
@@ -4474,7 +4536,7 @@ const I18N = {
     "cel.rede": "Conecta el móvil a la misma red Wi-Fi que este ordenador. Solo se hace una vez.",
     "cel.iphone": "Apunta la cámara del iPhone al código, ábrelo en Safari, toca Compartir y luego Añadir a pantalla de inicio.",
     "cel.android": "Apunta la cámara del Android al código para descargar e instalar la aplicación.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Idioma del sistema",
     "sinc.procurando": "buscando la partida guardada…",
@@ -4489,8 +4551,12 @@ const I18N = {
     "hub.abrir": "Abrir progreso",
     "hub.seusJogos": "Tus juegos",
     "hub.todos": "Todos los juegos",
-    "hub.instalados": "Instalados",
-    "hub.steam": "Biblioteca de Steam",
+    "hub.instalados": "Juegos instalados",
+    "pino.andamento": "En curso",
+    "pino.andamentoDica": "Jugado en los últimos 7 días",
+    "pino.ocioso": "Inactivo",
+    "pino.ociosoDica": "Sin jugar desde hace más de 7 días",
+    "hub.steam": "Mis juegos",
     "hub.nenhumInstalado": "Aún no se encontraron juegos instalados.",
     "hub.recente": "jugado por última vez",
     "bibli.subTodos": "todos los juegos que conoce la aplicación",
@@ -4519,6 +4585,8 @@ const I18N = {
     "selo.vigiado": "Vigilado",
     "selo.novo": "Novedad",
     "selo.novoDica": "Novedad desbloqueada desde la última vez que abriste este juego",
+    "selo.jogoNovo": "Nuevo",
+    "selo.jogoNovoDica": "Instalado hace poco. La marca desaparece al abrirlo",
     "bibli.sub": "en este equipo y en la biblioteca de Steam",
     "bibli.noPc": "En este equipo",
     "bibli.naSteam": "En la biblioteca de Steam",
@@ -4689,7 +4757,7 @@ const I18N = {
     "cel.rede": "Connectez le téléphone au même Wi-Fi que cet ordinateur. Cela ne se fait qu’une fois.",
     "cel.iphone": "Pointez l’appareil photo de l’iPhone vers le code, ouvrez-le dans Safari, touchez Partager, puis Sur l’écran d’accueil.",
     "cel.android": "Pointez l’appareil photo de l’Android vers le code pour télécharger et installer l’application.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Langue du système",
     "sinc.procurando": "recherche de la sauvegarde…",
@@ -4704,8 +4772,12 @@ const I18N = {
     "hub.abrir": "Voir la progression",
     "hub.seusJogos": "Vos jeux",
     "hub.todos": "Tous les jeux",
-    "hub.instalados": "Installés",
-    "hub.steam": "Bibliothèque Steam",
+    "hub.instalados": "Jeux installés",
+    "pino.andamento": "En cours",
+    "pino.andamentoDica": "Joué ces 7 derniers jours",
+    "pino.ocioso": "En pause",
+    "pino.ociosoDica": "Pas joué depuis plus de 7 jours",
+    "hub.steam": "Mes jeux",
     "hub.nenhumInstalado": "Aucun jeu installé trouvé pour l’instant.",
     "hub.recente": "joué en dernier",
     "bibli.subTodos": "tous les jeux que l’application connaît",
@@ -4734,6 +4806,8 @@ const I18N = {
     "selo.vigiado": "Surveillé",
     "selo.novo": "Nouveau",
     "selo.novoDica": "Nouveauté débloquée depuis votre dernière visite",
+    "selo.jogoNovo": "Nouveau",
+    "selo.jogoNovoDica": "Installé récemment. La marque disparaît à la première ouverture",
     "bibli.sub": "sur cet ordinateur et dans la bibliothèque Steam",
     "bibli.noPc": "Sur cet ordinateur",
     "bibli.naSteam": "Dans la bibliothèque Steam",
@@ -4904,7 +4978,7 @@ const I18N = {
     "cel.rede": "Verbinde das Handy mit demselben WLAN wie diesen Computer. Das ist nur einmal nötig.",
     "cel.iphone": "Richte die iPhone-Kamera auf den Code, öffne ihn in Safari, tippe auf Teilen und dann auf Zum Home-Bildschirm.",
     "cel.android": "Richte die Android-Kamera auf den Code, um die App herunterzuladen und zu installieren.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Systemsprache",
     "sinc.procurando": "Spielstand wird gesucht…",
@@ -4919,8 +4993,12 @@ const I18N = {
     "hub.abrir": "Fortschritt öffnen",
     "hub.seusJogos": "Deine Spiele",
     "hub.todos": "Alle Spiele",
-    "hub.instalados": "Installiert",
-    "hub.steam": "Steam-Bibliothek",
+    "hub.instalados": "Installierte Spiele",
+    "pino.andamento": "Im Gange",
+    "pino.andamentoDica": "In den letzten 7 Tagen gespielt",
+    "pino.ocioso": "Ruht",
+    "pino.ociosoDica": "Seit über 7 Tagen nicht gespielt",
+    "hub.steam": "Meine Spiele",
     "hub.nenhumInstalado": "Noch keine installierten Spiele gefunden.",
     "hub.recente": "zuletzt gespielt",
     "bibli.subTodos": "alle Spiele, die die App kennt",
@@ -4949,6 +5027,8 @@ const I18N = {
     "selo.vigiado": "Beobachtet",
     "selo.novo": "Neu",
     "selo.novoDica": "Seit dem letzten Öffnen etwas Neues freigeschaltet",
+    "selo.jogoNovo": "Neu",
+    "selo.jogoNovoDica": "Kürzlich installiert. Die Markierung verschwindet beim ersten Öffnen",
     "bibli.sub": "auf diesem Computer und in der Steam-Bibliothek",
     "bibli.noPc": "Auf diesem Computer",
     "bibli.naSteam": "In der Steam-Bibliothek",
@@ -5119,7 +5199,7 @@ const I18N = {
     "cel.rede": "Collega il telefono alla stessa rete Wi-Fi di questo computer. Si fa una volta sola.",
     "cel.iphone": "Inquadra il codice con la fotocamera dell’iPhone, aprilo in Safari, tocca Condividi e poi Aggiungi alla schermata Home.",
     "cel.android": "Inquadra il codice con la fotocamera dell’Android per scaricare e installare l’app.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Lingua di sistema",
     "sinc.procurando": "ricerca del salvataggio…",
@@ -5134,8 +5214,12 @@ const I18N = {
     "hub.abrir": "Apri i progressi",
     "hub.seusJogos": "I tuoi giochi",
     "hub.todos": "Tutti i giochi",
-    "hub.instalados": "Installati",
-    "hub.steam": "Libreria di Steam",
+    "hub.instalados": "Giochi installati",
+    "pino.andamento": "In corso",
+    "pino.andamentoDica": "Giocato negli ultimi 7 giorni",
+    "pino.ocioso": "Fermo",
+    "pino.ociosoDica": "Non giocato da più di 7 giorni",
+    "hub.steam": "I miei giochi",
     "hub.nenhumInstalado": "Nessun gioco installato trovato finora.",
     "hub.recente": "giocato per ultimo",
     "bibli.subTodos": "tutti i giochi che l’app conosce",
@@ -5164,6 +5248,8 @@ const I18N = {
     "selo.vigiado": "Osservato",
     "selo.novo": "Novità",
     "selo.novoDica": "Novità sbloccata dall'ultima apertura di questo gioco",
+    "selo.jogoNovo": "Nuovo",
+    "selo.jogoNovoDica": "Installato da poco. Il segno sparisce alla prima apertura",
     "bibli.sub": "su questo computer e nella libreria di Steam",
     "bibli.noPc": "Su questo computer",
     "bibli.naSteam": "Nella libreria di Steam",
@@ -5334,7 +5420,7 @@ const I18N = {
     "cel.rede": "Подключите телефон к той же сети Wi-Fi, что и этот компьютер. Это делается один раз.",
     "cel.iphone": "Наведите камеру iPhone на код, откройте его в Safari, нажмите «Поделиться», затем «На экран «Домой»».",
     "cel.android": "Наведите камеру Android на код, чтобы скачать и установить приложение.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Язык системы",
     "sinc.procurando": "ищем сохранение…",
@@ -5349,8 +5435,12 @@ const I18N = {
     "hub.abrir": "Открыть прогресс",
     "hub.seusJogos": "Ваши игры",
     "hub.todos": "Все игры",
-    "hub.instalados": "Установленные",
-    "hub.steam": "Библиотека Steam",
+    "hub.instalados": "Установленные игры",
+    "pino.andamento": "В процессе",
+    "pino.andamentoDica": "Играли за последние 7 дней",
+    "pino.ocioso": "Простаивает",
+    "pino.ociosoDica": "Не запускалась больше 7 дней",
+    "hub.steam": "Мои игры",
     "hub.nenhumInstalado": "Установленные игры пока не найдены.",
     "hub.recente": "последняя игра",
     "bibli.subTodos": "все игры, которые знает приложение",
@@ -5379,6 +5469,8 @@ const I18N = {
     "selo.vigiado": "Отслеживается",
     "selo.novo": "Новое",
     "selo.novoDica": "С прошлого раза открыто что-то новое",
+    "selo.jogoNovo": "Новая",
+    "selo.jogoNovoDica": "Недавно установлена. Метка исчезнет после первого открытия",
     "bibli.sub": "на этом компьютере и в библиотеке Steam",
     "bibli.noPc": "На этом компьютере",
     "bibli.naSteam": "В библиотеке Steam",
@@ -5549,7 +5641,7 @@ const I18N = {
     "cel.rede": "Połącz telefon z tą samą siecią Wi-Fi co ten komputer. Robi się to tylko raz.",
     "cel.iphone": "Skieruj aparat iPhone’a na kod, otwórz go w Safari, stuknij Udostępnij, a potem Do ekranu początkowego.",
     "cel.android": "Skieruj aparat Androida na kod, aby pobrać i zainstalować aplikację.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Język systemu",
     "sinc.procurando": "szukam zapisu gry…",
@@ -5564,8 +5656,12 @@ const I18N = {
     "hub.abrir": "Otwórz postęp",
     "hub.seusJogos": "Twoje gry",
     "hub.todos": "Wszystkie gry",
-    "hub.instalados": "Zainstalowane",
-    "hub.steam": "Biblioteka Steam",
+    "hub.instalados": "Zainstalowane gry",
+    "pino.andamento": "W toku",
+    "pino.andamentoDica": "Grane w ciągu ostatnich 7 dni",
+    "pino.ocioso": "Nieaktywna",
+    "pino.ociosoDica": "Nieuruchamiana od ponad 7 dni",
+    "hub.steam": "Moje gry",
     "hub.nenhumInstalado": "Nie znaleziono jeszcze zainstalowanych gier.",
     "hub.recente": "ostatnio grana",
     "bibli.subTodos": "wszystkie gry znane aplikacji",
@@ -5594,6 +5690,8 @@ const I18N = {
     "selo.vigiado": "Obserwowana",
     "selo.novo": "Nowość",
     "selo.novoDica": "Od ostatniego otwarcia odblokowano coś nowego",
+    "selo.jogoNovo": "Nowa",
+    "selo.jogoNovoDica": "Niedawno zainstalowana. Znacznik zniknie po pierwszym otwarciu",
     "bibli.sub": "na tym komputerze i w bibliotece Steam",
     "bibli.noPc": "Na tym komputerze",
     "bibli.naSteam": "W bibliotece Steam",
@@ -5764,7 +5862,7 @@ const I18N = {
     "cel.rede": "Telefonu bu bilgisayarla aynı Wi-Fi ağına bağlayın. Bu yalnızca bir kez yapılır.",
     "cel.iphone": "iPhone kamerasını koda tutun, Safari’de açın, Paylaş’a ve ardından Ana Ekrana Ekle’ye dokunun.",
     "cel.android": "Uygulamayı indirip yüklemek için Android kamerasını koda tutun.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "Sistem dili",
     "sinc.procurando": "kayıt dosyası aranıyor…",
@@ -5779,8 +5877,12 @@ const I18N = {
     "hub.abrir": "İlerlemeyi aç",
     "hub.seusJogos": "Oyunların",
     "hub.todos": "Tüm oyunlar",
-    "hub.instalados": "Yüklü",
-    "hub.steam": "Steam kütüphanesi",
+    "hub.instalados": "Yüklü oyunlar",
+    "pino.andamento": "Devam ediyor",
+    "pino.andamentoDica": "Son 7 günde oynandı",
+    "pino.ocioso": "Beklemede",
+    "pino.ociosoDica": "7 günden uzun süredir oynanmadı",
+    "hub.steam": "Oyunlarım",
     "hub.nenhumInstalado": "Henüz yüklü oyun bulunamadı.",
     "hub.recente": "en son oynanan",
     "bibli.subTodos": "uygulamanın bildiği tüm oyunlar",
@@ -5809,6 +5911,8 @@ const I18N = {
     "selo.vigiado": "İzleniyor",
     "selo.novo": "Yeni",
     "selo.novoDica": "Son açılıştan beri yeni bir şey açıldı",
+    "selo.jogoNovo": "Yeni",
+    "selo.jogoNovoDica": "Yeni yüklendi. İlk açılışta işaret kaybolur",
     "bibli.sub": "bu bilgisayarda ve Steam kütüphanesinde",
     "bibli.noPc": "Bu bilgisayarda",
     "bibli.naSteam": "Steam kütüphanesinde",
@@ -5979,7 +6083,7 @@ const I18N = {
     "cel.rede": "スマホをこのパソコンと同じWi-Fiにつなぎます。設定は一度だけです。",
     "cel.iphone": "iPhoneのカメラをコードに向け、Safariで開いて共有をタップし、「ホーム画面に追加」をタップします。",
     "cel.android": "Androidのカメラをコードに向けて、アプリをダウンロードしてインストールします。",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "システムの言語",
     "sinc.procurando": "セーブデータを探しています…",
@@ -5994,8 +6098,12 @@ const I18N = {
     "hub.abrir": "進捗を開く",
     "hub.seusJogos": "あなたのゲーム",
     "hub.todos": "すべてのゲーム",
-    "hub.instalados": "インストール済み",
-    "hub.steam": "Steamライブラリ",
+    "hub.instalados": "インストール済みのゲーム",
+    "pino.andamento": "プレイ中",
+    "pino.andamentoDica": "過去7日以内にプレイ",
+    "pino.ocioso": "休止中",
+    "pino.ociosoDica": "7日以上プレイしていません",
+    "hub.steam": "マイゲーム",
     "hub.nenhumInstalado": "インストール済みのゲームはまだ見つかっていません。",
     "hub.recente": "最近プレイ",
     "bibli.subTodos": "アプリが認識しているすべてのゲーム",
@@ -6024,6 +6132,8 @@ const I18N = {
     "selo.vigiado": "監視中",
     "selo.novo": "新着",
     "selo.novoDica": "前回から新しいものが解放されました",
+    "selo.jogoNovo": "NEW",
+    "selo.jogoNovoDica": "最近インストールされました。初めて開くと消えます",
     "bibli.sub": "このコンピューターと Steam ライブラリ",
     "bibli.noPc": "このコンピューター",
     "bibli.naSteam": "Steam ライブラリ",
@@ -6194,7 +6304,7 @@ const I18N = {
     "cel.rede": "휴대폰을 이 컴퓨터와 같은 Wi-Fi에 연결하세요. 한 번만 하면 됩니다.",
     "cel.iphone": "iPhone 카메라를 코드에 비추고 Safari에서 연 다음 공유와 홈 화면에 추가를 누르세요.",
     "cel.android": "Android 카메라를 코드에 비추면 앱을 내려받아 설치할 수 있습니다.",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "시스템 언어",
     "sinc.procurando": "세이브 파일을 찾는 중…",
@@ -6209,8 +6319,12 @@ const I18N = {
     "hub.abrir": "진행 상황 열기",
     "hub.seusJogos": "내 게임",
     "hub.todos": "모든 게임",
-    "hub.instalados": "설치됨",
-    "hub.steam": "Steam 라이브러리",
+    "hub.instalados": "설치된 게임",
+    "pino.andamento": "진행 중",
+    "pino.andamentoDica": "최근 7일 이내 플레이",
+    "pino.ocioso": "휴면",
+    "pino.ociosoDica": "7일 넘게 플레이하지 않음",
+    "hub.steam": "내 게임",
     "hub.nenhumInstalado": "아직 설치된 게임을 찾지 못했습니다.",
     "hub.recente": "최근 플레이",
     "bibli.subTodos": "앱이 알고 있는 모든 게임",
@@ -6239,6 +6353,8 @@ const I18N = {
     "selo.vigiado": "감시 중",
     "selo.novo": "새 소식",
     "selo.novoDica": "지난번 이후 새로운 것이 해금되었습니다",
+    "selo.jogoNovo": "NEW",
+    "selo.jogoNovoDica": "최근 설치됨. 처음 열면 표시가 사라집니다",
     "bibli.sub": "이 컴퓨터와 Steam 라이브러리",
     "bibli.noPc": "이 컴퓨터",
     "bibli.naSteam": "Steam 라이브러리",
@@ -6409,7 +6525,7 @@ const I18N = {
     "cel.rede": "让手机连接到与这台电脑相同的 Wi-Fi。只需设置一次。",
     "cel.iphone": "用 iPhone 相机对准二维码，在 Safari 中打开，点按“共享”，再点按“添加到主屏幕”。",
     "cel.android": "用 Android 相机对准二维码，下载并安装应用。",
-    "cel.btIphone": "iPhone",
+    "cel.btIphone": "iOS",
     "cel.btAndroid": "Android",
     "idioma.sistema": "系统语言",
     "sinc.procurando": "正在查找存档…",
@@ -6424,8 +6540,12 @@ const I18N = {
     "hub.abrir": "打开进度",
     "hub.seusJogos": "你的游戏",
     "hub.todos": "全部游戏",
-    "hub.instalados": "已安装",
-    "hub.steam": "Steam 库",
+    "hub.instalados": "已安装的游戏",
+    "pino.andamento": "进行中",
+    "pino.andamentoDica": "最近 7 天内玩过",
+    "pino.ocioso": "闲置",
+    "pino.ociosoDica": "超过 7 天未玩",
+    "hub.steam": "我的游戏",
     "hub.nenhumInstalado": "尚未找到已安装的游戏。",
     "hub.recente": "最近游玩",
     "bibli.subTodos": "应用知道的所有游戏",
@@ -6454,6 +6574,8 @@ const I18N = {
     "selo.vigiado": "已监视",
     "selo.novo": "新内容",
     "selo.novoDica": "自上次打开以来解锁了新内容",
+    "selo.jogoNovo": "新",
+    "selo.jogoNovoDica": "最近安装。首次打开后标记消失",
     "bibli.sub": "这台电脑上和 Steam 库中",
     "bibli.noPc": "这台电脑上",
     "bibli.naSteam": "Steam 库中",
@@ -6800,20 +6922,34 @@ function ligarCelular() {
    * ela está agora, montado pelo serviço na hora: o endereço muda de pessoa
    * para pessoa e de rede para rede, e ninguém precisa copiá-lo.
    */
-  const qr = document.getElementById("celQr");
+  const modal = document.getElementById("celModal");
   const img = document.getElementById("celQrImg");
   const dica = document.getElementById("celQrDica");
+  const marca = document.getElementById("celModalMarca");
+  const nomeDaJanela = document.getElementById("celModalNome");
+  let fechando = null;
+  const fecharQr = () => {
+    if (modal.hidden || !modal.classList.contains("aberta")) return;
+    modal.classList.remove("aberta");
+    clearTimeout(fechando);
+    fechando = setTimeout(() => { modal.hidden = true; img.removeAttribute("src"); }, 230);
+  };
+  modal.addEventListener("click", (ev) => { if (!ev.target.closest(".cel-janela")) fecharQr(); });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharQr(); });
   lista.querySelectorAll(".cel-bt").forEach((b) => {
     b.addEventListener("click", (ev) => {
       ev.stopPropagation();
-      const ja = b.getAttribute("aria-pressed") === "true";
-      lista.querySelectorAll(".cel-bt").forEach((o) => o.setAttribute("aria-pressed", "false"));
-      if (ja) { qr.hidden = true; return; }
-      b.setAttribute("aria-pressed", "true");
+      const android = b.dataset.cel === "android";
       img.src = "/qr.svg?para=" + b.dataset.cel + "&t=" + Date.now();
-      img.alt = t(b.dataset.cel === "android" ? "cel.android" : "cel.iphone");
-      dica.textContent = t(b.dataset.cel === "android" ? "cel.android" : "cel.iphone");
-      qr.hidden = false;
+      img.alt = t(android ? "cel.android" : "cel.iphone");
+      dica.textContent = t(android ? "cel.android" : "cel.iphone");
+      marca.innerHTML = b.querySelector(".cel-marca").outerHTML;
+      nomeDaJanela.textContent = t(android ? "cel.btAndroid" : "cel.btIphone");
+      abrir(false);
+      clearTimeout(fechando);
+      modal.hidden = false;
+      // Um quadro com a janela no estado de partida, e então a transição.
+      requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add("aberta")));
     });
   });
   if (typeof fetch !== "function") return;
@@ -8534,7 +8670,35 @@ function aplicarVista() {
   if (hub) hub.hidden = v !== "hub";
   if (bibli) bibli.hidden = v !== "bibli";
   atualizarNavegacao(v);
+  const lugar = v + "|" + (typeof location !== "undefined" ? location.hash : "");
+  if (aplicarVista.lugar !== undefined && aplicarVista.lugar !== lugar) transicaoDeTela();
+  aplicarVista.lugar = lugar;
   return v;
+}
+
+/*
+ * A troca de página entra com um esmaecer curto e um leve deslizar para cima.
+ * Só opacidade e transform, pela Web Animations: o compositor anima sozinho,
+ * sem recalcular layout nem repintar a página a cada quadro. A faixa do topo
+ * e o que é fixo na tela ficam parados.
+ */
+function transicaoDeTela() {
+  if (typeof document === "undefined" || document.hidden) return;
+  if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const wrap = document.querySelector(".wrap");
+  if (!wrap || !wrap.children) return;
+  let ultima = null;
+  for (const el of wrap.children) {
+    if (!el.animate || el.hidden || el.classList.contains("topbar")) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.position === "fixed" || cs.position === "sticky") continue;
+    ultima = el.animate(
+      [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }],
+      { duration: 260, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+    );
+  }
+  // O palco mede a própria posição para a arte de fundo; mede de novo parado.
+  if (ultima && ultima.finished && typeof medirPalco === "function") ultima.finished.then(medirPalco, () => {});
 }
 
 function irPara(destino) {
@@ -8555,6 +8719,12 @@ function daMaquinaLocal() {
 const SVG_PINO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" ' +
   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M6 1.8h4l-.7 4.1 2.4 2.3H4.3l2.4-2.3z"/><path d="M8 8.2V14"/></svg>';
+const SVG_INSTALADO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="2" y="3" width="12" height="8" rx="1.6"/><path d="M5.5 14h5M8 11v3"/><path d="M5.8 7l1.5 1.5 3-3"/></svg>';
+const SVG_OCIOSO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></svg>';
 const SVG_OLHO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" ' +
   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z"/>' +
@@ -8564,14 +8734,32 @@ function fazerPinos(g) {
   const caixa = document.createElement("div");
   caixa.className = "jogo-pinos";
 
-  const inst = document.createElement("span");
-  inst.className = "pino pino-instalado" + (g.instalado ? " on" : "");
-  inst.innerHTML = SVG_PINO + "<span>" + (g.instalado ? t("pino.instalado") : t("pino.naoInstalado")) + "</span>";
-  inst.title = g.instalado ? t("pino.instaladoDica") : t("pino.naoInstaladoDica");
-  caixa.appendChild(inst);
+  // Instalado é só um ícone, sem palavra; o que não está instalado não leva nada.
+  if (g.instalado) {
+    const inst = document.createElement("span");
+    inst.className = "pino-icone pino-instalado";
+    inst.innerHTML = SVG_INSTALADO;
+    inst.title = t("pino.instaladoDica");
+    inst.setAttribute("aria-label", t("pino.instalado"));
+    caixa.appendChild(inst);
+  }
 
-  // O indicador de vigia não aparece em página nenhuma (pedido do dono do
-  // projeto); a vigia continua funcionando por trás.
+  // Em andamento enquanto o jogo foi jogado nos últimos 7 dias; depois disso,
+  // um ícone de parado. Jogo nunca aberto não leva nenhum dos dois.
+  if (g.andamento === true) {
+    const and = document.createElement("span");
+    and.className = "pino pino-andamento on";
+    and.innerHTML = '<i class="pino-ponto" aria-hidden="true"></i><span>' + t("pino.andamento") + "</span>";
+    and.title = t("pino.andamentoDica");
+    caixa.appendChild(and);
+  } else if (g.andamento === false) {
+    const oc = document.createElement("span");
+    oc.className = "pino-icone pino-ocioso";
+    oc.innerHTML = SVG_OCIOSO;
+    oc.title = t("pino.ociosoDica");
+    oc.setAttribute("aria-label", t("pino.ocioso"));
+    caixa.appendChild(oc);
+  }
 
   // O ponto de sincronia, só no jogo que está sendo lido de fato, e em dia.
   if (sincronizado(g)) {
@@ -8713,7 +8901,7 @@ function arteVazia(g, grande) {
  * navegador. Chave nova é novidade, e o selo some quando o jogo é aberto. Na
  * primeira vez não há com o que comparar, então nada aparece.
  */
-const VISTO_CHAVE = "visto";
+const VISTO_CHAVE = "desbloqueios-vistos";
 function desbloqueados() {
   if (!sync || !sync.ok) return null;
   const s = [];
@@ -8741,9 +8929,38 @@ function temNovidade(g) {
   const ja = new Set(antes);
   return agora.some((k) => !ja.has(k));
 }
-function marcarVisto() {
+function marcarDesbloqueiosVistos() {
   const agora = desbloqueados();
   if (agora) guardar(VISTO_CHAVE, JSON.stringify(agora));
+}
+/*
+ * Jogo instalado há pouco: leva a marca "New" até o primeiro clique nele. A
+ * lista dos instalados já conhecidos fica neste navegador; na primeira vez
+ * ela nasce com tudo o que já está instalado, e nada ganha a marca.
+ */
+const CONHECIDOS_CHAVE = "instalados-conhecidos";
+function conhecidos() {
+  try { const v = JSON.parse(guardado(CONHECIDOS_CHAVE) || "null"); return Array.isArray(v) ? v : null; } catch (e) { return null; }
+}
+function jogosNovos(instalados) {
+  const ja = conhecidos();
+  if (!ja) { guardar(CONHECIDOS_CHAVE, JSON.stringify(instalados.map((g) => g.chave))); return new Set(); }
+  const s = new Set(ja);
+  return new Set(instalados.filter((g) => !s.has(g.chave)).map((g) => g.chave));
+}
+function conhecerJogo(chave) {
+  const ja = conhecidos() || [];
+  if (ja.includes(chave)) return false;
+  ja.push(chave);
+  guardar(CONHECIDOS_CHAVE, JSON.stringify(ja));
+  return true;
+}
+function marcaJogoNovo() {
+  const m = document.createElement("span");
+  m.className = "marca-jogo-novo";
+  m.title = t("selo.jogoNovoDica");
+  m.textContent = t("selo.jogoNovo");
+  return m;
 }
 function seloNovo() {
   const selo = document.createElement("span");
@@ -8857,14 +9074,6 @@ function mostrarNoPalco(g) {
   const meta = document.getElementById("palcoMeta");
   meta.innerHTML = "";
   meta.appendChild(fazerPinos(g));
-  const extra = document.createElement("div");
-  extra.className = "palco-extra";
-  const selo = (txt) => { const s = document.createElement("span"); s.textContent = txt; extra.appendChild(s); };
-  if (g.recente === 1) selo(t("hub.recente"));
-  selo(g.leitura === "completa" ? t("hub.rastreio") : t("hub.soAbertura"));
-  if (g.popular) selo(t("hub.popular", { n: g.popular }));
-  if (g.naSteam) selo(t("hub.naSteam"));
-  meta.appendChild(extra);
 
   const abre = document.getElementById("palcoAbre");
   abre.hidden = g.leitura !== "completa";
@@ -8898,6 +9107,7 @@ function renderHub() {
       mostrar[0] || lista.find((g) => g.leitura === "completa") || null;
     const conta = document.getElementById("hubConta");
     if (conta) conta.textContent = String(mostrar.length);
+    const novos = jogosNovos(mostrar);
     for (const g of mostrar) {
       const card = document.createElement("div");
       card.className = "jogo-card" + (g.leitura === "completa" ? " lido" : "");
@@ -8907,6 +9117,7 @@ function renderHub() {
       card.tabIndex = 0;
       const capaDoCard = fazerCapa(g, "capa");
       if (temNovidade(g)) capaDoCard.appendChild(seloNovo());
+      if (novos.has(g.chave)) capaDoCard.appendChild(marcaJogoNovo());
       card.appendChild(capaDoCard);
       // A capa fica limpa, sem indicador de vigia; só a novidade aparece nela.
       const nome = document.createElement("div");
@@ -8915,6 +9126,7 @@ function renderHub() {
       nome.appendChild(document.createTextNode(g.nome));
       card.appendChild(nome);
       const abrir = () => {
+        if (conhecerJogo(g.chave)) { const m = card.querySelector(".marca-jogo-novo"); if (m) m.remove(); }
         if (jogoEmFoco === g.chave && g.leitura === "completa") irPara(g.chave);
         else mostrarNoPalco(g);
       };
@@ -8960,7 +9172,7 @@ function renderHub() {
     // conhece. Os dois separam o que está neste computador do que não está.
     const soSteam = (location.hash || "").replace(/^#/, "") === "steam";
     const titulo = document.getElementById("bibliTitulo");
-    if (titulo) titulo.innerHTML = soSteam ? "Steam <span>library</span>" : "All <span>games</span>";
+    if (titulo) titulo.innerHTML = soSteam ? "My <span>games</span>" : "All <span>games</span>";
     ligarBusca();
     // Com uma busca na tela, a lista de sempre espera ela fechar.
     if (buscaNaTela()) return;
@@ -9303,7 +9515,7 @@ function render() {
   renderEstados();
   renderJogos();
   // Com a página do jogo à vista, o que ela mostra já foi visto.
-  if (vistaAtual() === "jogo") marcarVisto();
+  if (vistaAtual() === "jogo") marcarDesbloqueiosVistos();
   renderHub();
   renderDeaths();
   renderTempo();

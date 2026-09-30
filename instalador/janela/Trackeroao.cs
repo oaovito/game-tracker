@@ -548,7 +548,7 @@ class Lugar {
  */
 class Barra : Control {
   static readonly Color Inicial = Color.FromArgb(10, 11, 15);
-  static readonly Color Fechar = Color.FromArgb(232, 17, 35);
+  static readonly Color Fechar = Color.FromArgb(237, 66, 69);
 
   // A cor da barra e a das pontas da pagina, e muda com ela em ~0,35 s.
   Color fundo = Inicial, de = Inicial, para = Inicial;
@@ -604,7 +604,7 @@ class Barra : Control {
     icone = Programa.Icone(new Size((int)(16 * escala), (int)(16 * escala)));
   }
 
-  int LarguraBotao { get { return (int)Math.Round(Height * 46.0 / 36.0); } }
+  int LarguraBotao { get { return (int)Math.Round(Height * 38.0 / 36.0); } }
 
   Rectangle Botao(int i) {
     int l = LarguraBotao;
@@ -671,33 +671,64 @@ class Barra : Control {
       TextRenderer.DrawText(g, "oao", f, faixa, Limao, ff);
     }
 
-    g.SmoothingMode = SmoothingMode.None;
+    /*
+     * Os tres botoes, no jeito do Discord: tracos finos e arredondados, sem
+     * moldura, e ao passar o mouse uma pastilha de cantos redondos por tras
+     * (vermelha no fechar). Tudo com suavizacao, na mesma linha fina dos
+     * icones da pagina.
+     */
+    g.SmoothingMode = SmoothingMode.AntiAlias;
+    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
     for (int i = 0; i < 3; i++) {
       Rectangle b = Botao(i);
       Color cor = Apagado;
       if (i == sob) {
-        Color realce = i == 2 ? Fechar : (Claro ? Color.FromArgb(apertado == i ? 36 : 22, 0, 0, 0) : Color.FromArgb(apertado == i ? 44 : 30, 255, 255, 255));
-        using (SolidBrush br = new SolidBrush(realce)) g.FillRectangle(br, b);
+        Color realce = i == 2
+          ? (apertado == i ? Color.FromArgb(200, 50, 54) : Fechar)
+          : (Claro ? Color.FromArgb(apertado == i ? 30 : 18, 0, 0, 0) : Color.FromArgb(apertado == i ? 34 : 20, 255, 255, 255));
+        float mx = 4 * k, my = 6 * k;
+        RectangleF pastilha = new RectangleF(b.X + mx, b.Y + my, b.Width - 2 * mx, b.Height - 2 * my);
+        using (GraphicsPath caminho = Arredondado(pastilha, 6 * k))
+        using (SolidBrush br = new SolidBrush(realce)) g.FillPath(br, caminho);
         cor = i == 2 ? Color.White : Texto;
       }
-      int cx = b.X + b.Width / 2, cy = b.Y + b.Height / 2, m = (int)Math.Round(5 * k);
-      using (Pen p = new Pen(cor, Math.Max(1f, k))) {
+      float cx = b.X + b.Width / 2f, cy = b.Y + b.Height / 2f, m = 4.5f * k;
+      using (Pen p = new Pen(cor, Math.Max(1f, 1.15f * k))) {
+        p.StartCap = p.EndCap = LineCap.Round;
+        p.LineJoin = LineJoin.Round;
         if (i == 0) g.DrawLine(p, cx - m, cy, cx + m, cy);
         else if (i == 1) {
           if (dona.WindowState == FormWindowState.Maximized) {
-            int d = (int)Math.Round(2 * k);
-            g.DrawRectangle(p, cx - m, cy - m + d, 2 * m - d, 2 * m - d);
-            g.DrawLine(p, cx - m + d, cy - m, cx + m, cy - m);
-            g.DrawLine(p, cx + m, cy - m, cx + m, cy + m - d);
-          } else g.DrawRectangle(p, cx - m, cy - m, 2 * m, 2 * m);
+            float d = 2f * k, lado = 2 * m - d;
+            using (GraphicsPath frente = Arredondado(new RectangleF(cx - m, cy - m + d, lado, lado), 1.6f * k)) g.DrawPath(p, frente);
+            using (GraphicsPath tras = new GraphicsPath()) {
+              tras.AddLine(cx - m + d, cy - m, cx + m - 1.6f * k, cy - m);
+              tras.AddArc(cx + m - 3.2f * k, cy - m, 3.2f * k, 3.2f * k, 270, 90);
+              tras.AddLine(cx + m, cy - m + 1.6f * k, cx + m, cy + m - d);
+              g.DrawPath(p, tras);
+            }
+          } else {
+            using (GraphicsPath q = Arredondado(new RectangleF(cx - m, cy - m, 2 * m, 2 * m), 1.8f * k)) g.DrawPath(p, q);
+          }
         } else {
-          g.SmoothingMode = SmoothingMode.AntiAlias;
-          g.DrawLine(p, cx - m, cy - m, cx + m, cy + m);
-          g.DrawLine(p, cx - m, cy + m, cx + m, cy - m);
-          g.SmoothingMode = SmoothingMode.None;
+          float x = m * 0.95f;
+          g.DrawLine(p, cx - x, cy - x, cx + x, cy + x);
+          g.DrawLine(p, cx - x, cy + x, cx + x, cy - x);
         }
       }
     }
+    g.SmoothingMode = SmoothingMode.None;
+  }
+
+  static GraphicsPath Arredondado(RectangleF r, float raio) {
+    float d = Math.Min(raio * 2, Math.Min(r.Width, r.Height));
+    GraphicsPath c = new GraphicsPath();
+    c.AddArc(r.X, r.Y, d, d, 180, 90);
+    c.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+    c.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+    c.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+    c.CloseFigure();
+    return c;
   }
 }
 
@@ -907,18 +938,12 @@ class Girando {
     using (Graphics g = Graphics.FromImage(bmp)) {
       g.SmoothingMode = SmoothingMode.AntiAlias;
       g.Clear(Color.Transparent);
-      float r = n * 0.22f;
-      using (GraphicsPath fundo = new GraphicsPath()) {
-        fundo.AddArc(0, 0, r * 2, r * 2, 180, 90);
-        fundo.AddArc(n - r * 2, 0, r * 2, r * 2, 270, 90);
-        fundo.AddArc(n - r * 2, n - r * 2, r * 2, r * 2, 0, 90);
-        fundo.AddArc(0, n - r * 2, r * 2, r * 2, 90, 90);
-        fundo.CloseFigure();
-        using (SolidBrush b = new SolidBrush(Color.FromArgb(255, 11, 13, 18))) g.FillPath(b, fundo);
-      }
-      float raio = n * 0.335f, largura = n * 0.14f, c = n / 2f;
+      // Sem fundo: o anel ocupa o quadro inteiro, como o icone parado, com um
+      // aro escuro fino que o deixa legivel tambem na barra clara.
+      float raio = n * 0.39f, largura = n * 0.16f, c = n / 2f;
       RectangleF anel = new RectangleF(c - raio, c - raio, raio * 2, raio * 2);
-      using (Pen trilho = new Pen(Color.FromArgb(48, 216, 255, 60), largura)) g.DrawEllipse(trilho, anel);
+      using (Pen aro = new Pen(Color.FromArgb(128, 11, 13, 18), largura + Math.Max(1.2f, n * 0.075f))) g.DrawEllipse(aro, anel);
+      using (Pen trilho = new Pen(Color.FromArgb(70, 216, 255, 60), largura)) g.DrawEllipse(trilho, anel);
       using (Pen arco = new Pen(Color.FromArgb(255, 216, 255, 60), largura)) {
         arco.StartCap = arco.EndCap = LineCap.Round;
         g.DrawArc(arco, anel, -90 + giro, 270);
@@ -926,6 +951,10 @@ class Girando {
       g.SmoothingMode = SmoothingMode.None;
       int bx = (int)Math.Round(n * 0.3125), by = bx, bw = n - 2 * bx, bh = Math.Max(2, (int)Math.Round(n * 0.13));
       int sw = Math.Max(2, (int)Math.Round(n * 0.14)), sx = (n - sw) / 2, sb = n - by;
+      using (SolidBrush sombra = new SolidBrush(Color.FromArgb(128, 11, 13, 18))) {
+        g.FillRectangle(sombra, bx - 1, by - 1, bw + 2, bh + 2);
+        g.FillRectangle(sombra, sx - 1, by - 1, sw + 2, sb - by + 2);
+      }
       g.FillRectangle(Brushes.White, bx, by, bw, bh);
       g.FillRectangle(Brushes.White, sx, by, sw, sb - by);
       IntPtr h = bmp.GetHicon();
