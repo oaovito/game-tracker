@@ -648,6 +648,8 @@ const FECHADO = path.join(__dirname, 'fechado.flag');
 
 function encerrarDeVez() {
   try { fs.writeFileSync(FECHADO, new Date().toISOString()); } catch (e) { /* sai mesmo assim */ }
+  // Um pedido de abertura que sobrou de antes não pode religar o que a pessoa fechou.
+  try { fs.unlinkSync(PEDIDO); } catch (e) { /* nao havia */ }
   console.log('  [fechar] fechado pela bandeja; só volta aberto à mão');
   process.exit(0);
 }
@@ -673,7 +675,8 @@ function podeSubir(reinicio) {
   // No terminal é alguém rodando à mão, e fora do Windows não há tarefa.
   if (process.platform !== 'win32' || process.stdout.isTTY) return true;
   const idade = (f) => { try { return Date.now() - fs.statSync(f).mtimeMs; } catch (e) { return Infinity; } };
-  if (idade(PEDIDO) < 2 * 60 * 1000) {
+  // Vale o pedido recente e feito depois do último Fechar.
+  if (idade(PEDIDO) < 2 * 60 * 1000 && idade(PEDIDO) < idade(FECHADO)) {
     try { fs.unlinkSync(PEDIDO); } catch (e) { /* ja foi */ }
     try { fs.unlinkSync(FECHADO); } catch (e) { /* nao havia */ }
     return true;
