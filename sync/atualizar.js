@@ -329,17 +329,37 @@ async function trocarJanela(raiz, tag) {
   let atual = null;
   try { atual = fs.readFileSync(path.join(raiz, 'app', 'versao.txt'), 'utf8').trim(); } catch (e) { /* anterior a versao.txt */ }
   if (atual && !maisNova(numeroDaTag(tag), atual)) return null;
+  // A janela a vista nao e trocada: espera ela ir para a bandeja ou fechar.
+  let estado = null;
+  try { estado = fs.readFileSync(path.join(raiz, 'sync', 'janela.estado'), 'utf8').trim(); } catch (e) { /* fechada */ }
+  if (estado === 'vista') return 'adiada (janela à vista)';
   varrerTemporarios();
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'trackeroao-'));
+  /*
+   * Com a janela a vista a troca espera (o instalador sai com 3), e a
+   * conferencia seguinte tenta de novo. O instalador daquela versao fica
+   * guardado entre uma tentativa e outra, um so, para nao ser baixado de
+   * novo a cada cinco minutos; sai quando a troca termina ou quando outra
+   * versao chega.
+   */
+  const nome = 'trackeroao-janela-' + String(tag).replace(/[^\w.-]/g, '') + '.exe';
+  const exe = path.join(os.tmpdir(), nome);
   try {
-    const exe = path.join(tmp, 'trackeroao-instalador.exe');
-    await pedir(`https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/trackeroao-instalador.exe`, exe);
+    for (const n of fs.readdirSync(os.tmpdir())) {
+      if (/^trackeroao-janela-.*\.exe$/.test(n) && n !== nome) { try { fs.rmSync(path.join(os.tmpdir(), n), { force: true }); } catch (e) { /* em uso */ } }
+    }
+  } catch (e) { /* temp */ }
+  try {
+    if (!fs.existsSync(exe)) {
+      const parcial = exe + '.parcial';
+      await pedir(`https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/trackeroao-instalador.exe`, parcial);
+      fs.renameSync(parcial, exe);
+    }
     await envolverTroca(() => rodar(exe, ['/so-janela', '/destino=' + raiz]));
+    try { fs.rmSync(exe, { force: true }); } catch (e) { /* temp */ }
     return 'atualizada para ' + tag;
   } catch (e) {
+    try { fs.rmSync(exe + '.parcial', { force: true }); } catch (x) { /* temp */ }
     return 'adiada (' + e.message.split('\n')[0] + ')';
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* temp */ }
   }
 }
 

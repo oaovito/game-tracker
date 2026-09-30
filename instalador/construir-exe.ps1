@@ -373,7 +373,7 @@ static class Programa {
    * (<instalacao>\app) pela que vem dentro deste .exe, sem janela nenhuma e
    * sem rodar script. E o que a atualizacao automatica chama quando a versao
    * nova traz uma janela nova: o codigo ela copia do zip, e a janela, que e
-   * binaria, vem daqui. Com a janela aberta nada e trocado (sai com 3), para
+   * binaria, vem daqui. Com a janela a vista nada e trocado (sai com 3), para
    * nao fecha-la debaixo de quem esta olhando; a proxima conferencia tenta
    * de novo.
    */
@@ -393,8 +393,21 @@ static class Programa {
      * atualizacao nao depende de ninguem fechar nada. Se nao fechar a tempo,
      * nada e trocado e a proxima conferencia tenta de novo.
      */
-    bool estavaAberta = JanelaAberta();
+    bool estavaAberta = JanelaAberta(), escondida = false;
     if (estavaAberta) {
+      /*
+       * A vista, a janela nao e fechada debaixo de quem esta olhando: a troca
+       * espera (sai com 3) e a proxima conferencia tenta de novo. Escondida
+       * na bandeja, ela fecha, e a nova volta escondida, no mesmo lugar. Uma
+       * janela anterior a este sinal fecha e reabre como antes.
+       */
+      System.Threading.EventWaitHandle vista;
+      if (System.Threading.EventWaitHandle.TryOpenExisting("Local\\TrackeroaoAVista", out vista)) {
+        bool aVista = vista.WaitOne(0);
+        vista.Close();
+        if (aVista) return 3;
+        escondida = true;
+      }
       System.Threading.EventWaitHandle sinal;
       if (System.Threading.EventWaitHandle.TryOpenExisting("Local\\TrackeroaoFechar", out sinal)) { sinal.Set(); sinal.Close(); }
       for (int i = 0; i < 40 && JanelaAberta(); i++) System.Threading.Thread.Sleep(500);
@@ -423,7 +436,7 @@ static class Programa {
       // e o servico nao fica esperando por ela.
       AcertarAtalhos(destino, app);
       if (estavaAberta) {
-        try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe")) { UseShellExecute = true }); } catch { }
+        try { Process.Start(new ProcessStartInfo(Path.Combine(app, "Trackeroao.exe"), escondida ? "/escondida" : "") { UseShellExecute = true }); } catch { }
       }
       return 0;
     } catch {

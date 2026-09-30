@@ -1128,30 +1128,33 @@ check('a escolha so pode ser gravada de quem esta nesta maquina', () => {
   return 'as duas rotas que mudam algo sao so de localhost';
 });
 
-check('a bandeja acende com o jogo e apaga quando ele fecha', () => {
+check('a bandeja fica acesa enquanto o Trackeroao esta de pe', () => {
   const main = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
   const poll = /async function pollOnce\(\)[\s\S]*?\n\}/.exec(main);
   assert(poll, 'nao achei o poll');
-
   const corpo = poll[0];
-  const iAcende = corpo.indexOf('abrirBandeja');
-  const iApaga = corpo.indexOf('fecharBandeja');
-  assert(iAcende > 0, 'a bandeja nao acende quando o jogo abre');
-  assert(iApaga > iAcende, 'a bandeja nao apaga quando o jogo fecha');
-
+  assert(corpo.indexOf('abrirBandeja') > 0, 'a bandeja nao acende quando o jogo abre');
   /*
-   * A ultima leitura vem ANTES de apagar. A sessao que acabou e justamente a
-   * que interessa ver, e apagar antes faria a aplicacao sumir no instante em
-   * que ela tem mais o que mostrar.
+   * O X da janela a esconde na bandeja, e so o "Fechar" do menu encerra: o
+   * icone nao pode sumir com o jogo, ou a janela escondida ficaria sem volta.
    */
-  const trechoFecha = corpo.slice(corpo.indexOf('stopWatching()'));
-  assert(trechoFecha.indexOf("syncNow('jogo fechado')") < trechoFecha.indexOf('fecharBandeja'),
-    'o icone apaga antes da leitura final: some justo quando tem o que mostrar');
-
+  assert(corpo.indexOf('fecharBandeja') < 0, 'a bandeja apaga quando o jogo fecha, e a janela escondida fica sem volta');
+  assert(/abrirBandeja\(bandejaAcesa \? 'depois da atualização' : 'início'\)/.test(main), 'o servico nao acende a bandeja ao subir');
   // E abrir nao pode significar abrir janela: o pedido diz em silencio.
   assert(!/start.*http:\/\/localhost/i.test(corpo),
     'o poll abre o navegador sozinho, e o pedido e que a abertura automatica seja silenciosa');
-  return 'acende no jogo, apaga depois da leitura final, sem abrir janela';
+  return 'acende ao subir e com o jogo, e so sai com o Fechar';
+});
+
+check('nada inicia com o Windows sem a caixa marcada', () => {
+  const main = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+  const f = /function podeSubir\(reinicio\)[\s\S]*?\n\}/.exec(main);
+  assert(f, 'nao achei a regra de subida');
+  assert(/COM_WINDOWS/.test(f[0]) && /PEDIDO/.test(f[0]), 'a subida nao depende do pedido nem da caixa');
+  assert(/if \(!podeSubir\(reinicio\)\) process\.exit\(0\)/.test(main), 'o servico sobe sem conferir se pode');
+  const vbs = fs.readFileSync(path.join(__dirname, 'abrir.vbs'), 'utf8');
+  assert(/abrir\.pedido/.test(vbs), 'o atalho do clone nao deixa o pedido antes de subir o servico');
+  return 'so sobe aberto a mao, no reinicio da atualizacao ou com a caixa marcada';
 });
 
 check('a bandeja nao sobrevive ao servico', () => {

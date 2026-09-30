@@ -39,3 +39,9 @@ sync/.jogo-pasta.json
 sync/idioma.json
 # Fechado pela bandeja: o serviço não sobe sozinho enquanto existir.
 sync/fechado.flag
+# Pedido de abrir à mão: com ele a tarefa agendada sobe o serviço (dois minutos).
+sync/abrir.pedido
+# A caixa "Iniciar com o Windows" do menu da bandeja, marcada.
+sync/iniciar-com-windows.flag
+# Se a janela está à vista ou escondida na bandeja, para a troca da atualização.
+sync/janela.estado

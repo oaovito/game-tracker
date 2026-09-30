@@ -30,6 +30,14 @@ If fso.FileExists(fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName),
   fso.DeleteFile fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "fechado.flag"), True
 End If
 
+' O pedido de abrir: com ele o servico sobe pela tarefa agendada. Sem ele,
+' a tarefa que dispara no logon encerra o servico na hora, porque nada do
+' Trackeroao inicia com o Windows sem a caixa marcada no menu da bandeja.
+Dim marca
+Set marca = fso.CreateTextFile(fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "abrir.pedido"), True)
+marca.Write Now
+marca.Close
+
 ' --- 1. o servico esta no ar? ---
 Dim http, vivo
 vivo = False

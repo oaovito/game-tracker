@@ -127,20 +127,48 @@ página informa a nova cor à janela, e a barra passa de uma cor para a outra
 em cerca de um terço de segundo. Sobre um fundo claro, o texto e os botões da
 barra escurecem para continuar legíveis. A barra não tem linha de divisão embaixo: na tela
 inicial e na biblioteca, a arte desfocada do fundo começa na cor exata da barra
-e clareia num degradê ao longo dos primeiros 6 rem, de modo que a barra e a
-página se leem como uma superfície só.
+e clareia num degradê ao longo dos primeiros 6 rem; na página de cada jogo, o
+brilho do alto da página nasce da mesma cor, no mesmo espaço. Com uma lista
+aberta sobre a página, que escurece o que está atrás, a barra escurece na mesma
+medida. Assim a barra e a página se leem sempre como uma superfície só.
 
-Ela abre por dois caminhos, e só por eles: dois cliques no atalho "Trackeroao"
-da área de trabalho, ou dois cliques no ícone da bandeja. Nenhuma outra coisa
-a abre, nem o jogo, nem a atualização, nem o logon. Existe uma única janela de
-cada vez: abrir de novo apenas traz à frente a que já estava aberta.
+A janela tem três estados, e só três: o tamanho padrão, de 1320 por 860 pixels
+(ou menos, numa tela menor que isso), a tela cheia, e escondida na bandeja. As
+bordas não redimensionam, e o encaixe do Windows nas laterais da tela não muda
+o tamanho dela. Minimizar e o X escondem a janela na bandeja, sem encerrar
+nada; ela volta pelo ícone, no mesmo lugar e no mesmo estado. Encerrar de
+verdade é só pelo "Fechar" do menu da bandeja. Escondida, a página para de
+desenhar e o componente devolve memória ao sistema, como acontecia ao
+minimizar.
 
-Abrir a janela também põe o serviço de pé. Se ele foi encerrado, a janela o
-inicia pela tarefa agendada, que roda com o usuário e a pasta certos, espera
-que responda e só então carrega a página; enquanto isso, mostra uma tela de
-espera, sem texto além do nome. É também a abertura manual que desfaz o
-"Fechar" da bandeja, descrito adiante: ao abrir, a janela apaga a marca que
-impedia o serviço de subir sozinho.
+A janela abre onde estava da última vez: na mesma tela, na mesma posição e em
+tela cheia se estava assim, inclusive depois de reiniciar o computador ou de
+uma atualização. O lugar fica em `%LOCALAPPDATA%\trackeroao\janela.txt`. Se
+aquela tela não existe mais, por exemplo um monitor desligado, ela abre no
+meio da tela principal.
+
+Ela abre por dois caminhos, e só por eles: o atalho "Trackeroao" da área de
+trabalho, ou o ícone da bandeja. Nenhuma outra coisa a abre, nem o jogo, nem a
+atualização, nem o logon. Existe uma única janela de cada vez: abrir de novo
+apenas traz à frente a que já estava aberta.
+
+Abrir a janela também põe o serviço de pé. Se ele foi encerrado, a janela
+grava o pedido de abertura (`sync/abrir.pedido`) e o inicia pela tarefa
+agendada, que roda com o usuário e a pasta certos, espera que responda e só
+então carrega a página; enquanto isso, mostra uma tela de espera, sem texto
+além do nome.
+
+Nada do Trackeroao inicia sozinho com o Windows, a menos que a caixa "Iniciar
+com o Windows" do menu da bandeja esteja marcada, e ela vem desmarcada. A
+tarefa agendada continua registrada com o gatilho de logon, porque é por ela
+que a janela sobe o serviço, mas o serviço decide ao subir se pode ficar
+(`podeSubir`, em `sync/main.js`): fica quando há um pedido de abertura com
+menos de dois minutos, quando é o reinício de uma atualização, ou quando a
+caixa está marcada (`sync/iniciar-com-windows.flag`) e a aplicação não foi
+fechada pela bandeja desde que o computador ligou. Em qualquer outro caso,
+inclusive no logon sem a caixa marcada, ele sai na hora, sem ícone e sem
+janela. Com a caixa marcada, o logon põe o serviço de pé e acende o ícone da
+bandeja, sem abrir a janela.
 
 Num Windows 10 antigo, sem o componente WebView2 instalado, a página abre numa
 janela de aplicativo do Edge, igualmente sem barra de endereço.
@@ -163,10 +191,11 @@ padrão, e os dois cliques na bandeja fazem o mesmo.
 ### O ícone da bandeja
 
 O ícone na área de notificação, com o desenho do Trackeroao, é o sinal de
-que a aplicação está aberta. Ele aparece sozinho quando um jogo vigiado
-começa, e também quando a janela é aberta; com o jogo fechado, sai depois da
-última leitura da sessão. Dois cliques nele abrem a janela. Ao passar o mouse,
-ele mostra o nome e a versão instalada ("Trackeroao 1.7.3").
+que a aplicação está aberta. Ele acende quando o serviço sobe e fica aceso
+enquanto o Trackeroao estiver de pé, inclusive com o jogo fechado e com a
+janela escondida, porque é por ele que a janela escondida volta. Um clique nele
+abre a janela. Ao passar o mouse, ele mostra o nome e a versão instalada
+("Trackeroao 1.7.8").
 
 O desenho do ícone é um T branco dentro de um anel verde-limão fechado. O anel
 aberto em arco fica reservado para um único estado: enquanto uma atualização
@@ -182,9 +211,19 @@ quem usa: escondido à mão, o ícone continua escondido, inclusive depois das
 atualizações. No Windows 10 essa preferência não tem registro acessível, e
 vale a configuração da própria barra de tarefas.
 
-O clique com o botão direito abre um menu que começa pela mesma linha de nome
-e versão e, abaixo dela, pelo consumo do próprio Trackeroao naquele momento:
-CPU, GPU e RAM. O número soma todos os processos da aplicação: o serviço
+O clique com o botão direito abre o menu do Trackeroao. Ele é desenhado no
+estilo da aplicação, e não no do Windows: fundo escuro, texto claro, cantos
+arredondados no Windows 11 e o verde-limão como destaque do item sob o mouse
+(vermelho, no "Fechar"). A organização segue a do menu da Steam. No topo fica
+a linha com o ícone, o nome e a versão; abaixo dela, os jogos instalados ou
+vigiados, do jogado por último ao mais antigo, até cinco, cada um com um selo
+da cor dele e a inicial do nome. Um clique num jogo abre a janela na página de
+progresso dele, ou na tela inicial para quem ainda não tem página. A lista
+vem da rota local `/bandeja.txt` e é lida em segundo plano, ao acender o ícone
+e a cada vez que o menu fecha, de modo que abrir o menu não espera nada.
+
+Depois dos jogos vem o consumo do próprio Trackeroao naquele momento: CPU, GPU
+e RAM. O número soma todos os processos da aplicação: o serviço
 (`node`), os `Trackeroao.exe` da janela e do ícone, e os processos que eles
 abriram, como o motor da página (`msedgewebview2`). A CPU é a fração do
 processador inteiro, calculada pela diferença do tempo de processador entre
@@ -192,12 +231,15 @@ duas medidas; a GPU vem dos contadores "GPU Engine" do Windows, a mesma fonte
 do Gerenciador de Tarefas, e mostra o motor mais ocupado; a RAM é o conjunto de
 trabalho privado somado, o mesmo número da coluna "Memória" do Gerenciador de
 Tarefas. O conjunto de trabalho inteiro contaria de novo, em cada processo do
-WebView2, as páginas de memória que eles dividem entre si. Os números se renovam a cada segundo enquanto o menu está
-aberto, e nada é medido com ele fechado. O consumo do computador como um todo
+WebView2, as páginas de memória que eles dividem entre si. O menu abre na
+hora, e a medida roda fora dele, numa linha de execução própria: os números
+chegam logo depois de o menu aparecer e se renovam a cada segundo enquanto ele
+está aberto. Nada é medido com ele fechado. O consumo do computador como um todo
 não aparece aqui: para isso existe o Gerenciador de Tarefas.
 
-Abaixo do consumo vêm duas ações:
+Abaixo do consumo vêm as ações:
 
+- **Abrir o Trackeroao** mostra a janela, onde ela estava.
 - **Forçar atualização** pede ao serviço, pela rota `POST /atualizar`, que
   confira a release mais nova naquele instante, sem esperar a próxima rodada e
   mesmo com o jogo aberto, já que foi a pessoa quem pediu. Havendo versão nova,
@@ -205,10 +247,13 @@ Abaixo do consumo vêm duas ações:
   anel fechado. Durante a conferência e a aplicação, o anel do ícone gira. Se a
   instalação já está na última versão, um aviso pequeno aparece ao lado do
   ícone, dizendo qual é a versão instalada, e some sozinho.
+- **Iniciar com o Windows** é uma caixa, desmarcada de início. Marcada, o
+  Trackeroao sobe no logon, com o ícone na bandeja e sem janela; desmarcada,
+  nada dele inicia sozinho.
 - **Fechar** encerra tudo de verdade: a janela, o ícone e o serviço. Antes de
-  sair, grava `sync/fechado.flag`, e enquanto esse arquivo existir o serviço
-  não volta por conta própria, nem no logon nem com o jogo. Ele só volta
-  quando a pessoa abre o Trackeroao à mão, pelo atalho, o que apaga a marca.
+  sair, grava `sync/fechado.flag`, e o serviço não volta por conta própria até
+  a pessoa abrir o Trackeroao à mão ou, com a caixa marcada, até o computador
+  reiniciar.
 
 Os textos do menu seguem o idioma escolhido na página ou, sem escolha, o do
 Windows.
@@ -236,11 +281,18 @@ instalador daquela mesma release e o chama no modo `/so-janela` (a função
 `trocarJanela` de `sync/atualizar.js`). Nesse modo o instalador não mostra
 janela nem roda script: extrai a janela nova para uma pasta ao lado e a põe no
 lugar de `<instalação>\app`, que é substituída inteira. Nada fica duplicado, e
-nenhuma cópia antiga sobra ao lado da nova. Com a janela aberta, ela é
-fechada, a pasta é trocada e a janela abre de novo já na versão nova, de modo
-que a atualização não depende de ninguém fechar nada; se ela não fechar a
-tempo, nada é trocado e a conferência seguinte tenta de novo. O ícone da
-bandeja, que é o mesmo `.exe`, sai durante a troca e volta em seguida. Reinstalar pelo `.exe` segue a mesma regra: a pasta
+nenhuma cópia antiga sobra ao lado da nova. A janela nunca é fechada debaixo
+de quem está olhando para ela: a conferência só troca nada quando não há versão
+nova, e, havendo, a troca espera enquanto a janela está à vista. A janela
+informa o próprio estado em `sync/janela.estado` ("vista" ou "escondida") e
+no sinal `Local\TrackeroaoAVista`; à vista, o serviço nem começa a troca, e o
+instalador, se chamado, sai com o código 3. Escondida na bandeja, ela é
+fechada, a pasta é trocada e a janela nova volta escondida, no mesmo lugar,
+sem que nada apareça na tela. O instalador daquela versão fica guardado na
+pasta temporária entre uma tentativa e outra, um só, para não ser baixado de
+novo a cada cinco minutos, e sai quando a troca termina ou quando outra versão
+chega. O ícone da bandeja, que é o mesmo `.exe`, sai durante a troca e volta
+em seguida. Reinstalar pelo `.exe` segue a mesma regra: a pasta
 `app` é trocada no lugar, depois de fechada uma janela que estivesse aberta.
 
 Num clone do repositório, a mesma rotina só avança a `main` por fast-forward,
@@ -387,9 +439,11 @@ como qualquer vista baseada no Edge. O consumo é o de uma página aberta num
 navegador moderno, e a página pede o `progress.json` ao serviço a cada cinco
 segundos. Ao fechar a janela, todos esses processos terminam; a pasta de
 dados do componente é uma só, sempre a mesma, e não cresce de uma abertura
-para a outra. Abrir a janela também acende o ícone da bandeja, descrito a
-seguir, que continua lá depois de a janela fechar e só se apaga quando uma
-sessão de jogo termina ou quando a pessoa escolhe "Fechar".
+para a outra. O ícone da bandeja, descrito a seguir, fica aceso enquanto o
+Trackeroao estiver de pé, com ou sem janela, e só se apaga quando a pessoa
+escolhe "Fechar". Fechar a janela pelo X apenas a esconde: a página deixa de
+ser desenhada e o componente devolve memória ao sistema, como na janela
+minimizada.
 
 Até a versão 1.7.3, a tela inicial pesava mais do que devia: a trama do fundo
 era animada pela posição de uma máscara numa camada várias vezes maior que a
@@ -710,6 +764,13 @@ qualquer save e em qualquer ciclo, enquanto o save conhece apenas o personagem
 atual. Onde os dois discordam, a página indica o desencontro na própria linha da
 conquista.
 
+Na página do Sekiro, o tempo de jogo aparece numa barra única, dividida em
+oito trechos iguais até o limite da escala, preenchida na proporção exata das
+horas jogadas, com a escala marcada no começo, no meio e no fim. Tudo o que se
+abre com um clique (os quadros de progresso, os anéis e o seletor de estado)
+leva um "+" dourado bem visível no canto, que gira quando o detalhe está
+aberto.
+
 A **detecção de que o jogo foi desinstalado**, que leva à hibernação, também
 tem caminho sem Steam. A varredura de jogos registra a pasta em que o Sekiro
 foi encontrado; se essa pasta deixa de existir e a varredura seguinte não o
@@ -762,6 +823,22 @@ palco ocupa a altura que sobra, e os pôsteres são medidos também pela altura 
 janela, de modo que o título, o palco, os jogos instalados, os dois botões e o
 rodapé aparecem juntos em qualquer tamanho de janela. No celular, estreito
 demais para isso, a tela continua rolando.
+
+A regra vale para toda a aplicação no computador: nenhuma tela rola, a não ser
+onde o dono do projeto pedir. A página de progresso de cada jogo se reorganiza
+numa grade que ocupa a altura da janela; em janelas baixas, os dois quadros de
+progresso ficam lado a lado. O que não cabe de uma vez é folheado em vez de
+rolado: as listas das janelas de detalhe (chefes, itens, conquistas) se
+distribuem em colunas e páginas, a lista completa de jogos se divide em
+páginas por grupo, e o trilho de pôsteres, quando há mais jogos do que cabem,
+passa de página em página. Em todos os casos, as setas ‹ e › com o número da
+página, a roda do mouse e as setas do teclado fazem a troca. No celular, a
+disposição de sempre continua, com a rolagem mínima que já tinha.
+
+Quando um jogo está em foco, a arte dele se estende pela tela inteira como
+fundo, e a trama animada do "Trackeroao" se desliga enquanto isso, voltando só
+quando não há arte. O palco não tem mais moldura: a arte larga se dissolve nas
+bordas e se funde com esse fundo, sem caixa em volta.
 
 Nos pôsteres sem arte, o nome do jogo nunca se parte no meio de uma palavra.
 Quando uma palavra não cabe na largura do pôster, apenas a letra diminui, sem

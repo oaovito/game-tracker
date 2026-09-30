@@ -150,6 +150,28 @@ function createServer(options) {
       return;
     }
 
+    /*
+     * Os jogos do topo do menu da bandeja: os instalados ou vigiados, do
+     * jogado por ultimo ao mais antigo, cinco no maximo. Uma linha por jogo,
+     * "chave<TAB>nome<TAB>1 se tem pagina de progresso", para o icone ler sem
+     * precisar de biblioteca de JSON. So da propria maquina.
+     */
+    if (urlPath === '/bandeja.txt') {
+      const daMaquina = /^(::1|::ffff:127\.|127\.)/.test(req.socket.remoteAddress || '');
+      if (!daMaquina) { res.writeHead(403).end('forbidden'); return; }
+      let lista = [];
+      try { lista = ((require('./jogos').paraProgresso() || {}).lista) || []; } catch (e) { lista = []; }
+      const ordem = (g) => (g.recente ? g.recente : 1e9);
+      const linhas = lista
+        .filter((g) => g.instalado || g.vigiado)
+        .sort((a, b) => ordem(a) - ordem(b) || String(a.nome).localeCompare(String(b.nome)))
+        .slice(0, 5)
+        .map((g) => [g.chave, g.nome, g.leitura === 'completa' ? '1' : '0'].map((v) => String(v).replace(/[\t\r\n]/g, ' ')).join('\t'));
+      res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
+      res.end(linhas.join('\n'));
+      return;
+    }
+
     // O IP desta maquina na rede de casa, para o passo a passo do celular.
     if (urlPath === '/rede') {
       const addrs = localAddresses();

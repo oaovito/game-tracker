@@ -534,13 +534,9 @@ async function pollOnce() {
     } else {
       console.log('\n  >> jogo fechado - só o poll leve continua rodando');
       stopWatching();
-      /*
-       * Uma ultima leitura antes de apagar, e o icone so sai depois dela: a
-       * sessao que acabou e justamente a que interessa ver, e apagar antes
-       * faria a aplicacao sumir no instante em que tem mais o que mostrar.
-       */
+      // Uma ultima leitura: a sessao que acabou e a que interessa ver. O icone
+      // da bandeja fica, porque o Trackeroao continua aberto.
       syncNow('jogo fechado');
-      fecharBandeja();
       // A atualização que esperou o jogo fechar roda já na próxima folga.
       conferirLogo();
     }
@@ -656,9 +652,41 @@ function encerrarDeVez() {
   process.exit(0);
 }
 
+/*
+ * Quando o serviço pode subir.
+ *
+ * Nada do Trackeroao começa sozinho com o Windows, a não ser que a caixa
+ * "Iniciar com o Windows" do menu da bandeja esteja marcada (a marca é o
+ * iniciar-com-windows.flag). A tarefa agendada continua existindo, porque é
+ * por ela que a janela sobe o serviço; mas quando ela dispara no logon, sem
+ * pedido de ninguém, o serviço sai na hora.
+ *
+ * Pedido é o abrir.pedido, que quem abre o Trackeroao à mão escreve antes de
+ * chamar a tarefa (a janela, o atalho de um clone, o instalador), valendo por
+ * dois minutos. O reinício de uma atualização passa sempre. O "Fechar" da
+ * bandeja vale até o próximo pedido, ou até o computador reiniciar.
+ */
+const PEDIDO = path.join(__dirname, 'abrir.pedido');
+const COM_WINDOWS = path.join(__dirname, 'iniciar-com-windows.flag');
+
+function podeSubir(reinicio) {
+  // No terminal é alguém rodando à mão, e fora do Windows não há tarefa.
+  if (process.platform !== 'win32' || process.stdout.isTTY) return true;
+  const idade = (f) => { try { return Date.now() - fs.statSync(f).mtimeMs; } catch (e) { return Infinity; } };
+  if (idade(PEDIDO) < 2 * 60 * 1000) {
+    try { fs.unlinkSync(PEDIDO); } catch (e) { /* ja foi */ }
+    try { fs.unlinkSync(FECHADO); } catch (e) { /* nao havia */ }
+    return true;
+  }
+  if (reinicio) return true;
+  const ligado = require('os').uptime() * 1000;
+  if (idade(FECHADO) < ligado) return false;
+  return fs.existsSync(COM_WINDOWS);
+}
+
 async function run() {
-  if (fs.existsSync(FECHADO)) process.exit(0);
   const reinicio = !!process.env.TRACKEROAO_REINICIO;
+  if (!podeSubir(reinicio)) process.exit(0);
   const bandejaAcesa = !!process.env.TRACKEROAO_BANDEJA;
   delete process.env.TRACKEROAO_REINICIO;
   delete process.env.TRACKEROAO_BANDEJA;
@@ -744,7 +772,9 @@ async function run() {
     console.log('');
   }
 
-  if (bandejaAcesa) abrirBandeja('depois da atualização');
+  // O ícone fica na bandeja enquanto o Trackeroao estiver de pé: é por ele
+  // que a janela escondida volta e que a aplicação se fecha de verdade.
+  abrirBandeja(bandejaAcesa ? 'depois da atualização' : 'início');
 
   vigiarRede(null, null, (novo) => nomeador.ipMudou(novo));
   vigiarInstalacao(hibernarAgora);

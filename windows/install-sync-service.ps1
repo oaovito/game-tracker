@@ -105,6 +105,9 @@ Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
 
 Write-Host "Tarefa agendada '$taskName' criada (inicia oculta no login)." -ForegroundColor Green
 
+# O pedido de abrir: sem ele o servico sai assim que sobe, porque nada do
+# Trackeroao inicia sozinho sem a caixa "Iniciar com o Windows" marcada.
+Set-Content -Path (Join-Path $raiz 'sync\abrir.pedido') -Value (Get-Date -Format o) -ErrorAction SilentlyContinue
 Start-ScheduledTask -TaskName $taskName
 Start-Sleep -Seconds 3
 

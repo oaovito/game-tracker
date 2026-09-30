@@ -68,22 +68,35 @@ static class Programa {
     return null;
   }
 
+  // Quem abre passa a vez de ficar na frente para a janela ja aberta: sem
+  // isto o Windows so pisca o botao dela na barra de tarefas.
+  [DllImport("user32.dll")] internal static extern bool AllowSetForegroundWindow(int processo);
+
+  // Para onde a janela ja aberta deve ir (/ir=#sekiro, do menu da bandeja).
+  internal static string ArquivoIr { get { return Path.Combine(Path.GetTempPath(), "Trackeroao.ir"); } }
+
   [STAThread]
   static void Main(string[] args) {
+    bool escondida = false;
+    string ir = null;
     foreach (string a in args) {
       if (a.Equals("/bandeja", StringComparison.OrdinalIgnoreCase)) { Bandeja.Rodar(args); return; }
+      if (a.Equals("/escondida", StringComparison.OrdinalIgnoreCase)) escondida = true;
+      if (a.StartsWith("/ir=", StringComparison.OrdinalIgnoreCase)) ir = a.Substring(4);
     }
     bool primeira;
     Mutex unica = new Mutex(true, "Local\\TrackeroaoJanela", out primeira);
     if (!primeira) {
       // Ja existe uma janela: ela e que aparece, e esta sai sem mostrar nada.
+      if (ir != null) { try { File.WriteAllText(ArquivoIr, ir); } catch { } }
+      try { AllowSetForegroundWindow(-1); } catch { }
       EventWaitHandle mostrar;
       if (EventWaitHandle.TryOpenExisting("Local\\TrackeroaoMostrar", out mostrar)) mostrar.Set();
       return;
     }
     Application.EnableVisualStyles();
     Application.SetCompatibleTextRenderingDefault(false);
-    Application.Run(new Janela());
+    Application.Run(new Janela(escondida, ir));
     GC.KeepAlive(unica);
   }
 }
@@ -93,6 +106,22 @@ class Janela : Form {
   readonly WebView2 web;
   readonly EventWaitHandle mostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\TrackeroaoMostrar");
   readonly EventWaitHandle fechar = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\TrackeroaoFechar");
+  // Aceso enquanto a janela esta a vista. A troca da janela pela atualizacao
+  // le este sinal: com ela a vista, espera; escondida na bandeja, troca.
+  readonly EventWaitHandle aVista = new EventWaitHandle(false, EventResetMode.ManualReset, "Local\\TrackeroaoAVista");
+  readonly bool comecarEscondida;
+  string irPara;
+  // O X esconde; so o "Fechar" da bandeja (ou o desligamento do Windows) fecha.
+  bool saindo;
+  FormWindowState antes = FormWindowState.Normal;
+  // O tamanho da janela fora de tela cheia: um so, travado.
+  Size tamanho;
+
+  [DllImport("user32.dll")] static extern bool IsZoomed(IntPtr janela);
+  [DllImport("user32.dll")] static extern bool IsIconic(IntPtr janela);
+  [StructLayout(LayoutKind.Sequential)]
+  struct PosicaoJanela { public IntPtr Janela, Depois; public int X, Y, L, A; public uint Opcoes; }
+  const int WM_WINDOWPOSCHANGING = 0x46, HTBORDER = 18;
 
   [DllImport("dwmapi.dll")]
   static extern int DwmSetWindowAttribute(IntPtr janela, int atributo, ref int valor, int tamanho);
@@ -109,7 +138,9 @@ class Janela : Form {
 
   readonly Barra barra;
 
-  public Janela() {
+  public Janela(bool escondida, string ir) {
+    comecarEscondida = escondida;
+    irPara = ir;
     Text = "Trackeroao";
     BackColor = Fundo;
     // O icone da barra de tarefas: o do .exe, que traz todos os tamanhos.
@@ -118,10 +149,29 @@ class Janela : Form {
       Icon = File.Exists(ico) ? new Icon(ico) : Icon.ExtractAssociatedIcon(Application.ExecutablePath);
     } catch { }
     AutoScaleMode = AutoScaleMode.Dpi;
-    StartPosition = FormStartPosition.CenterScreen;
-    Rectangle tela = Screen.PrimaryScreen.WorkingArea;
-    Size = new Size(Math.Min(1320, tela.Width - 80), Math.Min(860, tela.Height - 60));
-    MinimumSize = new Size(420, 560);
+    /*
+     * Onde ela abre: no mesmo lugar da ultima vez (a mesma tela, a mesma
+     * posicao, em tela cheia se estava), inclusive depois de reiniciar o
+     * computador ou de uma atualizacao. Se aquela tela nao existe mais, abre
+     * no meio da tela principal.
+     */
+    Lugar lugar = Lugar.Ler();
+    Screen tela = null;
+    if (lugar != null) {
+      foreach (Screen t in Screen.AllScreens) if (t.WorkingArea.Contains(lugar.Centro)) tela = t;
+    }
+    Rectangle area = (tela ?? Screen.PrimaryScreen).WorkingArea;
+    tamanho = new Size(Math.Min(1320, area.Width - 80), Math.Min(860, area.Height - 60));
+    Size = tamanho;
+    if (tela != null) {
+      StartPosition = FormStartPosition.Manual;
+      Location = new Point(
+        Math.Max(area.Left, Math.Min(lugar.X, area.Right - tamanho.Width)),
+        Math.Max(area.Top, Math.Min(lugar.Y, area.Bottom - tamanho.Height)));
+      if (lugar.Cheia) { WindowState = FormWindowState.Maximized; antes = FormWindowState.Maximized; }
+    } else {
+      StartPosition = FormStartPosition.CenterScreen;
+    }
 
     barra = new Barra(this);
 
@@ -152,7 +202,23 @@ class Janela : Form {
       // Faz o Windows recalcular a moldura com a regra de WndProc.
       SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0027);
     };
-    Resize += delegate { barra.Invalidate(); Poupar(); };
+    /*
+     * Tres estados e so: o tamanho travado, a tela cheia, e escondida na
+     * bandeja. Minimizar e fechar pelo X escondem na bandeja; de la ela volta
+     * pelo icone, no mesmo lugar e no mesmo estado.
+     */
+    Resize += delegate {
+      barra.Invalidate();
+      if (WindowState == FormWindowState.Minimized) {
+        if (Visible) BeginInvoke((Action)Esconder);
+      } else {
+        antes = WindowState;
+      }
+      Poupar();
+      AtualizarVista();
+    };
+    VisibleChanged += delegate { Poupar(); AtualizarVista(); };
+    ResizeEnd += delegate { SalvarLugar(); };
     // O contorno da janela acompanha a barra enquanto ela troca de cor.
     barra.Mudou += delegate(Color c) {
       if (!IsHandleCreated) return;
@@ -160,11 +226,86 @@ class Janela : Form {
       try { DwmSetWindowAttribute(Handle, 34, ref v, 4); } catch { }
     };
     Shown += async delegate { await Abrir(); };
-    Vigiar(mostrar, delegate {
-      if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
-      Show(); Activate(); BringToFront();
-    });
-    Vigiar(fechar, delegate { Close(); });
+    Vigiar(mostrar, Mostrar);
+    Vigiar(fechar, delegate { saindo = true; Close(); });
+  }
+
+  // Aberta com /escondida (a troca da atualizacao com a janela na bandeja),
+  // ela nasce sem aparecer, e a pagina so carrega quando for mostrada.
+  bool mostrada;
+  protected override void SetVisibleCore(bool valor) {
+    if (valor && comecarEscondida && !mostrada) {
+      if (!IsHandleCreated) CreateHandle();
+      valor = false;
+    }
+    base.SetVisibleCore(valor);
+  }
+
+  void Mostrar() {
+    mostrada = true;
+    string ir = null;
+    try {
+      if (File.Exists(Programa.ArquivoIr)) { ir = File.ReadAllText(Programa.ArquivoIr).Trim(); File.Delete(Programa.ArquivoIr); }
+    } catch { }
+    if (!Visible) Show();
+    if (WindowState == FormWindowState.Minimized) WindowState = antes;
+    Activate();
+    BringToFront();
+    if (!string.IsNullOrEmpty(ir)) {
+      if (web.CoreWebView2 != null) web.CoreWebView2.Navigate(Programa.Endereco + ir);
+      else irPara = ir;
+    }
+    AtualizarVista();
+  }
+
+  void Esconder() {
+    SalvarLugar();
+    Hide();
+    Poupar();
+    AtualizarVista();
+  }
+
+  // O estado tambem vai para sync\janela.estado, que o servico le antes de
+  // tentar a troca: com a janela a vista, ele nem comeca (e o icone da
+  // bandeja nao pisca a cada conferencia).
+  string estadoGravado;
+  static string ArquivoEstado {
+    get {
+      string raiz = Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath));
+      return Path.Combine(Path.Combine(raiz, "sync"), "janela.estado");
+    }
+  }
+
+  void AtualizarVista() {
+    bool vista = Visible && WindowState != FormWindowState.Minimized;
+    try { if (vista) aVista.Set(); else aVista.Reset(); } catch { }
+    string estado = vista ? "vista" : "escondida";
+    if (estado == estadoGravado) return;
+    estadoGravado = estado;
+    try { File.WriteAllText(ArquivoEstado, estado); } catch { }
+  }
+
+  protected override void OnFormClosed(FormClosedEventArgs e) {
+    try { File.Delete(ArquivoEstado); } catch { }
+    base.OnFormClosed(e);
+  }
+
+  void SalvarLugar() {
+    if (!IsHandleCreated) return;
+    Point p = WindowState == FormWindowState.Normal ? Location : RestoreBounds.Location;
+    bool cheia = WindowState == FormWindowState.Maximized ||
+      (WindowState == FormWindowState.Minimized && antes == FormWindowState.Maximized);
+    Lugar.Gravar(p, cheia);
+  }
+
+  protected override void OnFormClosing(FormClosingEventArgs e) {
+    SalvarLugar();
+    if (!saindo && e.CloseReason == CloseReason.UserClosing) {
+      e.Cancel = true;
+      Esconder();
+      return;
+    }
+    base.OnFormClosing(e);
   }
 
   /*
@@ -182,6 +323,16 @@ class Janela : Form {
   }
 
   protected override void WndProc(ref Message m) {
+    // Fora da tela cheia o tamanho e sempre o mesmo: nem a borda nem o
+    // encaixe do Windows nas laterais da tela mudam o tamanho dela.
+    if (m.Msg == WM_WINDOWPOSCHANGING && IsHandleCreated && !IsZoomed(Handle) && !IsIconic(Handle) && tamanho.Width > 0) {
+      PosicaoJanela w = (PosicaoJanela)Marshal.PtrToStructure(m.LParam, typeof(PosicaoJanela));
+      if ((w.Opcoes & 0x0001) == 0 && (w.L != tamanho.Width || w.A != tamanho.Height)) {
+        w.L = tamanho.Width;
+        w.A = tamanho.Height;
+        Marshal.StructureToPtr(w, m.LParam, false);
+      }
+    }
     if (m.Msg == WM_NCCALCSIZE && m.WParam != IntPtr.Zero) {
       Retangulo r = (Retangulo)Marshal.PtrToStructure(m.LParam, typeof(Retangulo));
       int bx = Moldura(false), by = Moldura(true);
@@ -195,13 +346,11 @@ class Janela : Form {
     }
     if (m.Msg == WM_NCHITTEST) {
       base.WndProc(ref m);
-      if (m.Result.ToInt32() != HTCLIENT) return;
+      // As bordas nao redimensionam: o tamanho e travado.
+      int onde = m.Result.ToInt32();
+      if (onde >= 10 && onde <= 17) { m.Result = (IntPtr)HTBORDER; return; }
+      if (onde != HTCLIENT) return;
       Point p = PointToClient(new Point((short)(m.LParam.ToInt64() & 0xFFFF), (short)((m.LParam.ToInt64() >> 16) & 0xFFFF)));
-      if (WindowState != FormWindowState.Maximized && p.Y < Moldura(true)) {
-        int canto = Moldura(false) * 2;
-        m.Result = (IntPtr)(p.X < canto ? HTTOPLEFT : p.X > ClientSize.Width - canto ? HTTOPRIGHT : HTTOP);
-        return;
-      }
       if (barra != null && p.Y < barra.Height && !barra.SobreBotao(p)) m.Result = (IntPtr)HTCAPTION;
       return;
     }
@@ -225,7 +374,7 @@ class Janela : Form {
    */
   void Poupar() {
     if (web == null || web.CoreWebView2 == null) return;
-    bool min = WindowState == FormWindowState.Minimized;
+    bool min = WindowState == FormWindowState.Minimized || !Visible;
     try {
       web.Visible = !min;
       web.CoreWebView2.MemoryUsageTargetLevel = min ? CoreWebView2MemoryUsageTargetLevel.Low : CoreWebView2MemoryUsageTargetLevel.Normal;
@@ -270,7 +419,8 @@ class Janela : Form {
     bool vivo = await Task.Run(new Func<bool>(GarantirServico));
     if (vivo) {
       Pedir(Programa.Endereco + "abrir");
-      web.CoreWebView2.Navigate(Programa.Endereco);
+      web.CoreWebView2.Navigate(Programa.Endereco + (irPara ?? ""));
+      irPara = null;
     } else {
       web.NavigateToString(Espera().Replace("<i></i>", "<i class=\"parado\"></i>"));
     }
@@ -294,6 +444,12 @@ class Janela : Form {
       File.Delete(Path.Combine(Path.Combine(raiz, "sync"), "fechado.flag"));
     } catch { }
     if (Responde()) return true;
+    // O pedido de abrir: sem ele o servico que a tarefa sobe sai na hora,
+    // porque nada do Trackeroao inicia sozinho sem a caixa marcada na bandeja.
+    try {
+      string raiz = Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath));
+      File.WriteAllText(Path.Combine(Path.Combine(raiz, "sync"), "abrir.pedido"), DateTime.Now.ToString("o"));
+    } catch { }
     try {
       ProcessStartInfo p = new ProcessStartInfo("schtasks.exe", "/run /tn TrackeroaoSync");
       p.CreateNoWindow = true;
@@ -346,6 +502,41 @@ class Janela : Form {
       Process.Start(p);
     } catch { }
     Close();
+  }
+}
+
+/*
+ * Onde a janela estava: a posicao fora da tela cheia e se estava em tela
+ * cheia, num arquivo pequeno ao lado dos dados do componente de pagina.
+ */
+class Lugar {
+  public int X, Y;
+  public bool Cheia;
+  public Point Centro { get { return new Point(X + 300, Y + 200); } }
+
+  static string Arquivo {
+    get {
+      return Path.Combine(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "trackeroao"), "janela.txt");
+    }
+  }
+
+  public static Lugar Ler() {
+    try {
+      string[] v = File.ReadAllText(Arquivo).Trim().Split(' ');
+      Lugar l = new Lugar();
+      l.X = int.Parse(v[0]);
+      l.Y = int.Parse(v[1]);
+      l.Cheia = v.Length > 2 && v[2] == "1";
+      return l;
+    } catch { return null; }
+  }
+
+  public static void Gravar(Point p, bool cheia) {
+    try {
+      Directory.CreateDirectory(Path.GetDirectoryName(Arquivo));
+      File.WriteAllText(Arquivo, p.X + " " + p.Y + " " + (cheia ? "1" : "0"));
+    } catch { }
   }
 }
 
@@ -787,26 +978,29 @@ static class Visivel {
 /*
  * O icone da bandeja (Trackeroao.exe /bandeja /porta=8777 /pai=<pid>).
  *
- * Aparece quando um jogo escolhido abre, ou quando o Trackeroao e aberto a
- * mao, e some quando o servico que o chamou (o /pai) sai. Dois cliques abrem
- * a janela; o botao direito oferece "Forcar atualizacao" e "Fechar". Os
- * textos seguem o idioma escolhido no globo da pagina (sync\idioma.json) ou,
- * sem escolha, o do Windows.
+ * Fica aceso enquanto o Trackeroao estiver de pe, e some quando o servico que
+ * o chamou (o /pai) sai. Um clique abre a janela. O botao direito abre o menu
+ * do Trackeroao, desenhado no estilo dele (escuro, com o limao de destaque),
+ * como o da Steam: os jogos no topo, o consumo, "Abrir", "Forcar
+ * atualizacao", "Iniciar com o Windows" e "Fechar". Os textos seguem o idioma
+ * escolhido no globo da pagina (sync\idioma.json) ou, sem escolha, o do
+ * Windows.
  */
 static class Bandeja {
+  // Idioma, forcar atualizacao, fechar, aviso de versao atual, abrir, iniciar com o Windows.
   static readonly string[][] Textos = new string[][] {
-    new string[] { "en", "Force update", "Close", "You are on the latest version ({0})." },
-    new string[] { "pt-BR", "Forçar atualização", "Fechar", "Você já está na versão mais recente ({0})." },
-    new string[] { "es", "Forzar actualización", "Cerrar", "Ya tienes la versión más reciente ({0})." },
-    new string[] { "fr", "Forcer la mise à jour", "Fermer", "Vous avez déjà la dernière version ({0})." },
-    new string[] { "de", "Update erzwingen", "Schließen", "Du hast bereits die neueste Version ({0})." },
-    new string[] { "it", "Forza aggiornamento", "Chiudi", "Hai già la versione più recente ({0})." },
-    new string[] { "ru", "Принудительно обновить", "Закрыть", "У вас уже последняя версия ({0})." },
-    new string[] { "pl", "Wymuś aktualizację", "Zamknij", "Masz już najnowszą wersję ({0})." },
-    new string[] { "tr", "Güncellemeyi zorla", "Kapat", "Zaten en güncel sürümdesiniz ({0})." },
-    new string[] { "ja", "今すぐ更新", "閉じる", "最新バージョンです（{0}）。" },
-    new string[] { "ko", "강제 업데이트", "닫기", "이미 최신 버전입니다({0})." },
-    new string[] { "zh-CN", "强制更新", "关闭", "已是最新版本（{0}）。" },
+    new string[] { "en", "Force update", "Close", "You are on the latest version ({0}).", "Open Trackeroao", "Start with Windows" },
+    new string[] { "pt-BR", "Forçar atualização", "Fechar", "Você já está na versão mais recente ({0}).", "Abrir o Trackeroao", "Iniciar com o Windows" },
+    new string[] { "es", "Forzar actualización", "Cerrar", "Ya tienes la versión más reciente ({0}).", "Abrir Trackeroao", "Iniciar con Windows" },
+    new string[] { "fr", "Forcer la mise à jour", "Fermer", "Vous avez déjà la dernière version ({0}).", "Ouvrir Trackeroao", "Lancer avec Windows" },
+    new string[] { "de", "Update erzwingen", "Schließen", "Du hast bereits die neueste Version ({0}).", "Trackeroao öffnen", "Mit Windows starten" },
+    new string[] { "it", "Forza aggiornamento", "Chiudi", "Hai già la versione più recente ({0}).", "Apri Trackeroao", "Avvia con Windows" },
+    new string[] { "ru", "Принудительно обновить", "Закрыть", "У вас уже последняя версия ({0}).", "Открыть Trackeroao", "Запускать с Windows" },
+    new string[] { "pl", "Wymuś aktualizację", "Zamknij", "Masz już najnowszą wersję ({0}).", "Otwórz Trackeroao", "Uruchamiaj z Windows" },
+    new string[] { "tr", "Güncellemeyi zorla", "Kapat", "Zaten en güncel sürümdesiniz ({0}).", "Trackeroao'yu aç", "Windows ile başlat" },
+    new string[] { "ja", "今すぐ更新", "閉じる", "最新バージョンです（{0}）。", "Trackeroao を開く", "Windows と同時に起動" },
+    new string[] { "ko", "강제 업데이트", "닫기", "이미 최신 버전입니다({0}).", "Trackeroao 열기", "Windows 시작 시 실행" },
+    new string[] { "zh-CN", "强制更新", "关闭", "已是最新版本（{0}）。", "打开 Trackeroao", "随 Windows 启动" },
   };
 
   static string[] Idioma(string sync) {
@@ -844,6 +1038,17 @@ static class Bandeja {
     using (StreamReader sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd();
   }
 
+  static string Pegar(string url) {
+    HttpWebRequest r = (HttpWebRequest)WebRequest.Create(url);
+    r.Timeout = 3000;
+    r.Proxy = null;
+    using (HttpWebResponse resp = (HttpWebResponse)r.GetResponse())
+    using (StreamReader sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd();
+  }
+
+  [DllImport("dwmapi.dll")]
+  static extern int DwmSetWindowAttribute(IntPtr janela, int atributo, ref int valor, int tamanho);
+
   public static void Rodar(string[] args) {
     int porta = 8777, pai = 0;
     foreach (string a in args) {
@@ -857,6 +1062,7 @@ static class Bandeja {
     Application.EnableVisualStyles();
     string raiz = Path.GetDirectoryName(Path.GetDirectoryName(Application.ExecutablePath));
     string sync = Path.Combine(raiz, "sync");
+    string comWindows = Path.Combine(sync, "iniciar-com-windows.flag");
     string[] t = Idioma(sync);
     string base_ = "http://127.0.0.1:" + porta + "/";
 
@@ -867,42 +1073,134 @@ static class Bandeja {
     Func<string> nome = delegate { string v = Versao(raiz); return v == null ? "Trackeroao" : "Trackeroao " + v; };
     icone.Text = nome();
 
+    Action<string> abrir = delegate(string ir) {
+      try { Programa.AllowSetForegroundWindow(-1); } catch { }
+      try {
+        ProcessStartInfo p = new ProcessStartInfo(Application.ExecutablePath, ir == null ? "" : "/ir=" + ir);
+        p.UseShellExecute = false;
+        Process.Start(p);
+      } catch { }
+    };
+
     ContextMenuStrip menu = new ContextMenuStrip();
-    ToolStripItem versao = menu.Items.Add(nome());
-    versao.Enabled = false;
-    menu.Items.Add(new ToolStripSeparator());
-    menu.Opening += delegate { string n = nome(); versao.Text = n; icone.Text = n; };
+    Tema tema = new Tema();
+    menu.Renderer = tema;
+    menu.BackColor = Tema.Fundo;
+    menu.ForeColor = Tema.Texto;
+    menu.ShowImageMargin = true;
+    menu.ShowCheckMargin = false;
+    menu.ImageScalingSize = new Size(20, 20);
+    menu.Padding = new Padding(6, 8, 6, 8);
+    menu.Font = new Font("Segoe UI", 9.5f);
+    Font negrito = new Font("Segoe UI Semibold", 10f);
+
+    Func<string, Image, ToolStripMenuItem> item = delegate(string texto, Image img) {
+      ToolStripMenuItem i = new ToolStripMenuItem(texto, img);
+      i.Padding = new Padding(4, 5, 4, 5);
+      i.ImageScaling = ToolStripItemImageScaling.None;
+      return i;
+    };
+
+    // O topo: o icone e o nome com a versao.
+    Icon grande = Programa.Icone(new Size(20, 20));
+    ToolStripMenuItem cabeca = item(nome(), grande != null ? grande.ToBitmap() : null);
+    cabeca.Font = negrito;
+    cabeca.Tag = "cabeca";
+    cabeca.Click += delegate { abrir(null); };
+    menu.Items.Add(cabeca);
+
+    // Os jogos, como na Steam: um clique abre a pagina dele (ou a tela
+    // inicial, para quem ainda nao tem pagina de progresso).
+    ToolStripSeparator antesDosJogos = new ToolStripSeparator();
+    menu.Items.Add(antesDosJogos);
+    System.Collections.Generic.List<ToolStripItem> itensDeJogo = new System.Collections.Generic.List<ToolStripItem>();
+    string[] jogos = new string[0];
+    object trava = new object();
+    Action lerJogos = delegate {
+      ThreadPool.QueueUserWorkItem(delegate {
+        try {
+          string txt = Pegar(base_ + "bandeja.txt");
+          lock (trava) jogos = txt.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        } catch { }
+      });
+    };
+    Action montarJogos = delegate {
+      foreach (ToolStripItem velho in itensDeJogo) { menu.Items.Remove(velho); velho.Dispose(); }
+      itensDeJogo.Clear();
+      string[] lista;
+      lock (trava) lista = jogos;
+      int onde = menu.Items.IndexOf(antesDosJogos) + 1;
+      foreach (string linha in lista) {
+        string[] c = linha.Split('\t');
+        if (c.Length < 3) continue;
+        string chave = c[0], nomeJogo = c[1];
+        bool temPagina = c[2] == "1";
+        ToolStripMenuItem j = item(nomeJogo, Tema.Selo(nomeJogo));
+        j.Click += delegate { abrir(temPagina ? "#" + chave : "#"); };
+        menu.Items.Insert(onde++, j);
+        itensDeJogo.Add(j);
+      }
+      if (itensDeJogo.Count > 0) {
+        ToolStripSeparator s = new ToolStripSeparator();
+        menu.Items.Insert(onde, s);
+        itensDeJogo.Add(s);
+      }
+      antesDosJogos.Visible = itensDeJogo.Count > 0;
+    };
 
     // O que o Trackeroao inteiro gasta agora (servico, janela, este icone e
-    // o motor da pagina), medido so enquanto o menu esta aberto.
-    ToolStripItem cpu = menu.Items.Add("CPU");
-    ToolStripItem gpu = menu.Items.Add("GPU");
-    ToolStripItem ram = menu.Items.Add("RAM");
-    cpu.Enabled = gpu.Enabled = ram.Enabled = false;
+    // o motor da pagina). O menu abre na hora: a medida roda por fora, a
+    // cada segundo so enquanto ele estiver aberto, e os numeros chegam logo
+    // depois.
+    ToolStripMenuItem cpu = item("CPU   ...", null);
+    ToolStripMenuItem gpu = item("GPU   ...", null);
+    ToolStripMenuItem ram = item("RAM   ...", null);
+    foreach (ToolStripMenuItem i in new ToolStripMenuItem[] { cpu, gpu, ram }) {
+      i.Enabled = false;
+      i.Padding = new Padding(4, 1, 4, 1);
+      i.Font = new Font("Consolas", 9f);
+      menu.Items.Add(i);
+    }
     menu.Items.Add(new ToolStripSeparator());
     Consumo consumo = new Consumo(pai);
-    System.Windows.Forms.Timer medir = new System.Windows.Forms.Timer();
-    medir.Interval = 1000;
-    Action mostrar = delegate {
-      try { consumo.Medir(); } catch { }
-      cpu.Text = "CPU   " + consumo.Cpu;
-      gpu.Text = "GPU   " + consumo.Gpu;
-      ram.Text = "RAM   " + consumo.Ram;
+    int medindo = 0;
+    bool aberto = false;
+    Action medir = delegate {
+      if (Interlocked.Exchange(ref medindo, 1) == 1) return;
+      Thread th = new Thread(delegate() {
+        try {
+          while (aberto) {
+            try { consumo.Medir(); } catch { }
+            string c = consumo.Cpu, g = consumo.Gpu, r = consumo.Ram;
+            try {
+              menu.BeginInvoke((Action)delegate {
+                cpu.Text = "CPU   " + c;
+                gpu.Text = "GPU   " + g;
+                ram.Text = "RAM   " + r;
+              });
+            } catch { }
+            for (int k = 0; k < 10 && aberto; k++) Thread.Sleep(100);
+          }
+        } finally {
+          consumo.Soltar();
+          Interlocked.Exchange(ref medindo, 0);
+        }
+      });
+      th.IsBackground = true;
+      th.Start();
     };
-    medir.Tick += delegate { mostrar(); };
-    menu.Opening += delegate { consumo.Zerar(); mostrar(); medir.Start(); };
-    menu.Closed += delegate { medir.Stop(); consumo.Soltar(); };
-    ToolStripItem atualizar = menu.Items.Add(t[1]);
+
+    ToolStripMenuItem abrirItem = item(t[4], null);
+    abrirItem.Click += delegate { abrir(null); };
+    menu.Items.Add(abrirItem);
+
+    ToolStripMenuItem atualizar = item(t[1], null);
     atualizar.Click += delegate {
       /*
        * O servico confere a release agora. Ja na ultima versao, um aviso
        * pequeno sai ao lado deste icone e some sozinho. Havendo versao nova,
-       * ela e aplicada em silencio e o servico se reinicia.
-       */
-      /*
-       * Enquanto isso, o anel do icone abre em arco e gira. Com versao nova, o
-       * servico se reinicia ao terminar e o icone volta com o anel fechado;
-       * sem nada novo, ou sem resposta, o anel fecha na hora.
+       * ela e aplicada em silencio e o servico se reinicia. Enquanto isso, o
+       * anel do icone abre em arco e gira.
        */
       girando.Comecar();
       ThreadPool.QueueUserWorkItem(delegate {
@@ -919,14 +1217,30 @@ static class Bandeja {
         if (!nova) { try { menu.BeginInvoke((Action)delegate { if (girando.Ligado) girando.Parar(); }); } catch { } }
       });
     };
+    menu.Items.Add(atualizar);
+
+    // Iniciar com o Windows: desmarcada, nada do Trackeroao sobe sozinho no
+    // logon (o servico que a tarefa agendada chama sai na hora).
+    ToolStripMenuItem iniciar = item(t[5], null);
+    Action marcar = delegate { iniciar.Image = Tema.Caixa(File.Exists(comWindows)); };
+    marcar();
+    iniciar.Click += delegate {
+      try {
+        if (File.Exists(comWindows)) File.Delete(comWindows);
+        else File.WriteAllText(comWindows, DateTime.Now.ToString("o"));
+      } catch { }
+      marcar();
+    };
+    menu.Items.Add(iniciar);
+
     menu.Items.Add(new ToolStripSeparator());
-    ToolStripItem fechar = menu.Items.Add(t[2]);
+    ToolStripMenuItem fechar = item(t[2], null);
+    fechar.Tag = "fechar";
     fechar.Click += delegate {
       /*
        * Fecha tudo de verdade: a janela, este icone e o servico. Nada volta
-       * sozinho -- nem no logon, nem com o jogo -- ate o Trackeroao ser aberto
-       * a mao. A marca e escrita aqui tambem, para valer mesmo com o servico
-       * sem responder.
+       * sozinho ate o Trackeroao ser aberto a mao (ou, com a caixa marcada,
+       * ate o proximo logon).
        */
       EventWaitHandle sinal;
       if (EventWaitHandle.TryOpenExisting("Local\\TrackeroaoFechar", out sinal)) sinal.Set();
@@ -935,12 +1249,31 @@ static class Bandeja {
       icone.Visible = false;
       Application.Exit();
     };
-    icone.ContextMenuStrip = menu;
-    icone.MouseDoubleClick += delegate {
-      try { Process.Start(new ProcessStartInfo(Application.ExecutablePath) { UseShellExecute = false }); } catch { }
+    menu.Items.Add(fechar);
+
+    menu.Opening += delegate {
+      string n = nome();
+      cabeca.Text = n;
+      icone.Text = n;
+      montarJogos();
+      marcar();
+      aberto = true;
+      consumo.Zerar();
+      cpu.Text = "CPU   ...";
+      gpu.Text = "GPU   ...";
+      ram.Text = "RAM   ...";
+      medir();
     };
+    menu.Closed += delegate { aberto = false; lerJogos(); };
+
+    icone.ContextMenuStrip = menu;
+    icone.MouseClick += delegate(object o, MouseEventArgs e) { if (e.Button == MouseButtons.Left) abrir(null); };
     // O menu precisa de identificador para o BeginInvoke do aviso.
     IntPtr h = menu.Handle;
+    // Cantos arredondados no Windows 11, como os menus do sistema.
+    int redondo = 2;
+    try { DwmSetWindowAttribute(h, 33, ref redondo, 4); } catch { }
+    lerJogos();
     icone.Visible = true;
     // Aceso de novo no meio de uma atualizacao (a troca da janela), segue girando.
     foreach (string a in args) if (a.Equals("/atualizando", StringComparison.OrdinalIgnoreCase)) girando.Comecar();
@@ -968,5 +1301,129 @@ static class Bandeja {
     icone.Dispose();
     GC.KeepAlive(unica);
     GC.KeepAlive(h);
+  }
+}
+
+/*
+ * O desenho do menu da bandeja: o vidro escuro do Trackeroao, texto claro, o
+ * limao como destaque do item sob o mouse, e cada jogo com um selo da cor
+ * dele e a inicial, como os icones da lista da Steam.
+ */
+class Tema : ToolStripProfessionalRenderer {
+  public static readonly Color Fundo = Color.FromArgb(17, 19, 24);
+  public static readonly Color Borda = Color.FromArgb(44, 47, 56);
+  public static readonly Color Texto = Color.FromArgb(236, 238, 242);
+  public static readonly Color Apagado = Color.FromArgb(150, 154, 164);
+  public static readonly Color Limao = Color.FromArgb(216, 255, 60);
+
+  public Tema() : base(new Cores()) { RoundedEdges = false; }
+
+  class Cores : ProfessionalColorTable {
+    public override Color ToolStripDropDownBackground { get { return Fundo; } }
+    public override Color ImageMarginGradientBegin { get { return Fundo; } }
+    public override Color ImageMarginGradientMiddle { get { return Fundo; } }
+    public override Color ImageMarginGradientEnd { get { return Fundo; } }
+    public override Color MenuBorder { get { return Borda; } }
+    public override Color SeparatorDark { get { return Borda; } }
+    public override Color SeparatorLight { get { return Fundo; } }
+  }
+
+  static GraphicsPath Arredondado(Rectangle r, int raio) {
+    GraphicsPath p = new GraphicsPath();
+    int d = raio * 2;
+    p.AddArc(r.X, r.Y, d, d, 180, 90);
+    p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+    p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+    p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+    p.CloseFigure();
+    return p;
+  }
+
+  protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e) {
+    using (SolidBrush b = new SolidBrush(Fundo)) e.Graphics.FillRectangle(b, e.AffectedBounds);
+  }
+
+  protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e) {
+    Rectangle r = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
+    using (Pen p = new Pen(Borda)) e.Graphics.DrawRectangle(p, r);
+  }
+
+  protected override void OnRenderImageMargin(ToolStripRenderEventArgs e) { }
+
+  protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e) {
+    if (!e.Item.Selected || !e.Item.Enabled) return;
+    Rectangle r = new Rectangle(2, 1, e.Item.Width - 4, e.Item.Height - 2);
+    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+    bool fechar = "fechar".Equals(e.Item.Tag);
+    Color cor = fechar ? Color.FromArgb(60, 232, 17, 35) : Color.FromArgb(34, Limao);
+    using (GraphicsPath p = Arredondado(r, 6))
+    using (SolidBrush b = new SolidBrush(cor)) e.Graphics.FillPath(b, p);
+  }
+
+  protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e) {
+    int y = e.Item.Height / 2;
+    using (Pen p = new Pen(Borda)) e.Graphics.DrawLine(p, 10, y, e.Item.Width - 10, y);
+  }
+
+  protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e) {
+    if ("cabeca".Equals(e.Item.Tag)) e.TextColor = Texto;
+    else if (!e.Item.Enabled) e.TextColor = Apagado;
+    else e.TextColor = e.Item.Selected && !"fechar".Equals(e.Item.Tag) ? Limao : Texto;
+    base.OnRenderItemText(e);
+  }
+
+  protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e) { }
+
+  // O selo de um jogo: um quadrado arredondado na cor tirada do nome, com a inicial.
+  public static Bitmap Selo(string nome) {
+    int h = 0;
+    foreach (char c in nome) h = h * 31 + c;
+    float matiz = (h & 0x7fffffff) % 360;
+    Bitmap bmp = new Bitmap(20, 20, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+    using (Graphics g = Graphics.FromImage(bmp)) {
+      g.SmoothingMode = SmoothingMode.AntiAlias;
+      g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+      using (GraphicsPath p = Arredondado(new Rectangle(0, 0, 19, 19), 5))
+      using (LinearGradientBrush b = new LinearGradientBrush(new Rectangle(0, 0, 20, 20), DeMatiz(matiz, 0.55f), DeMatiz(matiz + 30, 0.32f), 45f))
+        g.FillPath(b, p);
+      string letra = nome.Length > 0 ? nome.Substring(0, 1).ToUpperInvariant() : "?";
+      using (Font f = new Font("Segoe UI Semibold", 9f))
+      using (StringFormat sf = new StringFormat()) {
+        sf.Alignment = StringAlignment.Center;
+        sf.LineAlignment = StringAlignment.Center;
+        g.DrawString(letra, f, Brushes.White, new RectangleF(0, 0, 20, 20), sf);
+      }
+    }
+    return bmp;
+  }
+
+  // A caixa de "Iniciar com o Windows": vazia, ou cheia de limao com o visto.
+  public static Bitmap Caixa(bool marcada) {
+    Bitmap bmp = new Bitmap(20, 20, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+    using (Graphics g = Graphics.FromImage(bmp)) {
+      g.SmoothingMode = SmoothingMode.AntiAlias;
+      Rectangle r = new Rectangle(2, 2, 15, 15);
+      using (GraphicsPath p = Arredondado(r, 4)) {
+        if (marcada) {
+          using (SolidBrush b = new SolidBrush(Limao)) g.FillPath(b, p);
+          using (Pen v = new Pen(Color.FromArgb(12, 15, 2), 2f)) {
+            v.StartCap = v.EndCap = LineCap.Round;
+            g.DrawLines(v, new PointF[] { new PointF(5.5f, 10f), new PointF(8.5f, 13f), new PointF(14f, 6.5f) });
+          }
+        } else {
+          using (Pen b = new Pen(Apagado, 1.4f)) g.DrawPath(b, p);
+        }
+      }
+    }
+    return bmp;
+  }
+
+  static Color DeMatiz(float matiz, float luz) {
+    matiz = ((matiz % 360) + 360) % 360;
+    float s = 0.6f, c = (1 - Math.Abs(2 * luz - 1)) * s, x = c * (1 - Math.Abs((matiz / 60) % 2 - 1)), m = luz - c / 2;
+    float r = 0, g = 0, b = 0;
+    if (matiz < 60) { r = c; g = x; } else if (matiz < 120) { r = x; g = c; } else if (matiz < 180) { g = c; b = x; }
+    else if (matiz < 240) { g = x; b = c; } else if (matiz < 300) { r = x; b = c; } else { r = c; b = x; }
+    return Color.FromArgb((int)((r + m) * 255), (int)((g + m) * 255), (int)((b + m) * 255));
   }
 }

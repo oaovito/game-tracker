@@ -275,6 +275,7 @@ jobs:
           Start-Sleep -Seconds 2
           Copy-Item sync\*.js, sync\*.ps1, sync\*.vbs, sync\*.json (Join-Path $destino 'sync') -Force
           Copy-Item trackeroao.html $destino -Force
+          Set-Content (Join-Path $destino 'sync\abrir.pedido') (Get-Date -Format o)
           schtasks /run /tn TrackeroaoSync | Out-Null
           $vivo = $false
           for ($i = 0; $i -lt 30 -and -not $vivo; $i++) {
@@ -378,6 +379,7 @@ jobs:
           [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, int m, IntPtr w, IntPtr l);
           [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
           [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+          [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
           [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
           [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
           '@
@@ -396,25 +398,47 @@ jobs:
           if ($naBarra -ne 2) { throw "a barra propria nao arrasta a janela ($naBarra)" }
           if ($noX -ne 1) { throw "o botao de fechar nao e do aplicativo ($noX)" }
           if ($naPagina -ne 1) { throw "a pagina nao recebe o clique ($naPagina)" }
-          # A troca da janela pela atualizacao, com a janela aberta: ela fecha,
-          # a pasta e trocada e ela abre de novo, sem ninguem mexer em nada.
-          # Um atalho de versao antiga, com o icone no .exe: a troca o acerta.
+          # Tamanho travado: a borda da janela nao redimensiona (HTBORDER).
+          $naBorda = Toque ($wr.L + 2) ($wr.T + 300)
+          Write-Host "toque na borda esquerda: $naBorda"
+          if ($naBorda -ge 10 -and $naBorda -le 17) { throw "a borda ainda redimensiona a janela ($naBorda)" }
+          # O estado da janela vai para o servico: a vista, a troca espera.
+          $estado = Join-Path $destino 'sync\janela.estado'
+          if ((Get-Content $estado -ErrorAction SilentlyContinue) -ne 'vista') { throw 'a janela aberta nao se marcou como a vista' }
+
+          # A troca da janela pela atualizacao. A vista, ela nao fecha debaixo de
+          # quem olha: o instalador sai com 3 e a janela fica.
           $velho = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk.FullName)
           $velho.IconLocation = "$janela,0"; $velho.Save()
           Remove-Item (Join-Path $destino 'app\versao.txt') -ErrorAction SilentlyContinue
-          # So o instalador: -Wait esperaria tambem a janela que ele reabre.
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -PassThru
-          if (-not $p.WaitForExit(120000)) { throw 'com a janela aberta, /so-janela nao terminou' }
-          if ($p.ExitCode -ne 0) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode)" }
+          if (-not $p.WaitForExit(120000)) { throw 'com a janela a vista, /so-janela nao terminou' }
+          if ($p.ExitCode -ne 3) { throw "com a janela a vista, /so-janela saiu com $($p.ExitCode), e nao esperou" }
+          if ($j.HasExited) { throw 'a troca fechou a janela que estava a vista' }
+          Write-Host 'com a janela a vista a troca esperou e a janela ficou'
+          # O X esconde na bandeja: o processo continua, sem janela a vista.
+          [void][T.U]::SendMessage($h, 0x10, [IntPtr]::Zero, [IntPtr]::Zero)
+          Start-Sleep -Seconds 2
+          if ($j.HasExited) { throw 'o X fechou a aplicacao, em vez de esconder na bandeja' }
+          if ([T.U]::IsWindowVisible($h)) { throw 'o X nao escondeu a janela' }
+          if ((Get-Content $estado -ErrorAction SilentlyContinue) -ne 'escondida') { throw 'a janela escondida nao se marcou como escondida' }
+          $lugar = Join-Path $env:LOCALAPPDATA 'trackeroao\janela.txt'
+          if (-not (Test-Path $lugar)) { throw 'a janela nao guardou onde estava' }
+          Write-Host "o X escondeu na bandeja; lugar guardado: $(Get-Content $lugar)"
+          # Escondida, a troca fecha, troca e reabre escondida, sem ninguem mexer.
+          $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -PassThru
+          if (-not $p.WaitForExit(120000)) { throw 'com a janela na bandeja, /so-janela nao terminou' }
+          if ($p.ExitCode -ne 0) { throw "com a janela na bandeja, /so-janela saiu com $($p.ExitCode)" }
           if (-not $j.WaitForExit(1000)) { throw 'a janela antiga continuou aberta depois da troca' }
-          if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw 'a troca com a janela aberta nao gravou a versao' }
+          if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw 'a troca com a janela na bandeja nao gravou a versao' }
           $nova = $null
           for ($i = 0; $i -lt 20 -and -not $nova; $i++) { Start-Sleep -Milliseconds 500; $nova = (Trackeroaos) | Select-Object -First 1 }
           if (-not $nova) { throw 'a janela nao abriu de novo depois da troca' }
           Start-Sleep -Seconds 8
           $j = Get-Process -Id $nova.ProcessId -ErrorAction SilentlyContinue
           if (-not $j) { throw 'a janela reaberta fechou sozinha' }
-          Write-Host "troca com a janela aberta: fechou, trocou e reabriu (pid $($nova.ProcessId))"
+          if ($nova.CommandLine -notlike '*/escondida*') { throw "a janela voltou a vista depois da troca: $($nova.CommandLine)" }
+          Write-Host "troca com a janela na bandeja: fechou, trocou e reabriu escondida (pid $($nova.ProcessId))"
           if ((IconeDoAtalho) -notlike '*\trackeroao\trackeroao.ico,0') { throw "a troca nao acertou o icone do atalho: $(IconeDoAtalho)" }
           Write-Host "atalho com o icone do Trackeroao: $(IconeDoAtalho)"
           [System.Threading.EventWaitHandle]$sinal = $null
