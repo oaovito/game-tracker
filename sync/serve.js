@@ -24,6 +24,7 @@ const MIME = {
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
   '.webmanifest': 'application/manifest+json',
+  '.apk': 'application/vnd.android.package-archive',
 };
 
 /**
@@ -242,6 +243,14 @@ function createServer(options) {
     }
     if (urlPath === '/' || urlPath === '') urlPath = '/' + indexFile;
 
+    /*
+     * O aplicativo de Android. Ele chega dentro do instalador, em
+     * <instalacao>/app, e o celular o baixa daqui, pela rede de casa: sem loja
+     * e sem link na internet. O resto de app/ (a janela do Windows) nao e
+     * servido; os icones da pagina em app/ continuam vindo de docs/app.
+     */
+    if (urlPath === '/android.apk') urlPath = '/app/trackeroao.apk';
+
     let file = safeJoin(root, urlPath);
     if (!file) {
       res.writeHead(403).end('forbidden');
@@ -254,9 +263,11 @@ function createServer(options) {
     // todo chefe caía no kanji de reserva enquanto no site público aparecia a
     // ilustração. Duas páginas iguais mostrando coisas diferentes.
     // O mesmo vale para o que faz a página virar aplicativo no celular.
-    if (/^\/(icones\/|app\/|sw\.js$|manifest\.webmanifest$)/.test(urlPath) && !fs.existsSync(file)) {
+    const daJanela = /^\/app\//.test(urlPath) && urlPath !== '/app/trackeroao.apk';
+    if (/^\/(icones\/|app\/|sw\.js$|manifest\.webmanifest$)/.test(urlPath) && (daJanela || !fs.existsSync(file))) {
       const noSite = safeJoin(path.join(root, 'docs'), urlPath);
       if (noSite && fs.existsSync(noSite)) file = noSite;
+      else if (daJanela) file = path.join(root, 'docs', '.nada');
     }
 
     fs.stat(file, (err, st) => {

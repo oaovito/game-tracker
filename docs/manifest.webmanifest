@@ -1,6 +1,6 @@
 {
-  "name": "trackeroao",
-  "short_name": "trackeroao",
+  "name": "Trackeroao",
+  "short_name": "Trackeroao",
   "description": "Sekiro progress, read from the save.",
   "start_url": "./",
   "scope": "./",
