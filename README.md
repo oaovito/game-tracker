@@ -196,8 +196,9 @@ Windows.
 ### Atualização
 
 A instalação se mantém atual sem intervenção. O serviço confere se há release
-nova vinte segundos depois de subir e, a partir daí, a cada hora; uma
-falha de rede adia a próxima tentativa para dez minutos depois. A conferência
+nova vinte segundos depois de subir, a partir daí a cada quinze minutos, e
+também logo que a janela é aberta; uma falha de rede adia a próxima tentativa
+para dez minutos depois. A conferência
 acontece sempre entre duas rodadas de verificação do jogo, nunca no meio de
 uma, e nunca com o jogo aberto: enquanto se joga, ela simplesmente espera. Há
 versão nova, o código da tag é baixado, copiado por cima da instalação e o

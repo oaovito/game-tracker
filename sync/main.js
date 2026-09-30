@@ -549,13 +549,16 @@ async function pollOnce() {
 // Primeira conferência pouco depois de subir: no logon a rede costuma chegar
 // segundos depois do serviço, e perguntar antes disso só produziria um erro.
 const ATUALIZAR_PRIMEIRA_MS = 20 * 1000;
-const ATUALIZAR_MS = 60 * 60 * 1000;
+const ATUALIZAR_MS = 15 * 60 * 1000;
 const ATUALIZAR_ERRO_MS = 10 * 60 * 1000;
 let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
 // Pedida à mão, pelo menu da bandeja: roda na próxima folga entre rodadas,
 // mesmo com o jogo aberto, porque foi a pessoa quem pediu.
 let atualizacaoForcada = false;
 function pedirAtualizacao() { atualizacaoForcada = true; proximaAtualizacao = 0; }
+// Abrir a janela antecipa a conferência para a próxima folga, pela regra de
+// sempre (com jogo aberto, espera): quem abre o Trackeroao vê a versão nova.
+function conferirLogo() { proximaAtualizacao = Math.min(proximaAtualizacao, Date.now()); }
 
 /**
  * Mantém a instalação atual sem que isso chegue a quem usa.
@@ -677,7 +680,7 @@ async function run() {
       try {
         await serve.start({
           root: ROOT, port: PORT, indexFile: 'trackeroao.html', quiet: true,
-          aoAbrir: () => abrirBandeja('atalho'),
+          aoAbrir: () => { abrirBandeja('atalho'); conferirLogo(); },
           aoVarrer: () => pedirVarredura(),
           aoAtualizar: () => pedirAtualizacao(),
           aoEncerrar: () => encerrarDeVez(),
