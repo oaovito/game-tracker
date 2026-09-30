@@ -711,9 +711,9 @@ class Barra : Control {
             using (GraphicsPath q = Arredondado(new RectangleF(cx - m, cy - m, 2 * m, 2 * m), 1.8f * k)) g.DrawPath(p, q);
           }
         } else {
-          float x = m * 0.95f;
-          g.DrawLine(p, cx - x, cy - x, cx + x, cy + x);
-          g.DrawLine(p, cx - x, cy + x, cx + x, cy - x);
+          float dx = m * 0.95f;
+          g.DrawLine(p, cx - dx, cy - dx, cx + dx, cy + dx);
+          g.DrawLine(p, cx - dx, cy + dx, cx + dx, cy - dx);
         }
       }
     }
