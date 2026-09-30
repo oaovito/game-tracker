@@ -17,7 +17,17 @@
       "tintColor": "#D8FF3C",
       "category": "utilities",
       "screenshots": [],
-      "versions": [],
+      "versions": [
+        {
+          "version": "1.8.6",
+          "buildVersion": "1.8.6",
+          "date": "2026-09-30T21:19:36.569Z",
+          "localizedDescription": "Instalador do Trackeroao para Windows e aplicativo de Android. No computador,\r\nbaixe o `trackeroao-instalador.exe` e dê dois cliques; quem já está na v1.5.0 ou\r\nposterior recebe esta versão sozinho. No celular Android, baixe o\r\n`trackeroao.apk` e abra o arquivo para instalar.\r\n\r\n## O que mudou nesta versão\r\n\r\n**Aplicativo de iOS.** O Trackeroao passa a ter um aplicativo nativo para\r\niPhone e iPad, o `trackeroao.ipa`, instalado pelo AltStore. No computador, o\r\nbotão \"iOS\" do painel do celular mostra um código QR que abre, no iPhone, o\r\npasso a passo: instalar o AltStore, adicionar a fonte do Trackeroao e tocar em\r\nInstalar. As versões seguintes chegam pelo AltStore. Como no Android, o\r\naplicativo acha o computador sozinho na rede de casa e guarda a última leitura\r\npara quando estiver longe.\r\n\r\n## Requisitos\r\n\r\nWindows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio\r\ninstalador. No celular, Android 7 ou posterior; no iPhone e no iPad, iOS 15 ou\r\nposterior, com o AltStore.",
+          "downloadURL": "https://github.com/oaovito/trackeroao/releases/download/v1.8.6/trackeroao.ipa",
+          "size": 85092,
+          "minOSVersion": "15.0"
+        }
+      ],
       "appPermissions": {
         "entitlements": [],
         "privacy": {
