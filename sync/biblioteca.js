@@ -160,6 +160,32 @@ function steamConta(steam) {
   return [...ids];
 }
 
+/**
+ * Quando a conta abriu cada jogo pela última vez, em segundos, por appId.
+ *
+ * É o mesmo arquivo que steamConta lê. Serve só para a tela inicial destacar
+ * o jogo mais recente; sem Steam, a ordem vem do que o próprio tracker viu
+ * abrir (ver jogos.js).
+ */
+function steamRecentes(steam) {
+  const vez = {};
+  let contas = [];
+  try { contas = fs.readdirSync(path.join(steam, 'userdata')); } catch (e) { return vez; }
+  for (const c of contas) {
+    const txt = lerTexto(path.join(steam, 'userdata', c, 'config', 'localconfig.vdf'));
+    if (!txt) continue;
+    const v = lerVdf(txt);
+    const apps = (((v.userlocalconfigstore || {}).software || {}).valve || {}).steam;
+    const lista = apps && (apps.apps || apps.Apps);
+    if (!lista) continue;
+    for (const [id, dados] of Object.entries(lista)) {
+      const n = dados && Number(dados.lastplayed || dados.LastPlayed);
+      if (/^\d+$/.test(id) && n > 0 && (!vez[id] || n > vez[id])) vez[id] = n;
+    }
+  }
+  return vez;
+}
+
 /* ------------------------------------------------------------- catálogo e populares */
 
 function pedir(url) {
@@ -489,7 +515,7 @@ function ultima() {
 }
 
 module.exports = {
-  varrer, ultima, normalizar, chaveDe, lerVdf, steamInstalados, steamConta, executaveis,
+  varrer, ultima, normalizar, chaveDe, lerVdf, steamInstalados, steamConta, steamRecentes, executaveis,
   catalogoGeral, populares, ARQUIVO, NAO_JOGO,
 };
 

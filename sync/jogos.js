@@ -25,6 +25,7 @@ const path = require('path');
 
 const CATALOGO = path.join(__dirname, 'jogos.json');
 const SELECAO = path.join(__dirname, '..', 'selecao.json');
+const RECENTES = path.join(__dirname, '..', 'recentes.json');
 
 /** Os jogos que o projeto sabe ler, versionados em jogos.json. */
 function suportados() {
@@ -131,11 +132,60 @@ function selecionar(chaves) {
   return limpas;
 }
 
+/**
+ * Marca que um jogo vigiado acabou de abrir. E o que ordena a tela inicial
+ * quando nao ha Steam, e o que vale quando o jogo abriu fora dela.
+ */
+function marcarAberto(chave) {
+  if (!chave) return;
+  let j = {};
+  try { j = JSON.parse(fs.readFileSync(RECENTES, 'utf8')) || {}; } catch (e) { j = {}; }
+  j[chave] = Date.now();
+  try {
+    fs.writeFileSync(RECENTES + '.tmp', JSON.stringify(j));
+    fs.renameSync(RECENTES + '.tmp', RECENTES);
+  } catch (e) { /* ordem da tela inicial nao derruba nada */ }
+}
+
+/*
+ * A posicao de cada jogo por quao recente foi a ultima vez que abriu: 1 e o
+ * mais recente. Junta o que o tracker viu abrir com o que a Steam registra.
+ * A pagina recebe so a posicao, nunca a hora.
+ *
+ * A leitura da Steam e guardada por um minuto: a pagina pergunta a cada
+ * poucos segundos, e o arquivo dela nao muda nesse ritmo.
+ */
+let memoSteam = { em: 0, vez: {} };
+function ordemRecente(lista) {
+  let proprio = {};
+  try { proprio = JSON.parse(fs.readFileSync(RECENTES, 'utf8')) || {}; } catch (e) { proprio = {}; }
+  if (Date.now() - memoSteam.em > 60000) {
+    let vez = {};
+    try {
+      const steam = require('./instalacao').steamPath();
+      if (steam) vez = require('./biblioteca').steamRecentes(steam);
+    } catch (e) { vez = {}; }
+    memoSteam = { em: Date.now(), vez };
+  }
+  const quando = lista
+    .map((g) => ({
+      chave: g.chave,
+      t: Math.max(Number(proprio[g.chave]) || 0, g.appId ? (Number(memoSteam.vez[String(g.appId)]) || 0) * 1000 : 0),
+    }))
+    .filter((x) => x.t > 0)
+    .sort((a, b) => b.t - a.t);
+  const pos = {};
+  quando.forEach((x, i) => { pos[x.chave] = i + 1; });
+  return pos;
+}
+
 /** O que a pagina precisa saber para desenhar a escolha. */
 function paraProgresso() {
   const esc = escolhidas();
+  const cat = catalogo();
+  const recente = ordemRecente(cat);
   return {
-    lista: catalogo().map((g) => ({
+    lista: cat.map((g) => ({
       chave: g.chave,
       nome: g.nome,
       leitura: g.leitura || 'nenhuma',
@@ -145,6 +195,7 @@ function paraProgresso() {
       semSteam: (g.fontes || []).some((f) => !/^steam/.test(f)),
       popular: g.popular || null,
       arte: g.arte || null,
+      recente: recente[g.chave] || null,
     })),
     // Distingue "nunca escolheu" de "escolheu nenhum", que tem efeitos opostos.
     escolheu: esc !== null,
@@ -159,7 +210,7 @@ function paraProgresso() {
 
 module.exports = {
   suportados, catalogo, escolhidas, vigiados, processos, porProcesso, selecionar, paraProgresso,
-  CATALOGO, SELECAO,
+  marcarAberto, CATALOGO, SELECAO, RECENTES,
 };
 
 if (require.main === module) {

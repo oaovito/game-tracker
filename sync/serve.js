@@ -136,6 +136,20 @@ function createServer(options) {
      * Vazio (null) volta a seguir o idioma do sistema. GET vale de qualquer
      * lugar; mudar, só da própria máquina.
      */
+    /*
+     * A lista de jogos, por conta propria. Ela tambem vai dentro do
+     * progress.json, mas so quando ha save lido: sem save do Sekiro na
+     * maquina, a tela inicial ficaria sem jogos e a janela abriria direto
+     * numa pagina vazia do Sekiro.
+     */
+    if (urlPath === '/jogos.json') {
+      let corpo = null;
+      try { corpo = require('./jogos').paraProgresso(); } catch (e) { corpo = null; }
+      res.writeHead(corpo ? 200 : 503, { 'content-type': MIME['.json'], 'cache-control': 'no-store' });
+      res.end(JSON.stringify(corpo || { ok: false }));
+      return;
+    }
+
     // O IP desta maquina na rede de casa, para o passo a passo do celular.
     if (urlPath === '/rede') {
       const addrs = localAddresses();

@@ -28,6 +28,9 @@ sync/offsets.json.bak
 redirect/
 
 /selecao.json
+# Quando cada jogo vigiado abriu por último, para a tela inicial destacar o
+# mais recente. Só a ordem sai daqui; a hora não vai para a página.
+/recentes.json
 /biblioteca.json
 sync/cache/
 sync/.jogo-pasta.json

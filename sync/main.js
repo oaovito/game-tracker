@@ -505,6 +505,7 @@ async function pollOnce() {
     if (running) {
       const g = jogos.porProcesso(qual);
       const nome = g ? g.nome : qual;
+      if (g) jogos.marcarAberto(g.chave);
       console.log('\n  >> ' + nome + ' aberto - sincronização ativa');
       // A aplicacao acende aqui, e so aqui: e o momento que o pedido descreve.
       abrirBandeja(nome);

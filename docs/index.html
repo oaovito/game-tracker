@@ -2817,6 +2817,8 @@
     color: var(--j-apagado); border: 1px solid var(--j-borda); border-radius: 999px; padding: 2px 9px;
   }
   .trilho-cabeca .hub-bt { margin-left: auto; }
+  .hub-atalhos { justify-content: flex-start; margin: 22px 0 6px; }
+  .hub-atalhos .hub-bt { min-width: 11rem; }
   .trilho {
     display: grid; grid-auto-flow: column;
     grid-auto-columns: clamp(8.5rem, 13vw, 11.5rem);
@@ -3025,20 +3027,25 @@
       </div>
     </div>
     <div class="trilho-cabeca">
-      <span class="trilho-rotulo" data-i18n="hub.seusJogos">Your games</span>
+      <span class="trilho-rotulo" data-i18n="hub.instalados">Installed</span>
       <span class="trilho-conta" id="hubConta"></span>
-      <button class="hub-bt" id="hubTodos" type="button" data-i18n="hub.todos">All games</button>
     </div>
     <div class="trilho" id="hubGrade"></div>
     <div class="hub-nota" id="hubNota"></div>
+    <!-- Terceira faixa: a biblioteca da Steam e todos os jogos que o
+         aplicativo conhece. -->
+    <div class="hub-acoes hub-atalhos">
+      <button class="hub-bt" id="hubSteam" type="button" data-i18n="hub.steam">Steam library</button>
+      <button class="hub-bt" id="hubTodos" type="button" data-i18n="hub.todos">All games</button>
+    </div>
   </section>
 
   <!-- Todos os jogos: o que está no computador e o que está na Steam. -->
   <section class="bibli" id="bibli" hidden>
     <div class="hub-topo">
-      <h1 class="hub-titulo" translate="no">All <span>games</span></h1>
+      <h1 class="hub-titulo" id="bibliTitulo" translate="no">All <span>games</span></h1>
     </div>
-    <div class="hub-sub" id="bibliSub" data-i18n="bibli.sub">on this computer and in the Steam library</div>
+    <div class="hub-sub" id="bibliSub" data-i18n="bibli.subTodos">every game the app knows about</div>
     <div id="bibliGrupos"></div>
     <div class="hub-acoes">
       <button class="hub-bt" id="bibliVarrer" type="button" hidden data-i18n="bibli.varrer">Search again</button>
@@ -3651,6 +3658,14 @@ const I18N = {
     "hub.abrir": "Open progress",
     "hub.seusJogos": "Your games",
     "hub.todos": "All games",
+    "hub.instalados": "Installed",
+    "hub.steam": "Steam library",
+    "hub.nenhumInstalado": "No installed games found yet.",
+    "hub.recente": "played most recently",
+    "bibli.subTodos": "every game the app knows about",
+    "bibli.subSteam": "games in your Steam account",
+    "bibli.naoInstalado": "Not installed",
+    "bibli.semSteam": "No Steam library found on this computer.",
     "hub.nenhum": "No games found yet. The search runs a minute after the service starts.",
     "hub.semSteam": "Searched without Steam.",
     "hub.falhaEscolha": "Could not save the choice. Is the service running?",
@@ -3847,6 +3862,14 @@ const I18N = {
     "hub.abrir": "Abrir progresso",
     "hub.seusJogos": "Seus jogos",
     "hub.todos": "Todos os jogos",
+    "hub.instalados": "Instalados",
+    "hub.steam": "Biblioteca da Steam",
+    "hub.nenhumInstalado": "Nenhum jogo instalado encontrado ainda.",
+    "hub.recente": "jogado por último",
+    "bibli.subTodos": "todos os jogos que o aplicativo conhece",
+    "bibli.subSteam": "jogos da sua conta Steam",
+    "bibli.naoInstalado": "Não instalados",
+    "bibli.semSteam": "Nenhuma biblioteca da Steam encontrada neste computador.",
     "hub.nenhum": "Nenhum jogo encontrado ainda. A busca roda um minuto depois que o serviço inicia.",
     "hub.semSteam": "Busca feita sem a Steam.",
     "hub.falhaEscolha": "Não foi possível salvar a escolha. O serviço está rodando?",
@@ -4043,6 +4066,14 @@ const I18N = {
     "hub.abrir": "Abrir progreso",
     "hub.seusJogos": "Tus juegos",
     "hub.todos": "Todos los juegos",
+    "hub.instalados": "Instalados",
+    "hub.steam": "Biblioteca de Steam",
+    "hub.nenhumInstalado": "Aún no se encontraron juegos instalados.",
+    "hub.recente": "jugado por última vez",
+    "bibli.subTodos": "todos los juegos que conoce la aplicación",
+    "bibli.subSteam": "juegos de tu cuenta de Steam",
+    "bibli.naoInstalado": "No instalados",
+    "bibli.semSteam": "No se encontró ninguna biblioteca de Steam en este ordenador.",
     "hub.nenhum": "Aún no se encontraron juegos. La búsqueda se ejecuta un minuto después de que arranca el servicio.",
     "hub.semSteam": "Búsqueda hecha sin Steam.",
     "hub.falhaEscolha": "No se pudo guardar la elección. ¿Está en marcha el servicio?",
@@ -4239,6 +4270,14 @@ const I18N = {
     "hub.abrir": "Voir la progression",
     "hub.seusJogos": "Vos jeux",
     "hub.todos": "Tous les jeux",
+    "hub.instalados": "Installés",
+    "hub.steam": "Bibliothèque Steam",
+    "hub.nenhumInstalado": "Aucun jeu installé trouvé pour l’instant.",
+    "hub.recente": "joué en dernier",
+    "bibli.subTodos": "tous les jeux que l’application connaît",
+    "bibli.subSteam": "jeux de votre compte Steam",
+    "bibli.naoInstalado": "Non installés",
+    "bibli.semSteam": "Aucune bibliothèque Steam trouvée sur cet ordinateur.",
     "hub.nenhum": "Aucun jeu trouvé pour l’instant. La recherche se lance une minute après le démarrage du service.",
     "hub.semSteam": "Recherche faite sans Steam.",
     "hub.falhaEscolha": "Impossible d’enregistrer le choix. Le service tourne-t-il ?",
@@ -4435,6 +4474,14 @@ const I18N = {
     "hub.abrir": "Fortschritt öffnen",
     "hub.seusJogos": "Deine Spiele",
     "hub.todos": "Alle Spiele",
+    "hub.instalados": "Installiert",
+    "hub.steam": "Steam-Bibliothek",
+    "hub.nenhumInstalado": "Noch keine installierten Spiele gefunden.",
+    "hub.recente": "zuletzt gespielt",
+    "bibli.subTodos": "alle Spiele, die die App kennt",
+    "bibli.subSteam": "Spiele in deinem Steam-Konto",
+    "bibli.naoInstalado": "Nicht installiert",
+    "bibli.semSteam": "Keine Steam-Bibliothek auf diesem Computer gefunden.",
     "hub.nenhum": "Noch keine Spiele gefunden. Die Suche läuft eine Minute nach dem Start des Dienstes.",
     "hub.semSteam": "Ohne Steam gesucht.",
     "hub.falhaEscolha": "Die Auswahl konnte nicht gespeichert werden. Läuft der Dienst?",
@@ -4631,6 +4678,14 @@ const I18N = {
     "hub.abrir": "Apri i progressi",
     "hub.seusJogos": "I tuoi giochi",
     "hub.todos": "Tutti i giochi",
+    "hub.instalados": "Installati",
+    "hub.steam": "Libreria di Steam",
+    "hub.nenhumInstalado": "Nessun gioco installato trovato finora.",
+    "hub.recente": "giocato per ultimo",
+    "bibli.subTodos": "tutti i giochi che l’app conosce",
+    "bibli.subSteam": "giochi del tuo account Steam",
+    "bibli.naoInstalado": "Non installati",
+    "bibli.semSteam": "Nessuna libreria di Steam trovata su questo computer.",
     "hub.nenhum": "Nessun gioco trovato finora. La ricerca parte un minuto dopo l’avvio del servizio.",
     "hub.semSteam": "Ricerca fatta senza Steam.",
     "hub.falhaEscolha": "Impossibile salvare la scelta. Il servizio è attivo?",
@@ -4827,6 +4882,14 @@ const I18N = {
     "hub.abrir": "Открыть прогресс",
     "hub.seusJogos": "Ваши игры",
     "hub.todos": "Все игры",
+    "hub.instalados": "Установленные",
+    "hub.steam": "Библиотека Steam",
+    "hub.nenhumInstalado": "Установленные игры пока не найдены.",
+    "hub.recente": "последняя игра",
+    "bibli.subTodos": "все игры, которые знает приложение",
+    "bibli.subSteam": "игры вашего аккаунта Steam",
+    "bibli.naoInstalado": "Не установлены",
+    "bibli.semSteam": "Библиотека Steam на этом компьютере не найдена.",
     "hub.nenhum": "Игры пока не найдены. Поиск запускается через минуту после старта службы.",
     "hub.semSteam": "Поиск без Steam.",
     "hub.falhaEscolha": "Не удалось сохранить выбор. Служба запущена?",
@@ -5023,6 +5086,14 @@ const I18N = {
     "hub.abrir": "Otwórz postęp",
     "hub.seusJogos": "Twoje gry",
     "hub.todos": "Wszystkie gry",
+    "hub.instalados": "Zainstalowane",
+    "hub.steam": "Biblioteka Steam",
+    "hub.nenhumInstalado": "Nie znaleziono jeszcze zainstalowanych gier.",
+    "hub.recente": "ostatnio grana",
+    "bibli.subTodos": "wszystkie gry znane aplikacji",
+    "bibli.subSteam": "gry z twojego konta Steam",
+    "bibli.naoInstalado": "Niezainstalowane",
+    "bibli.semSteam": "Nie znaleziono biblioteki Steam na tym komputerze.",
     "hub.nenhum": "Nie znaleziono jeszcze gier. Wyszukiwanie rusza minutę po starcie usługi.",
     "hub.semSteam": "Wyszukano bez Steama.",
     "hub.falhaEscolha": "Nie udało się zapisać wyboru. Czy usługa działa?",
@@ -5219,6 +5290,14 @@ const I18N = {
     "hub.abrir": "İlerlemeyi aç",
     "hub.seusJogos": "Oyunların",
     "hub.todos": "Tüm oyunlar",
+    "hub.instalados": "Yüklü",
+    "hub.steam": "Steam kütüphanesi",
+    "hub.nenhumInstalado": "Henüz yüklü oyun bulunamadı.",
+    "hub.recente": "en son oynanan",
+    "bibli.subTodos": "uygulamanın bildiği tüm oyunlar",
+    "bibli.subSteam": "Steam hesabınızdaki oyunlar",
+    "bibli.naoInstalado": "Yüklü değil",
+    "bibli.semSteam": "Bu bilgisayarda Steam kütüphanesi bulunamadı.",
     "hub.nenhum": "Henüz oyun bulunamadı. Arama, hizmet başladıktan bir dakika sonra çalışır.",
     "hub.semSteam": "Steam olmadan arandı.",
     "hub.falhaEscolha": "Seçim kaydedilemedi. Hizmet çalışıyor mu?",
@@ -5415,6 +5494,14 @@ const I18N = {
     "hub.abrir": "進捗を開く",
     "hub.seusJogos": "あなたのゲーム",
     "hub.todos": "すべてのゲーム",
+    "hub.instalados": "インストール済み",
+    "hub.steam": "Steamライブラリ",
+    "hub.nenhumInstalado": "インストール済みのゲームはまだ見つかっていません。",
+    "hub.recente": "最近プレイ",
+    "bibli.subTodos": "アプリが認識しているすべてのゲーム",
+    "bibli.subSteam": "Steamアカウントのゲーム",
+    "bibli.naoInstalado": "未インストール",
+    "bibli.semSteam": "このパソコンにSteamライブラリが見つかりません。",
     "hub.nenhum": "まだゲームが見つかりません。検索はサービス起動の1分後に実行されます。",
     "hub.semSteam": "Steam なしで検索しました。",
     "hub.falhaEscolha": "選択を保存できませんでした。サービスは起動していますか？",
@@ -5611,6 +5698,14 @@ const I18N = {
     "hub.abrir": "진행 상황 열기",
     "hub.seusJogos": "내 게임",
     "hub.todos": "모든 게임",
+    "hub.instalados": "설치됨",
+    "hub.steam": "Steam 라이브러리",
+    "hub.nenhumInstalado": "아직 설치된 게임을 찾지 못했습니다.",
+    "hub.recente": "최근 플레이",
+    "bibli.subTodos": "앱이 알고 있는 모든 게임",
+    "bibli.subSteam": "Steam 계정의 게임",
+    "bibli.naoInstalado": "설치 안 됨",
+    "bibli.semSteam": "이 컴퓨터에서 Steam 라이브러리를 찾을 수 없습니다.",
     "hub.nenhum": "아직 찾은 게임이 없습니다. 검색은 서비스 시작 1분 후에 실행됩니다.",
     "hub.semSteam": "Steam 없이 검색했습니다.",
     "hub.falhaEscolha": "선택을 저장하지 못했습니다. 서비스가 실행 중인가요?",
@@ -5807,6 +5902,14 @@ const I18N = {
     "hub.abrir": "打开进度",
     "hub.seusJogos": "你的游戏",
     "hub.todos": "全部游戏",
+    "hub.instalados": "已安装",
+    "hub.steam": "Steam 库",
+    "hub.nenhumInstalado": "尚未找到已安装的游戏。",
+    "hub.recente": "最近游玩",
+    "bibli.subTodos": "应用知道的所有游戏",
+    "bibli.subSteam": "你的 Steam 账户中的游戏",
+    "bibli.naoInstalado": "未安装",
+    "bibli.semSteam": "此电脑上未找到 Steam 库。",
     "hub.nenhum": "尚未找到游戏。服务启动一分钟后会开始搜索。",
     "hub.semSteam": "已在没有 Steam 的情况下搜索。",
     "hub.falhaEscolha": "无法保存选择。服务在运行吗？",
@@ -7693,16 +7796,46 @@ function renderEssentials() {
  * de uma leitura antiga, de antes desta tela existir.
  */
 
+/*
+ * A lista de jogos vem na leitura do save, e também por conta própria em
+ * /jogos.json: num computador sem o save do Sekiro a leitura não traz lista,
+ * e a tela inicial não pode depender dele.
+ */
+let jogosAvulsos = null;
+// Enquanto a primeira pergunta a /jogos.json não volta, a tela inicial fica
+// de pé, vazia, em vez de piscar a página do Sekiro.
+let jogosPendente = typeof fetch === "function";
+function fonteDosJogos() {
+  if (temSync() && sync.jogosVigiados && Array.isArray(sync.jogosVigiados.lista)) return sync.jogosVigiados;
+  return jogosAvulsos && Array.isArray(jogosAvulsos.lista) ? jogosAvulsos : null;
+}
 function listaDeJogos() {
-  return temSync() && sync.jogosVigiados && Array.isArray(sync.jogosVigiados.lista)
-    ? sync.jogosVigiados.lista : null;
+  const f = fonteDosJogos();
+  return f ? f.lista : null;
+}
+async function pedirJogos() {
+  if (typeof fetch !== "function") return;
+  try {
+    const r = await fetch("/jogos.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) { if (jogosPendente) { jogosPendente = false; render(); } return; }
+    const j = await r.json();
+    if (!j || !Array.isArray(j.lista)) return;
+    const antes = JSON.stringify(jogosAvulsos);
+    jogosAvulsos = j;
+    const era = jogosPendente;
+    jogosPendente = false;
+    if (era || antes !== JSON.stringify(j)) render();
+  } catch (e) {
+    // Sem servidor: fica o que a leitura trouxer.
+    if (jogosPendente) { jogosPendente = false; render(); }
+  }
 }
 
 function vistaAtual() {
   const lista = listaDeJogos();
   const h = (typeof location !== "undefined" && location.hash || "").replace(/^#/, "");
-  if (!lista) return "jogo";
-  if (h === "all") return "bibli";
+  if (!lista) return jogosPendente && !h ? "hub" : "jogo";
+  if (h === "all" || h === "steam") return "bibli";
   if (h && lista.some((g) => g.chave === h && g.leitura === "completa")) return "jogo";
   return "hub";
 }
@@ -7962,6 +8095,7 @@ function mostrarNoPalco(g) {
   const extra = document.createElement("div");
   extra.className = "palco-extra";
   const selo = (txt) => { const s = document.createElement("span"); s.textContent = txt; extra.appendChild(s); };
+  if (g.recente === 1) selo(t("hub.recente"));
   selo(g.leitura === "completa" ? t("hub.rastreio") : t("hub.soAbertura"));
   if (g.popular) selo(t("hub.popular", { n: g.popular }));
   if (g.naSteam) selo(t("hub.naSteam"));
@@ -7988,10 +8122,15 @@ function renderHub() {
     const grade = document.getElementById("hubGrade");
     if (!grade) return;
     grade.innerHTML = "";
-    const peso = (g) => (g.leitura === "completa" ? 0 : g.vigiado ? 1 : 2);
+    // A faixa de baixo são os instalados, do jogado por último ao mais antigo.
+    const ordem = (g) => (g.recente ? g.recente : 1e9);
     const mostrar = lista
-      .filter((g) => g.leitura === "completa" || g.vigiado || g.instalado)
-      .sort((a, b) => peso(a) - peso(b) || String(a.nome).localeCompare(String(b.nome)));
+      .filter((g) => g.instalado)
+      .sort((a, b) => ordem(a) - ordem(b) || String(a.nome).localeCompare(String(b.nome)));
+    // O destaque é o jogo jogado por último, instalado ou não; sem essa
+    // informação, o primeiro instalado, e sem instalados o que tem progresso.
+    const destaque = lista.filter((g) => g.recente).sort((a, b) => a.recente - b.recente)[0] ||
+      mostrar[0] || lista.find((g) => g.leitura === "completa") || null;
     const conta = document.getElementById("hubConta");
     if (conta) conta.textContent = String(mostrar.length);
     for (const g of mostrar) {
@@ -8030,18 +8169,20 @@ function renderHub() {
       grade.appendChild(card);
     }
     const palco = document.getElementById("hubPalco");
-    if (palco) palco.hidden = !mostrar.length;
-    if (mostrar.length) mostrarNoPalco(mostrar.find((g) => g.chave === jogoEmFoco) || mostrar[0]);
+    if (palco) palco.hidden = !destaque;
+    if (destaque) mostrarNoPalco(lista.find((g) => g.chave === jogoEmFoco) || destaque);
     const nota = document.getElementById("hubNota");
     if (nota) {
-      const var_ = sync.jogosVigiados.varredura;
-      nota.textContent = mostrar.length ? "" : t("hub.nenhum");
+      const var_ = (fonteDosJogos() || {}).varredura;
+      nota.textContent = mostrar.length ? "" : t(lista.length ? "hub.nenhumInstalado" : "hub.nenhum");
       if (var_ && var_.comSteam === false) nota.textContent += (nota.textContent ? " " : "") + t("hub.semSteam");
     }
-    const bt = document.getElementById("hubTodos");
-    if (bt && !bt.dataset.ligado) {
-      bt.dataset.ligado = "1";
-      bt.addEventListener("click", () => irPara("all"));
+    for (const [id, destino] of [["hubTodos", "all"], ["hubSteam", "steam"]]) {
+      const bt = document.getElementById(id);
+      if (bt && !bt.dataset.ligado) {
+        bt.dataset.ligado = "1";
+        bt.addEventListener("click", () => irPara(destino));
+      }
     }
     return;
   }
@@ -8056,16 +8197,27 @@ function renderHub() {
       carregarImg(probe, enderecos(lido, ["heroi", "faixa"]), () => ambienteCom(null));
       probe.addEventListener("load", () => ambienteCom(probe.currentSrc || probe.src));
     }
+    // #steam: a biblioteca da conta Steam. #all: tudo o que o aplicativo
+    // conhece. Os dois separam o que está neste computador do que não está.
+    const soSteam = (location.hash || "").replace(/^#/, "") === "steam";
+    const titulo = document.getElementById("bibliTitulo");
+    if (titulo) titulo.innerHTML = soSteam ? "Steam <span>library</span>" : "All <span>games</span>";
+    const sub = document.getElementById("bibliSub");
+    if (sub) {
+      sub.setAttribute("data-i18n", soSteam ? "bibli.subSteam" : "bibli.subTodos");
+      sub.textContent = t(soSteam ? "bibli.subSteam" : "bibli.subTodos");
+    }
+    const base = soSteam ? lista.filter((g) => g.naSteam) : lista;
     const grupos = [
-      ["bibli.noPc", lista.filter((g) => g.instalado)],
-      ["bibli.naSteam", lista.filter((g) => g.naSteam && !g.instalado)],
+      ["bibli.noPc", base.filter((g) => g.instalado)],
+      ["bibli.naoInstalado", base.filter((g) => !g.instalado)],
     ];
-    for (const [titulo, jogos] of grupos) {
+    for (const [rotulo, jogos] of grupos) {
       const grupo = document.createElement("div");
       grupo.className = "bibli-grupo";
       const h = document.createElement("h2");
       const rot = document.createElement("span");
-      rot.textContent = t(titulo);
+      rot.textContent = t(rotulo);
       const num = document.createElement("b");
       num.textContent = String(jogos.length);
       h.appendChild(rot);
@@ -8074,7 +8226,7 @@ function renderHub() {
       if (!jogos.length) {
         const p = document.createElement("p");
         p.className = "bibli-vazio";
-        p.textContent = titulo === "bibli.noPc" ? t("bibli.vazioPc") : t("bibli.vazioSteam");
+        p.textContent = soSteam && !base.length ? t("bibli.semSteam") : rotulo === "bibli.noPc" ? t("bibli.vazioPc") : "—";
         grupo.appendChild(p);
       }
       for (const g of jogos.slice().sort((a, b) => String(a.nome).localeCompare(String(b.nome)))) {
@@ -8762,6 +8914,9 @@ ligarIdiomas();
 ligarCelular();
 render();
 pollProgress();
+pedirJogos();
+// Sem lista na leitura (sem o save), a lista avulsa se renova sozinha.
+setInterval(() => { if (!(temSync() && sync.jogosVigiados)) pedirJogos(); }, 15000);
 /*
  * Sem escolha neste aparelho, vale a que o serviço guardou — feita no globo
  * de outro navegador, ou pela bandeja. Pelo link público a rota não existe e
