@@ -43,6 +43,47 @@ permissions:
   contents: write
 
 jobs:
+  # A base de jogos (sync/catalogo-jogos.json.gz) e refeita antes de toda
+  # release e entra no commit que a release marca: cada versao sai com a lista
+  # de jogos do seu dia, e a varredura reconhece jogos sem depender da rede.
+  # Quando nao ha versao pendente, nada e feito aqui.
+  catalogo:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Refazer a base de jogos
+        id: commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pendente=""
+          for f in releases/v*.md; do
+            t="$(basename "$f" .md)"
+            gh release view "$t" >/dev/null 2>&1 || pendente="$t"
+          done
+          if [ -z "$pendente" ]; then echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! node sync/gerar-catalogo.js; then
+            # Sem fonte hoje: uma base de ate 15 dias ainda vale; mais velha, ou
+            # nenhuma, e a regra do projeto quebrada, e a release espera.
+            idade="$(node -e "const b=require('./sync/gerar-catalogo').ler();console.log(b?Math.floor((Date.now()-Date.parse(b.geradoEm))/864e5):999)")"
+            if [ "$idade" -gt 15 ]; then echo "base de jogos com $idade dias e nenhuma fonte respondeu"; exit 1; fi
+            echo "::warning::base de jogos mantida, com $idade dia(s)"
+          fi
+          if ! git diff --quiet -- sync/catalogo-jogos.json.gz || [ -n "$(git status --porcelain -- sync/catalogo-jogos.json.gz)" ]; then
+            git -c user.name=oaovito -c user.email=oaovito@icloud.com add sync/catalogo-jogos.json.gz
+            git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Base de jogos atualizada para $pendente"
+            git push -q origin HEAD:main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   # O aplicativo de Android, construido sem Gradle pelo android/construir.sh
   # com as ferramentas do SDK que o runner ubuntu ja traz. Ele vai para dentro
   # do instalador (em <instalacao>\app), e o computador o entrega ao celular
@@ -53,9 +94,12 @@ jobs:
   # computador, entao ele quase nunca precisa ser trocado no celular. Quando
   # precisar, a versao nova pede para desinstalar a anterior antes.
   android:
+    needs: catalogo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.catalogo.outputs.sha }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -73,10 +117,12 @@ jobs:
           retention-days: 1
 
   publicar:
-    needs: android
+    needs: [catalogo, android]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.catalogo.outputs.sha }}
 
       - name: Os scripts do PowerShell sao validos
         shell: powershell
@@ -434,7 +480,7 @@ jobs:
           # computador entrega ao celular pela rede de casa.
           cp dist/app/trackeroao.apk dist/trackeroao.apk
           gh release create "$TAG" dist/trackeroao-instalador.exe dist/trackeroao.apk \
-            --target "$GITHUB_SHA" --title "Trackeroao ${TAG#v}" --notes-file corpo.md
+            --target "${{ needs.catalogo.outputs.sha }}" --title "Trackeroao ${TAG#v}" --notes-file corpo.md
 
       - name: Titulos das releases so com nome e versao
         shell: bash

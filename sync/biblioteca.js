@@ -228,9 +228,17 @@ function doCache(nome, validade) {
  */
 async function catalogoGeral(opts) {
   const o = opts || {};
+  if (o.catalogo) return o.catalogo;
+  /*
+   * A base que vem com a release (sync/catalogo-jogos.json.gz, refeita a cada
+   * versão) é o chão: com ela a varredura reconhece jogos sem rede nenhuma. O
+   * que a rede trouxer entra por cima, e cobre o que saiu depois da release.
+   */
+  const base = o.semBase ? {} : ((require('./gerar-catalogo').ler() || {}).jogos || {});
+  const junto = (extra) => Object.assign({}, base, extra || {});
   const c = doCache('catalogo-steam.json', 7 * DIA);
-  if (c && c.fresco && !o.forcar) return c.dados;
-  if (o.semRede) return c ? c.dados : {};
+  if (c && c.fresco && !o.forcar) return junto(c.dados);
+  if (o.semRede) return junto(c ? c.dados : {});
   const mapa = {};
   try {
     const r = await pedir('https://api.steampowered.com/ISteamApps/GetAppList/v2/');
@@ -248,8 +256,8 @@ async function catalogoGeral(opts) {
       } catch (e) { break; }
     }
   }
-  if (Object.keys(mapa).length) { guardar('catalogo-steam.json', mapa); return mapa; }
-  return c ? c.dados : {};
+  if (Object.keys(mapa).length) { guardar('catalogo-steam.json', mapa); return junto(mapa); }
+  return junto(c ? c.dados : {});
 }
 
 /**
@@ -309,15 +317,50 @@ function raizesDoDisco() {
     'Program Files (x86)\\Ubisoft\\Ubisoft Game Launcher\\games', 'Program Files (x86)\\Steam\\steamapps\\common',
     'Program Files\\Steam\\steamapps\\common', 'Program Files\\ModifiableWindowsApps',
   ];
+  // A pasta de jogos que a própria pessoa criou, no idioma dela.
+  const deJogoLocal = ['Jogos', 'Juegos', 'Jeux', 'Spiele', 'Giochi', 'Gry', 'Oyunlar', 'Игры', 'ゲーム', '游戏', '게임',
+    'Games\\Steam\\steamapps\\common', 'Program Files (x86)\\Games', 'Program Files\\Games'];
   const dePrograma = ['Program Files', 'Program Files (x86)'];
   const raizes = [];
   for (const letra of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
     const disco = letra + ':\\';
     try { if (!fs.existsSync(disco)) continue; } catch (e) { continue; }
-    for (const p of deJogo) raizes.push({ pasta: path.join(disco, p), tipo: 'jogo' });
+    for (const p of deJogo.concat(deJogoLocal)) raizes.push({ pasta: path.join(disco, p), tipo: 'jogo' });
     for (const p of dePrograma) raizes.push({ pasta: path.join(disco, p), tipo: 'programa' });
+    // A raiz do disco: muita gente instala o jogo direto em D:\. Ali vale o
+    // catálogo inteiro, mas só para uma pasta com o executável de um jogo.
+    raizes.push({ pasta: disco, tipo: 'raiz' });
+  }
+  const casa = process.env.USERPROFILE;
+  if (casa) {
+    for (const p of ['Games', 'Jogos', 'Documents\\Games', 'Documents\\Jogos', 'Desktop\\Jogos', 'Desktop\\Games']) {
+      raizes.push({ pasta: path.join(casa, p), tipo: 'jogo' });
+    }
   }
   return raizes;
+}
+
+/*
+ * Pastas de sistema que nunca são jogo, na raiz de um disco: nomes que, por
+ * acaso, também existem na Steam não podem virar jogo instalado.
+ */
+const RAIZ_DE_SISTEMA = /^(windows|users|usuarios|program ?files.*|programdata|perflogs|recovery|intel|amd|nvidia|drivers|temp|tmp|\$.*|system volume information|msocache|onedrivetemp|xboxgames|games|jogos|steamlibrary|epic games|gog games|riot games|found\.\d+|config\.msi|boot|efi|documents and settings|inetpub|python\d*|msys64|cygwin64|android|go|node_modules|backup|backups|downloads|musica|music|videos|pictures|imagens|documents|documentos|desktop|dados|data)$/i;
+
+/*
+ * As formas de um nome de pasta que podem ser o nome do jogo: a pasta inteira,
+ * sem o que vem entre parênteses ou colchetes, e sem a versão e o que vem
+ * depois dela ("Hollow Knight v1.5.78", "Celeste [GOG]", "Hades - Repack").
+ */
+function formasDoNome(nomePasta) {
+  const f = new Set();
+  const add = (x) => { const n = normalizar(x); if (n.length >= 4) f.add(n); };
+  add(nomePasta);
+  const limpo = nomePasta.replace(/[([{].*?[)\]}]/g, ' ').trim();
+  add(limpo);
+  add(limpo.replace(/[\s._-]+v?\d+(\.\d+)+.*$/i, ''));
+  add(limpo.replace(/\s+-\s+.*$/, ''));
+  add(limpo.replace(/[._]+/g, ' ').replace(/\s+(repack|goty|gog|steam|build \d+|update \d+).*$/i, ''));
+  return [...f];
 }
 
 function subpastas(dir) {
@@ -451,20 +494,41 @@ async function varrer(opts) {
 
   // 2. O disco, com ou sem Steam.
   const raizes = o.raizes || raizesDoDisco();
-  for (const r of raizes) {
-    for (const nomePasta of subpastas(r.pasta)) {
-      const n = normalizar(nomePasta);
+  const reconhecer = (nomePasta, tipo) => {
+    for (const n of formasDoNome(nomePasta)) {
       const pop = popPorPasta.get(n);
-      const doCat = r.tipo === 'jogo' ? porNome.get(n) : null;
+      const doCat = tipo !== 'programa' ? porNome.get(n) : null;
       const naConta = [...jogos.values()].find((j) => normalizar(j.nome) === n);
-      const achado = pop || doCat || naConta;
-      if (!achado) continue;
-      juntar({
-        appId: achado.appId || null, nome: achado.nome, pasta: path.join(r.pasta, nomePasta),
-        instalado: true, processos: achado.processos || [],
-      }, 'disco');
+      const achado = pop || naConta || doCat;
+      if (achado) return { achado, doCatalogo: !pop && !naConta };
     }
-  }
+    return null;
+  };
+  const visto = new Set();
+  const olhar = (dir, tipo, nivel) => {
+    for (const nomePasta of subpastas(dir)) {
+      if (tipo === 'raiz' && RAIZ_DE_SISTEMA.test(nomePasta)) continue;
+      const pasta = path.join(dir, nomePasta);
+      if (visto.has(pasta.toLowerCase())) continue;
+      visto.add(pasta.toLowerCase());
+      const r = reconhecer(nomePasta, tipo);
+      if (r) {
+        // Pelo catálogo geral, fora de uma pasta só de jogos, a pasta precisa
+        // ter o executável de um jogo: um nome parecido não basta.
+        const exes = r.achado.processos && r.achado.processos.length ? r.achado.processos : executaveis(pasta);
+        if (tipo === 'raiz' && r.doCatalogo && !exes.length) continue;
+        juntar({
+          appId: r.achado.appId || null, nome: r.achado.nome, pasta,
+          instalado: true, processos: exes,
+        }, 'disco');
+      } else if (tipo === 'jogo' && nivel === 0) {
+        // Um nível abaixo, para quem separa os jogos em subpastas
+        // (D:\Jogos\RPG\..., D:\Games\Steam\...).
+        olhar(pasta, tipo, 1);
+      }
+    }
+  };
+  for (const r of raizes) olhar(r.pasta, r.tipo, 0);
 
   // 3. O registro do Windows e a Epic.
   for (const e of epic()) juntar({ ...e, instalado: true }, 'epic');

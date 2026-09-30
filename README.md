@@ -785,19 +785,44 @@ ganha um pôster tipográfico com o próprio nome, numa cor derivada dele.
 
 A lista vem de `sync/biblioteca.js`, que consulta três fontes de nomes: a
 biblioteca da Steam da pessoa, quando existe (os `appmanifest` de cada
-biblioteca e o que a conta já jogou, segundo o `localconfig.vdf`); o catálogo
-geral da Steam, obtido da lista pública de aplicativos e guardado por uma
-semana; e os jogos mais jogados do momento, que se atualizam diariamente e
+biblioteca e o que a conta já jogou, segundo o `localconfig.vdf`); a base de
+jogos que acompanha cada release, `sync/catalogo-jogos.json.gz`, somada ao
+catálogo geral da Steam quando há rede (a lista pública de aplicativos,
+guardada por uma semana); e os jogos mais jogados do momento, que se atualizam diariamente e
 somam-se a uma lista fixa em `sync/populares.json`. Essa lista fixa cobre os
 títulos que nem estão na Steam, como Valorant, League of Legends, Fortnite e
 Minecraft, e garante reconhecimento mesmo sem rede.
 
-Com esses nomes, a varredura percorre as pastas onde jogos costumam ser
-instalados em cada disco, os programas registrados no Windows e os manifestos
-da Epic. Pastas dedicadas a jogos (Games, XboxGames, Epic Games, GOG,
-`steamapps\common`) aceitam qualquer nome do catálogo; pastas genéricas como
-Program Files aceitam apenas jogos da biblioteca da pessoa e populares, para
-que um programa vendido também na Steam não seja tomado por jogo. De cada jogo
+A base de jogos é gerada por `sync/gerar-catalogo.js` na integração contínua,
+a partir da lista pública de aplicativos da Steam (com a lista de jogos
+mantida em `jsnli/steamappidlist` como reserva), sem demonstrações, trilhas
+sonoras, ferramentas e servidores. Ela é refeita antes de toda release e entra
+no próprio commit que a release marca, de modo que cada instalação sai com a
+lista do seu dia e reconhece jogos sem depender da rede. A regra do projeto é
+que a base nunca fique mais de quinze dias sem release: a rotina
+`.github/workflows/catalogo.yml` roda todo dia e, quando a última release tem
+quinze dias ou mais, refaz a base, escreve as notas da versão seguinte e
+dispara a publicação, que passa pelo mesmo teste num Windows limpo de qualquer
+outra release. Uma base com mais de quinze dias, sem fonte que responda, segura
+a release em vez de publicá-la velha.
+
+Com esses nomes, a varredura procura jogos em qualquer plataforma: nos
+`appmanifest` da Steam, nos manifestos da Epic, nos programas registrados no
+Windows e no disco. No disco, ela percorre em cada unidade as pastas onde
+jogos costumam ser instalados (Games, XboxGames, Epic Games, GOG,
+`steamapps\common`, Riot Games, Ubisoft, EA), as pastas de jogos que a própria
+pessoa costuma criar, no idioma dela (Jogos, Juegos, Jeux, Spiele e as
+demais), as mesmas pastas dentro do perfil do usuário e a raiz de cada disco,
+onde muita gente instala o jogo direto (`D:\Sekiro`). Nas pastas de jogos, uma
+subpasta a mais também é olhada (`D:\Jogos\RPG\Celeste`). O nome da pasta é
+comparado de várias formas: inteiro, sem o que vem entre parênteses ou
+colchetes e sem a versão ou o sufixo que vem depois do nome ("Hollow Knight
+v1.5.78 [GOG]" é o Hollow Knight). Pastas dedicadas a jogos aceitam qualquer
+nome da base; na raiz do disco, o nome da base só vale para uma pasta que
+tenha o executável de um jogo, e as pastas do sistema (Windows, Users,
+ProgramData e semelhantes) nunca contam; pastas genéricas como Program Files
+aceitam apenas jogos da biblioteca da pessoa e populares, para que um programa
+vendido também na Steam não seja tomado por jogo. De cada jogo
 instalado, o executável é o maior `.exe` da pasta que não seja instalador,
 atualizador, anti-cheat ou relatório de erro. A varredura roda um pouco depois
 de o serviço subir e, daí em diante, uma vez por dia, sempre entre duas rodadas

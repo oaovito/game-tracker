@@ -2084,6 +2084,60 @@ function resumo() {
     }
   }
   {
+    const nome = 'acha jogos fora das lojas: raiz do disco, pasta própria, subpasta e nome com versão';
+    const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'trackeroao-bib2-'));
+    try {
+      const b = require('./biblioteca');
+      const disco = path.join(tmp, 'D');
+      const exe = (dir, arq) => { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, arq), Buffer.alloc(4096)); };
+      exe(path.join(disco, 'Hollow Knight v1.5.78.11833 [GOG]'), 'hollow_knight.exe');
+      exe(path.join(disco, 'Sekiro Shadows Die Twice'), 'sekiro.exe');
+      exe(path.join(disco, 'Windows'), 'explorer.exe');
+      fs.mkdirSync(path.join(disco, 'Portal'), { recursive: true }); // sem executável: não é jogo instalado
+      exe(path.join(disco, 'Jogos', 'Plataforma', 'Celeste'), 'Celeste.exe');
+      const catalogo = { 367520: 'Hollow Knight', 814380: 'Sekiro: Shadows Die Twice', 504230: 'Celeste', 400: 'Portal', 1: 'Windows' };
+      const r = await b.varrer({
+        steam: null, semRede: true, naoGravar: true, registro: [], catalogo,
+        raizes: [{ pasta: disco, tipo: 'raiz' }, { pasta: path.join(disco, 'Jogos'), tipo: 'jogo' }],
+      });
+      const inst = r.jogos.filter((j) => j.instalado).map((j) => j.nome);
+      for (const n of ['Hollow Knight', 'Sekiro: Shadows Die Twice', 'Celeste']) {
+        if (!inst.includes(n)) throw new Error('não achou ' + n + ': ' + JSON.stringify(inst));
+      }
+      if (inst.includes('Windows')) throw new Error('a pasta do Windows virou jogo');
+      if (inst.includes('Portal')) throw new Error('pasta sem executável na raiz virou jogo');
+      pass++;
+      console.log('   ok    ' + nome + '  -  ' + inst.join(', '));
+    } catch (err) {
+      fail++;
+      failures.push(nome);
+      console.log('   FALHA ' + nome + '\n            ' + err.message);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
+  {
+    const nome = 'a base de jogos vem na release, e a varredura a usa sem rede';
+    try {
+      const zlib = require('zlib');
+      const arq = require('./gerar-catalogo').ARQUIVO;
+      if (!fs.existsSync(arq)) {
+        const e = new Error('a base ainda não foi gerada neste clone (a integração contínua a gera antes de cada release)');
+        e.pular = true;
+        throw e;
+      }
+      const base = JSON.parse(zlib.gunzipSync(fs.readFileSync(arq)).toString('utf8'));
+      const n = Object.keys(base.jogos || {}).length;
+      if (n < 20000) throw new Error('a base tem só ' + n + ' jogos');
+      const dias = (Date.now() - Date.parse(base.geradoEm)) / 86400000;
+      pass++;
+      console.log('   ok    ' + nome + '  -  ' + n + ' jogos, de ' + base.fonte + ', gerada há ' + Math.floor(dias) + ' dia(s)');
+    } catch (err) {
+      if (err.pular) { console.log('   --    ' + nome + '  -  ' + err.message); }
+      else { fail++; failures.push(nome); console.log('   FALHA ' + nome + '\n            ' + err.message); }
+    }
+  }
+  {
     const nome = 'cada jogo ganha banner, da maior resolução para a menor, com ou sem Steam';
     try {
       const a = require('./arte');

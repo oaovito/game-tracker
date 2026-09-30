@@ -1,0 +1,72 @@
+# A base de jogos nunca fica mais de quinze dias sem release.
+#
+# Toda release ja refaz a base (ver o job "catalogo" de release.yml). Quando
+# nenhuma release sai por quinze dias, esta rotina diaria abre uma so para a
+# base: refaz sync/catalogo-jogos.json.gz, escreve releases/vX.Y.Z.md com a
+# versao seguinte e dispara a publicacao, que passa pelo mesmo teste num
+# Windows limpo de qualquer outra release. As instalacoes recebem a versao
+# nova sozinhas, como sempre.
+
+name: catalogo
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  quinzena:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Release so da base, se a ultima tem quinze dias
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for f in releases/v*.md; do
+            t="$(basename "$f" .md)"
+            gh release view "$t" >/dev/null 2>&1 || { echo "a $t ainda vai sair, e leva a base junto"; exit 0; }
+          done
+          ultima="$(gh release list --limit 1 --json publishedAt --jq '.[0].publishedAt')"
+          dias=$(( ( $(date +%s) - $(date -d "$ultima" +%s) ) / 86400 ))
+          echo "ultima release ha $dias dia(s)"
+          [ "$dias" -ge 15 ] || exit 0
+          node sync/gerar-catalogo.js
+          v="$(ls releases/v*.md | sed 's|.*/v||; s|\.md$||' | sort -V | tail -n 1)"
+          nova="${v%.*}.$(( ${v##*.} + 1 ))"
+          total="$(node -e "console.log(Object.keys(require('./sync/gerar-catalogo').ler().jogos).length.toLocaleString('pt-BR'))")"
+          {
+            echo "# Trackeroao $nova"
+            echo
+            echo "Instalador do Trackeroao para Windows e aplicativo de Android. No computador,"
+            echo "baixe o \`trackeroao-instalador.exe\` e dê dois cliques; quem já está na v1.5.0 ou"
+            echo "posterior recebe esta versão sozinho. No celular Android, baixe o"
+            echo "\`trackeroao.apk\` e abra o arquivo para instalar."
+            echo
+            echo "## O que mudou nesta versão"
+            echo
+            echo "**Base de jogos atualizada.** A lista de jogos que a varredura usa para"
+            echo "reconhecer o que está instalado no computador foi refeita, agora com $total"
+            echo "jogos. Nenhuma outra mudança."
+            echo
+            echo "## Requisitos"
+            echo
+            echo "Windows 10 ou 11, em qualquer idioma. O Node.js é resolvido pelo próprio"
+            echo "instalador. No celular, Android 7 ou posterior; no iPhone, a página aberta no"
+            echo "Safari e adicionada à Tela de Início."
+          } > "releases/v$nova.md"
+          git add sync/catalogo-jogos.json.gz "releases/v$nova.md"
+          git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Base de jogos atualizada; release $nova"
+          git push -q origin HEAD:main
+          # O push feito por esta rotina nao dispara outra; a publicacao e chamada aqui.
+          gh workflow run release.yml --ref main
