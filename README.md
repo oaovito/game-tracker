@@ -1051,28 +1051,31 @@ O endereço varia de pessoa para pessoa e de rede para rede, e o código é
 montado pelo serviço a cada vez que o botão é tocado; basta apontar a câmera
 do telefone para ele.
 
-**No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em `docs/celular/ios/`,
-instalado pelo AltStore, e não pela App Store. O código QR do botão "iOS" abre,
-no telefone, uma página servida pelo próprio computador (`/ios`, a partir de
-`sync/ios.html`) com o passo a passo, que cabe inteiro na tela, sem rolagem, no
-visual do aplicativo: o primeiro passo tem o botão para baixar o AltStore PAL,
-e no meio da tela um botão verde-limão, pulsando devagar, baixa o Trackeroao
-para iOS, abrindo no AltStore PAL a fonte do Trackeroao (`docs/celular/altstore/fonte.json`,
-lida pelo endereço bruto do GitHub). Se o AltStore PAL não estiver no aparelho,
-o botão tenta o AltStore comum. As versões novas chegam pelo próprio AltStore, porque a fonte é
+**No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em
+`docs/celular/ios/`, instalado pelo SideStore, e não pela App Store. O SideStore
+é gratuito e assina os aplicativos com o próprio Apple ID de quem instala, sem
+conta paga de desenvolvedor; a instalação dele, feita uma única vez, segue o
+guia oficial em sidestore.io e usa um computador só nesse momento. O código QR
+do botão "iOS" abre, no telefone, uma página servida pelo próprio computador
+(`/ios`, a partir de `sync/ios.html`) com o passo a passo, que cabe inteiro na
+tela, sem rolagem, no visual do aplicativo: o primeiro passo tem o botão para
+instalar o SideStore, e no meio da tela um botão verde-limão, pulsando devagar,
+abre no SideStore a fonte do Trackeroao (`docs/celular/altstore/fonte.json`, no
+formato de fonte do AltStore, que o SideStore lê, pelo endereço bruto do
+GitHub). Se o SideStore não estiver no aparelho, o botão tenta o AltStore, que
+lê a mesma fonte. Com a conta gratuita, a Apple limita a assinatura a sete dias
+e a três aplicativos por aparelho; o SideStore renova o Trackeroao sozinho,
+pelo próprio telefone, e as versões novas chegam por ele, porque a fonte é
 atualizada a cada release. O aplicativo funciona como o de Android: toda a
-página passa por uma ponte (`docs/celular/ios/src/Ponte.swift`, no esquema `trackeroao://`)
-que busca cada arquivo no computador por `trackeroao.local`, guarda a última
-cópia de cada um e a entrega quando o computador está fora do alcance. Links
-para outros sites abrem no Safari, e o aplicativo só lê, como o de Android.
+página passa por uma ponte (`docs/celular/ios/src/Ponte.swift`, no esquema
+`trackeroao://`) que busca cada arquivo no computador por `trackeroao.local`,
+guarda a última cópia de cada um e a entrega quando o computador está fora do
+alcance. Links para outros sites abrem no Safari, e o aplicativo só lê, como o
+de Android.
 
-O `.ipa` é construído num Mac do GitHub por `docs/celular/ios/construir.sh`, sem projeto do
-Xcode: o `swiftc` compila, o `actool` monta o ícone e o pacote é zipado. Ele
-sai sem assinatura, e o AltStore o assina no próprio aparelho, com a conta
-Apple de quem instala. A distribuição pelo AltStore PAL, a loja alternativa
-reconhecida pela Apple, exige ainda que o aplicativo seja registrado e
-autenticado pela Apple com uma conta de desenvolvedor, o que depende do dono
-do projeto; até lá, vale o AltStore comum.
+O `.ipa` é construído num Mac do GitHub por `docs/celular/ios/construir.sh`,
+sem projeto do Xcode: o `swiftc` compila, o `actool` monta o ícone e o pacote é
+zipado. Ele sai sem assinatura, e o SideStore o assina no próprio aparelho.
 
 Quem já tinha adicionado a página à Tela de Início continua podendo usá-la:
 ela abre sem o Safari em volta e mostra a leitura corrente, atualizada a cada
@@ -1226,7 +1229,7 @@ trackeroao/
         res/                  ícones e tema
       ios/                    o aplicativo de iOS (Swift, construído num Mac
                               do GitHub por construir.sh)
-      altstore/               fonte.json, a fonte do AltStore PAL
+      altstore/               fonte.json, a fonte lida pelo SideStore
 
   sync/
     main.js                   poll do processo + watcher + servidor + mDNS

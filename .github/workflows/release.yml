@@ -485,6 +485,14 @@ jobs:
           Write-Host "atualizar: instalada $($r.instalada), ultima $($r.ultima), atual $($r.atual)"
           if (-not $r.atual) { throw 'a versao recem-instalada nao foi reconhecida como a ultima' }
 
+          # A atualizacao silenciosa baixa o zip da release e o descompacta no
+          # proprio Windows: tem de caber com folga no tempo-limite.
+          $t = [Diagnostics.Stopwatch]::StartNew()
+          node -e "const a=require('./sync/atualizar');a.ultimaRelease().then(a.baixar).then(b=>{const n=a.listar(b.pasta).length;b.limpar();console.log('zip descompactado: '+n+' arquivos');if(n<50)process.exit(1)}).catch(e=>{console.error(e.message);process.exit(1)})"
+          if ($LASTEXITCODE -ne 0) { throw 'a atualizacao pelo zip nao descompactou' }
+          if ($t.Elapsed.TotalSeconds -gt 120) { throw "o zip levou $([int]$t.Elapsed.TotalSeconds) s para descompactar" }
+          Write-Host "zip da atualizacao em $([int]$t.Elapsed.TotalSeconds) s"
+
           # "Fechar": o servico sai e nao volta sozinho, nem pela tarefa do logon;
           # so a abertura manual (a janela) o traz de volta.
           Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8777/encerrar' | Out-Null

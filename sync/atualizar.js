@@ -285,10 +285,18 @@ async function baixarEm(tmp, tag, limpar) {
   await pedir(`https://codeload.github.com/${REPO}/zip/refs/tags/${encodeURIComponent(tag)}`, zip);
   const pasta = path.join(tmp, 'x');
   // O Node não descompacta zip sozinho, e o projeto não ganha dependência por
-  // isso: o Expand-Archive já vem no Windows. Fora dele, o unzip do sistema.
+  // isso: o Windows já traz o descompactador do .NET. É ele, e não o
+  // Expand-Archive, que descompacta: o Expand-Archive do PowerShell 5 desenha
+  // uma barra de progresso por arquivo mesmo escondido, e com o antivírus
+  // olhando cada um chegava a passar do tempo-limite -- e a atualização
+  // falhava sempre, em silêncio. Fora do Windows, o unzip do sistema.
   if (process.platform === 'win32') {
+    const z = zip.replace(/'/g, "''");
+    const p = pasta.replace(/'/g, "''");
     await rodar('powershell', ['-NoProfile', '-NonInteractive', '-Command',
-      `Expand-Archive -LiteralPath '${zip.replace(/'/g, "''")}' -DestinationPath '${pasta.replace(/'/g, "''")}' -Force`]);
+      "$ProgressPreference = 'SilentlyContinue'; " +
+      "try { Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory('" + z + "', '" + p + "') } " +
+      "catch { Expand-Archive -LiteralPath '" + z + "' -DestinationPath '" + p + "' -Force }"], { timeout: 10 * 60 * 1000 });
   } else {
     await rodar('unzip', ['-q', zip, '-d', pasta]);
   }
@@ -432,7 +440,7 @@ async function situacao(raiz) {
   return { instalada, ultima, atual: instalada === ultima };
 }
 
-module.exports = { verificar, situacao, aoTrocarJanela, maisNova, aplicarPasta, listar, lerEstado, varrerPastasVazias, EXIGIDOS, LEGADO, PASTAS_LEGADO, PRESERVAR, NOME_ESTADO };
+module.exports = { verificar, situacao, aoTrocarJanela, baixar, ultimaRelease, maisNova, aplicarPasta, listar, lerEstado, varrerPastasVazias, EXIGIDOS, LEGADO, PASTAS_LEGADO, PRESERVAR, NOME_ESTADO };
 
 /*
  * Linha de comando.

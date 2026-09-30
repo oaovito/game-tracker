@@ -1,0 +1,3 @@
+# As imagens de preview servem só ao README: ficam fora do zip da release,
+# que é o que as instalações baixam para se atualizar.
+* export-ignore

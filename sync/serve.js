@@ -237,7 +237,7 @@ function createServer(options) {
       const host = addrs.length ? addrs[0].address : 'trackeroao.local';
       const base = 'http://' + host + ':' + (req.socket.localPort || 8777);
       const para = new URL(req.url, 'http://x').searchParams.get('para');
-      // O iPhone vai para o passo a passo do aplicativo pelo AltStore (/ios).
+      // O iPhone vai para o passo a passo do aplicativo pelo SideStore (/ios).
       const alvo = para === 'android' ? base + '/android.apk' : base + '/ios';
       res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' });
       res.end(require('./qr').svg(alvo));
