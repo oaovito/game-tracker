@@ -302,6 +302,14 @@ estado. O que aconteceu fica apenas no log. A única exceção à espera é o
 "Forçar atualização" da bandeja, que roda na folga seguinte mesmo com o jogo
 aberto.
 
+A página que já estava aberta também se atualiza. Cada resposta `.json` do
+serviço traz o cabeçalho `x-trackeroao-pagina`, com o tamanho e a data do
+arquivo da página que ele serve. A página guarda o primeiro valor que vê e, quando
+ele muda (a atualização trocou o arquivo), recarrega-se sozinha no mesmo
+lugar. Isso vale para a janela, inclusive escondida na bandeja, e para o
+celular na rede de casa; sem isso, a janela aberta continuaria mostrando o
+código antigo até ser fechada.
+
 A janela do Trackeroao não vem no pacote de código, porque é binária. Quando a
 versão dela, registrada em `app\versao.txt`, fica para trás, o serviço baixa o
 instalador daquela mesma release e o chama no modo `/so-janela` (a função
@@ -795,6 +803,10 @@ qualquer dos dois a tiver, porque a Steam registra o que a conta obteve em
 qualquer save e em qualquer ciclo, enquanto o save conhece apenas o personagem
 atual. Onde os dois discordam, a página indica o desencontro na própria linha da
 conquista.
+
+No computador, os dois quadros de cima (chefes e Headless) dividem entre si a
+largura inteira do bloco das mortes, e a fileira de baixo (conquistas e tempo)
+se espalha pela mesma largura.
 
 Na página do Sekiro, o tempo de jogo aparece numa barra única, dividida em
 oito trechos iguais até o limite da escala, preenchida na proporção exata das

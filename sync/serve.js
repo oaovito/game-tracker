@@ -84,6 +84,20 @@ function createServer(options) {
   const aoAtualizar = typeof options.aoAtualizar === 'function' ? options.aoAtualizar : null;
   const aoEncerrar = typeof options.aoEncerrar === 'function' ? options.aoEncerrar : null;
 
+  /*
+   * A versao da pagina servida, pelo tamanho e pela data do arquivo. Vai num
+   * cabecalho de cada resposta .json que a pagina pede a cada poucos
+   * segundos: quando a atualizacao troca o arquivo, a pagina ja aberta (na
+   * janela, mesmo escondida na bandeja, ou no celular) ve a mudanca e se
+   * recarrega sozinha, em vez de ficar no codigo antigo ate alguem fechar.
+   */
+  const versaoDaPagina = () => {
+    try {
+      const st = fs.statSync(path.join(root, indexFile));
+      return st.size + '-' + Math.round(st.mtimeMs);
+    } catch (e) { return ''; }
+  };
+
   return http.createServer((req, res) => {
     // Tirar a query ANTES de decidir se é a raiz: com "/?algo" a comparação
     // com "/" falhava e a página virava 404.
@@ -145,7 +159,7 @@ function createServer(options) {
     if (urlPath === '/jogos.json') {
       let corpo = null;
       try { corpo = require('./jogos').paraProgresso(); } catch (e) { corpo = null; }
-      res.writeHead(corpo ? 200 : 503, { 'content-type': MIME['.json'], 'cache-control': 'no-store' });
+      res.writeHead(corpo ? 200 : 503, { 'content-type': MIME['.json'], 'cache-control': 'no-store', 'x-trackeroao-pagina': versaoDaPagina() });
       res.end(JSON.stringify(corpo || { ok: false }));
       return;
     }
@@ -380,6 +394,7 @@ function createServer(options) {
       const headers = { 'content-type': MIME[ext] || 'application/octet-stream' };
       // The page polls progress.json; it must never be served from cache.
       headers['cache-control'] = ext === '.json' ? 'no-store' : 'no-cache';
+      if (ext === '.json') headers['x-trackeroao-pagina'] = versaoDaPagina();
       res.writeHead(200, headers);
       fs.createReadStream(file).pipe(res);
     });

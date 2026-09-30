@@ -3317,12 +3317,20 @@
     body:not(.vista-hub):not(.vista-bibli) .wrap > .made-by { grid-row: 8; margin-top: clamp(4px, 1vh, 16px); }
     body:not(.vista-hub):not(.vista-bibli) h1 { font-size: clamp(1.8rem, 5vh, 2.7rem); }
     body:not(.vista-hub):not(.vista-bibli) .dois-quadrados {
-      display: flex; justify-content: center; gap: 12px; width: 100%; min-height: 0;
+      display: flex; justify-content: center; gap: 12px; width: 100%; max-width: none; min-height: 0;
       margin: 0 auto clamp(8px, 1.6vh, 1.25rem); container-type: size;
     }
+    /* Os quadros dividem a largura inteira do bloco das mortes, lado a lado,
+       e medem de altura o que a fileira tem (até 20rem). */
     body:not(.vista-hub):not(.vista-bibli) .dois-quadrados > .quadro {
-      flex: none; aspect-ratio: auto;
-      width: min(100cqh, (100cqw - 12px) / 2, 20rem); height: min(100cqh, (100cqw - 12px) / 2, 20rem);
+      flex: 1 1 0; min-width: 0; aspect-ratio: auto;
+      width: auto; height: min(100cqh, 20rem);
+    }
+    /* A fileira de baixo não tem moldura: o anel e o tempo continuam
+       quadrados, espalhados pela mesma largura. */
+    body:not(.vista-hub):not(.vista-bibli) .deaths-panel ~ .dois-quadrados { justify-content: space-evenly; }
+    body:not(.vista-hub):not(.vista-bibli) .deaths-panel ~ .dois-quadrados > .quadro {
+      flex: none; width: min(100cqh, (100cqw - 12px) / 2, 20rem); height: min(100cqh, (100cqw - 12px) / 2, 20rem);
     }
     body:not(.vista-hub):not(.vista-bibli) .deaths-panel {
       padding: clamp(14px, 3vh, 40px) 22px clamp(8px, 1.6vh, 20px);
@@ -8620,6 +8628,7 @@ async function pedirJogos() {
   if (typeof fetch !== "function") return;
   try {
     const r = await fetch("/jogos.json?t=" + Date.now(), { cache: "no-store" });
+    conferirVersaoDaPagina(r);
     if (!r.ok) { if (jogosPendente) { jogosPendente = false; render(); } return; }
     const j = await r.json();
     if (!j || !Array.isArray(j.lista)) return;
@@ -10055,9 +10064,28 @@ function cair(motivo) {
   if (sync !== null || motivo) { sync = motivo || null; render(); }
 }
 
+/*
+ * A página se recarrega sozinha quando o serviço passa a servir outra versão
+ * dela (a atualização automática trocou o arquivo). Cada resposta .json do
+ * serviço diz qual versão ele serve; a primeira vista vira a referência, e
+ * qualquer outra depois dela recarrega a página no mesmo lugar. Sem o
+ * cabeçalho (uma cópia estática, sem serviço), nada acontece.
+ */
+let paginaServida = null;
+function conferirVersaoDaPagina(res) {
+  const v = res && res.headers && res.headers.get ? res.headers.get("x-trackeroao-pagina") : null;
+  if (!v) return;
+  if (paginaServida === null) { paginaServida = v; return; }
+  if (v !== paginaServida && typeof location !== "undefined" && location.reload) {
+    paginaServida = v;
+    location.reload();
+  }
+}
+
 async function pollProgress() {
   try {
     const res = await fetch("progress.json?t=" + Date.now(), { cache: "no-store" });
+    conferirVersaoDaPagina(res);
     if (!res.ok) {
       // O servidor devolve 404 com corpo {ok:false,...} quando o arquivo ainda
       // não existe. Esse corpo diz o motivo real, então vale lê-lo em vez de
