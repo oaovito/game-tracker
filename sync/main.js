@@ -195,13 +195,23 @@ let bandeja = null;
 function abrirBandeja(motivo) {
   if (bandeja && !bandeja.killed) return;
   if (process.platform !== 'win32') return;
+  /*
+   * Instalado, o icone e o proprio Trackeroao.exe (/bandeja): o Windows lista
+   * o icone com o nome e o desenho do Trackeroao. Num clone, sem a janela,
+   * vale o bandeja.ps1, que o Windows lista como PowerShell.
+   */
+  const exe = path.join(__dirname, '..', 'app', 'Trackeroao.exe');
   const script = path.join(__dirname, 'bandeja.ps1');
-  if (!fs.existsSync(script)) return;
+  const comExe = fs.existsSync(exe);
+  if (!comExe && !fs.existsSync(script)) return;
   try {
-    bandeja = require('child_process').spawn('powershell.exe', [
-      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
-      '-File', script, '-Porta', String(PORT), '-ProcessoPai', String(process.pid),
-    ], { windowsHide: true, detached: false, stdio: 'ignore' });
+    bandeja = comExe
+      ? require('child_process').spawn(exe, ['/bandeja', '/porta=' + PORT, '/pai=' + process.pid],
+        { windowsHide: false, detached: false, stdio: 'ignore' })
+      : require('child_process').spawn('powershell.exe', [
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
+        '-File', script, '-Porta', String(PORT), '-ProcessoPai', String(process.pid),
+      ], { windowsHide: true, detached: false, stdio: 'ignore' });
     bandeja.on('exit', () => { bandeja = null; });
     console.log('  [bandeja] icone aceso (' + motivo + ')');
   } catch (e) {
@@ -215,6 +225,15 @@ function fecharBandeja() {
   bandeja = null;
   console.log('  [bandeja] icone apagado');
 }
+
+// A troca da janela pela atualizacao precisa do .exe livre, e o icone da
+// bandeja e o mesmo .exe: ele sai durante a troca e volta se estava aceso.
+atualizar.aoTrocarJanela(async (trocar) => {
+  const acesa = !!(bandeja && !bandeja.killed);
+  fecharBandeja();
+  if (acesa) await new Promise((r) => setTimeout(r, 1500));
+  try { return await trocar(); } finally { if (acesa) abrirBandeja('depois da troca da janela'); }
+});
 
 // ------------------------------------------------------------- slot learning
 /**

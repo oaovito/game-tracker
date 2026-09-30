@@ -283,6 +283,10 @@ function numeroDaTag(tag) {
   return m ? `${m[1]}.${m[2]}.${m[3]}.0` : null;
 }
 
+// Quem precisa largar o .exe da janela antes da troca (o icone da bandeja).
+let envolverTroca = (trocar) => trocar();
+function aoTrocarJanela(fn) { if (typeof fn === 'function') envolverTroca = fn; }
+
 async function trocarJanela(raiz, tag) {
   if (process.platform !== 'win32') return null;
   if (!fs.existsSync(path.join(raiz, 'app', 'Trackeroao.exe'))) return null;
@@ -294,7 +298,7 @@ async function trocarJanela(raiz, tag) {
   try {
     const exe = path.join(tmp, 'trackeroao-instalador.exe');
     await pedir(`https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/trackeroao-instalador.exe`, exe);
-    await rodar(exe, ['/so-janela', '/destino=' + raiz]);
+    await envolverTroca(() => rodar(exe, ['/so-janela', '/destino=' + raiz]));
     return 'atualizada para ' + tag;
   } catch (e) {
     return 'adiada (' + e.message.split('\n')[0] + ')';
@@ -331,7 +335,7 @@ async function situacao(raiz) {
   return { instalada, ultima, atual: instalada === ultima };
 }
 
-module.exports = { verificar, situacao, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
+module.exports = { verificar, situacao, aoTrocarJanela, aplicarPasta, listar, lerEstado, EXIGIDOS, LEGADO, PRESERVAR, NOME_ESTADO };
 
 /*
  * Linha de comando.

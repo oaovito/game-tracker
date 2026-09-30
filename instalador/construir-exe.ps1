@@ -380,8 +380,15 @@ static class Programa {
   static int TrocarJanela(string destino) {
     if (destino == null || !File.Exists(Path.Combine(destino, "sync\\main.js"))) return 2;
     string app = Path.Combine(destino, "app");
+    // Janela aberta: nao troca, e a proxima conferencia tenta de novo.
+    System.Threading.Mutex aberta;
+    if (System.Threading.Mutex.TryOpenExisting("Local\\TrackeroaoJanela", out aberta)) { aberta.Close(); return 3; }
+    // O resto do mesmo .exe e o icone da bandeja, que o servico acende de
+    // novo depois da troca: sai agora para largar o arquivo.
     foreach (Process p in Process.GetProcessesByName("Trackeroao")) {
-      try { if (p.MainModule.FileName.StartsWith(app, StringComparison.OrdinalIgnoreCase)) return 3; } catch { }
+      try {
+        if (p.MainModule.FileName.StartsWith(app, StringComparison.OrdinalIgnoreCase)) { p.Kill(); p.WaitForExit(5000); }
+      } catch { }
     }
     string novo = app + "-novo";
     try {

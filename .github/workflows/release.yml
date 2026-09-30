@@ -251,7 +251,46 @@ jobs:
           if ($j.HasExited) { throw "a janela fechou sozinha (codigo $($j.ExitCode))" }
           $segunda = Start-Process $janela -PassThru
           if (-not $segunda.WaitForExit(15000)) { throw 'a segunda abertura criou outra janela' }
-          if (@(Get-Process -Name Trackeroao -ErrorAction SilentlyContinue).Count -ne 1) { throw 'mais de uma janela aberta' }
+          function Trackeroaos([switch]$Bandeja) {
+            @(Get-CimInstance Win32_Process -Filter "Name='Trackeroao.exe'" | Where-Object { ($_.CommandLine -like '*/bandeja*') -eq [bool]$Bandeja })
+          }
+          if ((Trackeroaos).Count -ne 1) { throw 'mais de uma janela aberta' }
+
+          # O icone da bandeja e o proprio Trackeroao.exe, que a abertura acende
+          # pelo servico, e o Windows o lista com o nome do produto.
+          $tray = $null
+          for ($i = 0; $i -lt 20 -and -not $tray; $i++) { Start-Sleep -Milliseconds 500; $tray = (Trackeroaos -Bandeja) | Select-Object -First 1 }
+          if (-not $tray) { throw 'o icone da bandeja nao acendeu com a janela' }
+          if (@(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -like '*bandeja.ps1*' }).Count) { throw 'a bandeja ainda roda pelo PowerShell' }
+          $desc = (Get-Item $janela).VersionInfo.FileDescription
+          if ($desc -ne 'Trackeroao') { throw "o Windows listaria a bandeja como '$desc'" }
+          Write-Host "bandeja: Trackeroao.exe /bandeja (pid $($tray.ProcessId)), descricao '$desc'"
+
+          # A barra propria: sem a barra de titulo do Windows, a area do
+          # aplicativo comeca no topo da janela; na faixa de cima, fora dos
+          # botoes, o Windows entende barra de titulo; no X, botao do aplicativo.
+          Add-Type -Namespace T -Name U -MemberDefinition @'
+          [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, int m, IntPtr w, IntPtr l);
+          [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+          [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+          [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+          [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+          '@
+          $h = (Get-Process -Id $j.Id).MainWindowHandle
+          if ($h -eq [IntPtr]::Zero) { throw 'a janela nao tem identificador' }
+          $wr = New-Object T.U+RECT; [void][T.U]::GetWindowRect($h, [ref]$wr)
+          $pt = New-Object T.U+POINT; [void][T.U]::ClientToScreen($h, [ref]$pt)
+          Write-Host "janela: topo $($wr.T), area do aplicativo comeca em $($pt.Y)"
+          if ([Math]::Abs($pt.Y - $wr.T) -gt 1) { throw 'a barra de titulo do Windows continua la' }
+          function Toque($x, $y) { [T.U]::SendMessage($h, 0x84, [IntPtr]::Zero, [IntPtr](($y -shl 16) -bor ($x -band 0xFFFF))).ToInt32() }
+          $meio = [int](($wr.L + $wr.R) / 2)
+          $naBarra = Toque $meio ($wr.T + 18)
+          $noX = Toque ($wr.R - 20) ($wr.T + 18)
+          $naPagina = Toque $meio ($wr.T + 200)
+          Write-Host "toques: barra $naBarra, X $noX, pagina $naPagina"
+          if ($naBarra -ne 2) { throw "a barra propria nao arrasta a janela ($naBarra)" }
+          if ($noX -ne 1) { throw "o botao de fechar nao e do aplicativo ($noX)" }
+          if ($naPagina -ne 1) { throw "a pagina nao recebe o clique ($naPagina)" }
           # A troca da janela pela atualizacao nao mexe numa janela aberta.
           $p = Start-Process dist\trackeroao-instalador.exe -ArgumentList '/so-janela', "/destino=$destino" -Wait -PassThru
           if ($p.ExitCode -ne 3) { throw "com a janela aberta, /so-janela saiu com $($p.ExitCode), e nao 3" }
@@ -264,6 +303,7 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "/so-janela saiu com $($p.ExitCode)" }
           if (-not (Test-Path (Join-Path $destino 'app\versao.txt'))) { throw '/so-janela nao gravou a versao da janela' }
           if (Test-Path (Join-Path $destino 'app-novo')) { throw '/so-janela deixou a pasta temporaria' }
+          if ((Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja segurou o .exe durante a troca' }
           Write-Host 'a janela abriu, e unica e fecha pelo menu da bandeja'
 
           # "Forcar atualizacao": recem-instalada, a versao e a ultima.
@@ -278,6 +318,7 @@ jobs:
           if (-not (Test-Path (Join-Path $destino 'sync\fechado.flag'))) { throw 'o Fechar nao deixou a marca' }
           function Responde { try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:8777/progress.json' | Out-Null; $true } catch { $false } }
           if (Responde) { throw 'o servico continuou de pe depois do Fechar' }
+          if ((Trackeroaos -Bandeja).Count) { throw 'o icone da bandeja ficou depois do Fechar' }
           schtasks /run /tn TrackeroaoSync | Out-Null
           Start-Sleep -Seconds 10
           if (Responde) { throw 'a tarefa do logon religou o servico depois do Fechar' }
