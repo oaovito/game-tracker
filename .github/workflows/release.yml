@@ -416,8 +416,9 @@ jobs:
           if ($p.ExitCode -ne 3) { throw "com a janela a vista, /so-janela saiu com $($p.ExitCode), e nao esperou" }
           if ($j.HasExited) { throw 'a troca fechou a janela que estava a vista' }
           Write-Host 'com a janela a vista a troca esperou e a janela ficou'
-          # O X esconde na bandeja: o processo continua, sem janela a vista.
-          [void][T.U]::SendMessage($h, 0x10, [IntPtr]::Zero, [IntPtr]::Zero)
+          # O X (SC_CLOSE, como o X, o Alt+F4 e o fechar da barra de tarefas) esconde
+          # na bandeja: o processo continua, sem janela a vista.
+          [void][T.U]::SendMessage($h, 0x112, [IntPtr]0xF060, [IntPtr]::Zero)
           Start-Sleep -Seconds 2
           if ($j.HasExited) { throw 'o X fechou a aplicacao, em vez de esconder na bandeja' }
           if ([T.U]::IsWindowVisible($h)) { throw 'o X nao escondeu a janela' }
