@@ -840,10 +840,15 @@ passa de página em página. Em todos os casos, as setas ‹ e › com o número
 página, a roda do mouse e as setas do teclado fazem a troca. No celular, a
 disposição de sempre continua, com a rolagem mínima que já tinha.
 
-Quando um jogo está em foco, a arte dele se estende pela tela inteira como
-fundo, e a trama animada do "Trackeroao" se desliga enquanto isso, voltando só
-quando não há arte. O palco não tem mais moldura: a arte larga se dissolve nas
-bordas e se funde com esse fundo, sem caixa em volta.
+Quando um jogo está em foco, a arte dele ocupa a tela inteira, e a trama
+animada do "Trackeroao" se desliga enquanto isso, voltando só quando não há
+arte. O palco não tem moldura nem imagem própria no computador: ele é o trecho
+em foco dessa mesma arte. São três camadas da mesma imagem, no mesmo lugar,
+pixel sobre pixel: nítida numa elipse larga centrada no palco, meio desfocada
+numa elipse maior e bem desfocada no resto da tela. A passagem de uma para a
+outra é gradual e não tem canto, corte ou diagonal; o alto da tela fica fora da
+camada nítida, para a barra da janela continuar na cor da página. As camadas
+são estáticas e não pedem novo desenho enquanto a tela está parada.
 
 Nos pôsteres sem arte, o nome do jogo nunca se parte no meio de uma palavra.
 Quando uma palavra não cabe na largura do pôster, apenas a letra diminui, sem

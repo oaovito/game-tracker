@@ -2694,6 +2694,42 @@
   .vista-hub .ambiente img { filter: blur(26px) saturate(1.25); object-position: 50% 35%; }
   .vista-hub .ambiente img.pronta { opacity: 0.85; }
   .vista-hub.com-arte .oao-fundo { display: none; }
+  /* A arte nítida: a mesma imagem, no mesmo lugar do fundo, pixel sobre
+     pixel. Nítida sobre o palco e, dali para fora, passando por uma camada
+     meio borrada até o fundo borrado, numa elipse larga, sem canto nem
+     corte. Assim o palco não é uma caixa com a arte dentro: é o trecho em
+     foco de uma arte só, que ocupa a tela inteira. As medidas do palco
+     (--pcx, --pcy, --prx, --pry) vêm do script. Só no computador; no
+     celular o palco tem a própria arte, em cima. */
+  .ambiente-nitida { display: none; }
+  @media (min-width: 641px) {
+    .vista-hub.com-arte .ambiente-nitida {
+      display: block; position: absolute; inset: 0; z-index: 2;
+      /* O alto fica fora, para a barra da janela continuar na cor da página. */
+      -webkit-mask-composite: source-in; mask-composite: intersect;
+      --pcx: 50%; --pcy: 42%; --prx: 60vw; --pry: 34vh;
+      -webkit-mask-image: radial-gradient(ellipse var(--prx) var(--pry) at var(--pcx) var(--pcy), #000 0, #000 58%, rgba(0,0,0,0.72) 74%, rgba(0,0,0,0.28) 88%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7rem);
+      mask-image: radial-gradient(ellipse var(--prx) var(--pry) at var(--pcx) var(--pcy), #000 0, #000 58%, rgba(0,0,0,0.72) 74%, rgba(0,0,0,0.28) 88%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7rem);
+    }
+    .vista-hub.com-arte .ambiente-nitida.meia {
+      -webkit-mask-image: radial-gradient(ellipse calc(var(--prx) * 1.35) calc(var(--pry) * 1.5) at var(--pcx) var(--pcy), #000 0, #000 55%, rgba(0,0,0,0.5) 78%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7rem);
+      mask-image: radial-gradient(ellipse calc(var(--prx) * 1.35) calc(var(--pry) * 1.5) at var(--pcx) var(--pcy), #000 0, #000 55%, rgba(0,0,0,0.5) 78%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7rem);
+    }
+    .vista-hub .ambiente .ambiente-nitida img {
+      position: absolute; inset: -12%; width: 124%; height: 124%;
+      object-fit: cover; object-position: 50% 35%; opacity: 1; filter: none;
+    }
+    .vista-hub .ambiente .ambiente-nitida.meia img { filter: blur(9px) saturate(1.15); }
+    .vista-hub .ambiente::after { z-index: 1; }
+    /* O palco não desenha outra arte por cima: a dele é a do fundo. */
+    .vista-hub.com-arte .palco-arte img { visibility: hidden; }
+    /* A sombra que segura o texto também não tem borda: some antes da
+       beirada do palco. */
+    .vista-hub.com-arte .palco-arte { -webkit-mask-image: none; mask-image: none; }
+    .vista-hub.com-arte .palco-arte::after {
+      background: radial-gradient(ellipse 40% 55% at 28% 58%, rgba(5, 6, 9, 0.72) 0%, rgba(5, 6, 9, 0.4) 40%, rgba(5, 6, 9, 0) 70%);
+    }
+  }
   .vista-hub .ambiente::after { background: linear-gradient(180deg, var(--j-veu-topo), var(--j-veu-pe) 92%); }
   html.na-janela .vista-hub .ambiente::after {
     background:
@@ -3259,7 +3295,7 @@
 </head>
 <body>
 <!-- O fundo da tela de jogos: a arte do jogo em foco, desfocada. -->
-<div class="ambiente" aria-hidden="true"><img id="ambienteImg" alt=""></div>
+<div class="ambiente" aria-hidden="true"><img id="ambienteImg" alt=""><div class="ambiente-nitida meia"><img alt=""></div><div class="ambiente-nitida"><img alt=""></div></div>
 <!-- O fundo da tela inicial: "Trackeroao" em trama, deslizando devagar. -->
 <div class="oao-fundo" aria-hidden="true"></div>
 <div class="wrap">
@@ -8568,9 +8604,28 @@ function ambienteCom(src) {
   if (!src) { amb.classList.remove("pronta"); comArte(false); return; }
   if (amb.getAttribute("src") === src) return;
   amb.classList.remove("pronta");
-  amb.onload = () => { amb.classList.add("pronta"); comArte(true); };
+  amb.onload = () => { amb.classList.add("pronta"); comArte(true); medirPalco(); };
   amb.src = src;
+  document.querySelectorAll(".ambiente-nitida img").forEach((n) => { n.src = src; });
 }
+
+/* Onde o palco está na tela, para a arte nítida do fundo se concentrar ali. */
+function medirPalco() {
+  const palco = document.getElementById("hubPalco");
+  const amb = document.querySelector(".ambiente");
+  if (!palco || !amb || palco.hidden || !palco.getBoundingClientRect) return;
+  const r = palco.getBoundingClientRect();
+  if (!r.width) return;
+  const w = window.innerWidth || 1, h = window.innerHeight || 1;
+  const cx = r.left + r.width / 2, cy = r.top + r.height * 0.45;
+  amb.querySelectorAll(".ambiente-nitida").forEach((n) => {
+    n.style.setProperty("--pcx", (cx / w * 100).toFixed(2) + "%");
+    n.style.setProperty("--pcy", (cy / h * 100).toFixed(2) + "%");
+    n.style.setProperty("--prx", Math.max(r.width * 0.72, w * 0.5).toFixed(0) + "px");
+    n.style.setProperty("--pry", Math.max(r.height * 0.95, h * 0.28).toFixed(0) + "px");
+  });
+}
+if (typeof window.addEventListener === "function") window.addEventListener("resize", () => { clearTimeout(medirPalco.t); medirPalco.t = setTimeout(medirPalco, 120); });
 
 let jogoEmFoco = null;
 
@@ -8692,6 +8747,7 @@ function renderHub() {
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => paginarTrilho(true));
     const palco = document.getElementById("hubPalco");
     if (palco) palco.hidden = !destaque;
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(medirPalco);
     if (destaque) mostrarNoPalco(lista.find((g) => g.chave === jogoEmFoco) || destaque);
     const nota = document.getElementById("hubNota");
     if (nota) {
