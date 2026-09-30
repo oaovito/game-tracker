@@ -70,6 +70,15 @@ async function main() {
     console.log('  ' + t.arq);
     await c.close();
   }
+  // O passo a passo do iOS, que o código QR do iPhone abre.
+  const c = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'pt-BR' });
+  const pg = await c.newPage();
+  await pg.goto('file://' + path.join(RAIZ, 'sync', 'ios.html'));
+  await pg.waitForLoadState('networkidle').catch(() => {});
+  await pg.waitForTimeout(1500);
+  await pg.screenshot({ path: path.join(SAIDA, 'ios.png') });
+  console.log('  ios.png');
+  await c.close();
   await b.close();
 }
 

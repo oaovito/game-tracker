@@ -2,82 +2,113 @@
 <!--
   A página que o código QR do iPhone abre, servida pelo próprio computador
   (rota /ios de serve.js): o passo a passo para instalar o aplicativo de iOS
-  pelo AltStore, com a fonte do Trackeroao (altstore/fonte.json).
+  pelo AltStore PAL, com a fonte do Trackeroao (altstore/fonte.json). Cabe
+  inteira na tela, sem rolagem, no visual da tela inicial do Trackeroao.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Trackeroao</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Sora:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: dark; }
-  html, body { margin: 0; min-height: 100%; background: #06070a; color: #f5f6f8; }
+  :root { color-scheme: dark; --lima: #d8ff3c; --tinta: #0c0f02; --texto: #f5f6f8; --apagado: rgba(245, 246, 248, 0.62);
+    --vidro: rgba(20, 22, 29, 0.72); --borda: rgba(255, 255, 255, 0.1); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #06070a; color: var(--texto); }
   body {
-    font: 400 16px/1.5 system-ui, -apple-system, sans-serif;
-    padding: calc(28px + env(safe-area-inset-top, 0px)) 20px calc(28px + env(safe-area-inset-bottom, 0px));
+    font: 400 clamp(0.82rem, 2.1vh, 0.98rem)/1.45 'Sora', system-ui, -apple-system, sans-serif;
+    box-sizing: border-box; height: 100vh; height: 100dvh;
+    padding: calc(clamp(14px, 3vh, 32px) + env(safe-area-inset-top, 0px)) 20px calc(clamp(12px, 2.4vh, 26px) + env(safe-area-inset-bottom, 0px));
     display: flex; flex-direction: column; align-items: center;
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(216, 255, 60, 0.07), transparent 60%),
+      radial-gradient(90% 50% at 50% 100%, rgba(120, 90, 255, 0.08), transparent 70%),
+      #06070a;
   }
-  main { width: min(26rem, 100%); display: flex; flex-direction: column; gap: 18px; }
-  h1 { margin: 0 0 6px; font-weight: 800; font-size: 1.7rem; letter-spacing: -0.02em; text-wrap: balance; }
-  h1 span { color: #d8ff3c; }
-  ol { margin: 0; padding: 0; list-style: none; counter-reset: p; display: flex; flex-direction: column; gap: 14px; }
-  li {
-    counter-increment: p; position: relative; padding: 16px 16px 16px 54px; border-radius: 18px;
-    background: rgba(20, 22, 29, 0.9); border: 1px solid rgba(255, 255, 255, 0.1);
+  main { width: min(25rem, 100%); flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: clamp(8px, 1.8vh, 18px); }
+  h1 { margin: 0; font: 800 clamp(1.4rem, 4.4vh, 2rem)/1.05 'Unbounded', system-ui, sans-serif; letter-spacing: -0.02em; text-align: center; text-wrap: balance; }
+  h1 span { color: var(--lima); }
+  .passo {
+    position: relative; padding: clamp(10px, 2vh, 16px) 16px clamp(10px, 2vh, 16px) 52px; border-radius: 18px;
+    background: var(--vidro); border: 1px solid var(--borda);
   }
-  li::before {
-    content: counter(p); position: absolute; left: 16px; top: 15px; width: 26px; height: 26px; border-radius: 50%;
-    display: grid; place-items: center; background: #d8ff3c; color: #0c0f02; font-weight: 800; font-size: 0.85rem;
+  .passo b {
+    position: absolute; left: 14px; top: clamp(10px, 2vh, 15px); width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--lima); color: var(--tinta);
+    font: 800 0.8rem/1 'Unbounded', system-ui, sans-serif;
   }
-  a.bt {
-    display: inline-block; margin-top: 10px; padding: 10px 18px; border-radius: 999px; text-decoration: none;
-    background: #d8ff3c; color: #0c0f02; font-weight: 700; font-size: 0.9rem;
+  .passo p { margin: 0; }
+  .bt {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: clamp(6px, 1.2vh, 10px);
+    padding: 9px 16px; border-radius: 999px; text-decoration: none;
+    border: 1px solid var(--borda); background: rgba(255, 255, 255, 0.06); color: var(--texto);
+    font: 600 0.8rem/1 'Unbounded', system-ui, sans-serif; letter-spacing: 0.02em;
   }
-  a.leve { color: rgba(245, 246, 248, 0.7); font-size: 0.85rem; text-align: center; }
-  a { color: #d8ff3c; }
-  p { margin: 0; }
-  .nota { color: rgba(245, 246, 248, 0.55); font-size: 0.85rem; }
+  .bt svg { width: 15px; height: 15px; flex: none; }
+  /* O botão do Trackeroao, no meio da tela, pulsando devagar: o halo cresce e
+     apaga (só transform e opacity, que o compositor faz sozinho). */
+  .centro { display: flex; justify-content: center; padding: clamp(6px, 1.6vh, 14px) 0; }
+  .baixar {
+    position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 10px;
+    padding: clamp(13px, 2.4vh, 18px) 26px; border-radius: 999px; text-decoration: none;
+    background: var(--lima); color: var(--tinta); font: 800 clamp(0.85rem, 2.2vh, 1rem)/1 'Unbounded', system-ui, sans-serif;
+    box-shadow: 0 10px 34px rgba(216, 255, 60, 0.28);
+    animation: respira 2.8s ease-in-out infinite;
+  }
+  .baixar::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1;
+    background: var(--lima); opacity: 0; animation: halo 2.8s ease-out infinite;
+  }
+  .baixar svg { width: 18px; height: 18px; flex: none; }
+  @keyframes respira { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+  @keyframes halo { 0% { opacity: 0.45; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35, 1.8); } }
+  @media (prefers-reduced-motion: reduce) { .baixar, .baixar::before { animation: none; } }
+  .nota { margin: 0; text-align: center; color: var(--apagado); font-size: 0.78rem; }
+  .apagado { color: var(--apagado); }
 </style>
 </head>
 <body>
 <main>
   <h1 id="t0">Tracker<span>oao</span></h1>
-  <ol>
-    <li><p id="t1"></p><a class="bt" href="https://altstore.io">AltStore</a></li>
-    <li><p id="t2"></p><a class="bt" id="fonte" href="#"></a></li>
-    <li><p id="t4"></p></li>
-  </ol>
-  <a class="leve" id="direto" href="#"></a>
+  <div class="passo"><b>1</b><p id="t1"></p>
+    <a class="bt" href="https://altstore.io"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="t2"></span></a>
+  </div>
+  <div class="passo"><b>2</b><p id="t3"></p></div>
+  <div class="centro">
+    <a class="baixar" id="baixar" href="#"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.54c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.41 1.2-2.47-.03-.01-2.3-.88-2.32-3.52zM14.2 6.07c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.3-.56.64-1.05 1.67-.92 2.66.97.08 1.96-.49 2.56-1.2z"/></svg><span id="t4"></span></a>
+  </div>
+  <div class="passo"><b>3</b><p id="t5" class="apagado"></p></div>
   <p class="nota" id="t6"></p>
 </main>
 <script>
-var TEXTOS = {"en": ["Trackeroao for iPhone", "Install AltStore on this iPhone.", "Add the Trackeroao source to AltStore.", "Add source", "In AltStore, open Trackeroao and tap Install. Updates arrive through AltStore.", "Or install it straight away", "Open this page on the iPhone, on the same Wi-Fi as the computer."], "pt-BR": ["Trackeroao no iPhone", "Instale o AltStore neste iPhone.", "Adicione a fonte do Trackeroao ao AltStore.", "Adicionar fonte", "No AltStore, abra o Trackeroao e toque em Instalar. As atualizações chegam pelo AltStore.", "Ou instale direto", "Abra esta página no iPhone, no mesmo Wi-Fi do computador."], "es": ["Trackeroao en el iPhone", "Instala AltStore en este iPhone.", "Añade la fuente de Trackeroao a AltStore.", "Añadir fuente", "En AltStore, abre Trackeroao y toca Instalar. Las actualizaciones llegan por AltStore.", "O instálalo directamente", "Abre esta página en el iPhone, en la misma Wi-Fi que el ordenador."], "fr": ["Trackeroao sur iPhone", "Installez AltStore sur cet iPhone.", "Ajoutez la source Trackeroao à AltStore.", "Ajouter la source", "Dans AltStore, ouvrez Trackeroao et touchez Installer. Les mises à jour arrivent par AltStore.", "Ou installez-le directement", "Ouvrez cette page sur l’iPhone, sur le même Wi-Fi que l’ordinateur."], "de": ["Trackeroao auf dem iPhone", "Installiere AltStore auf diesem iPhone.", "Füge die Trackeroao-Quelle zu AltStore hinzu.", "Quelle hinzufügen", "Öffne Trackeroao in AltStore und tippe auf Installieren. Updates kommen über AltStore.", "Oder direkt installieren", "Öffne diese Seite auf dem iPhone, im selben WLAN wie der Computer."], "it": ["Trackeroao su iPhone", "Installa AltStore su questo iPhone.", "Aggiungi la sorgente di Trackeroao ad AltStore.", "Aggiungi sorgente", "In AltStore apri Trackeroao e tocca Installa. Gli aggiornamenti arrivano tramite AltStore.", "Oppure installalo subito", "Apri questa pagina sull’iPhone, sulla stessa Wi-Fi del computer."], "ru": ["Trackeroao на iPhone", "Установите AltStore на этот iPhone.", "Добавьте источник Trackeroao в AltStore.", "Добавить источник", "В AltStore откройте Trackeroao и нажмите «Установить». Обновления приходят через AltStore.", "Или установите сразу", "Откройте эту страницу на iPhone в той же сети Wi-Fi, что и компьютер."], "pl": ["Trackeroao na iPhonie", "Zainstaluj AltStore na tym iPhonie.", "Dodaj źródło Trackeroao do AltStore.", "Dodaj źródło", "W AltStore otwórz Trackeroao i stuknij Zainstaluj. Aktualizacje przychodzą przez AltStore.", "Albo zainstaluj od razu", "Otwórz tę stronę na iPhonie, w tej samej sieci Wi-Fi co komputer."], "tr": ["iPhone’da Trackeroao", "Bu iPhone’a AltStore’u yükleyin.", "Trackeroao kaynağını AltStore’a ekleyin.", "Kaynak ekle", "AltStore’da Trackeroao’yu açıp Yükle’ye dokunun. Güncellemeler AltStore üzerinden gelir.", "Ya da hemen yükleyin", "Bu sayfayı bilgisayarla aynı Wi-Fi’deki iPhone’da açın."], "ja": ["iPhone版 Trackeroao", "この iPhone に AltStore をインストールします。", "Trackeroao のソースを AltStore に追加します。", "ソースを追加", "AltStore で Trackeroao を開き、インストールをタップします。アップデートは AltStore から届きます。", "または直接インストール", "パソコンと同じ Wi-Fi の iPhone でこのページを開いてください。"], "ko": ["iPhone용 Trackeroao", "이 iPhone에 AltStore를 설치하세요.", "AltStore에 Trackeroao 소스를 추가하세요.", "소스 추가", "AltStore에서 Trackeroao를 열고 설치를 누르세요. 업데이트는 AltStore로 받습니다.", "또는 바로 설치", "컴퓨터와 같은 Wi-Fi에 연결된 iPhone에서 이 페이지를 여세요."], "zh-CN": ["iPhone 版 Trackeroao", "在这台 iPhone 上安装 AltStore。", "将 Trackeroao 源添加到 AltStore。", "添加源", "在 AltStore 中打开 Trackeroao 并点按“安装”。更新会通过 AltStore 送达。", "或直接安装", "请在与电脑连接同一 Wi-Fi 的 iPhone 上打开此页面。"]};
+var TEXTOS = {"en": ["Trackeroao for iOS", "Download and install AltStore PAL on this iPhone.", "Download AltStore PAL", "Tap the button below. AltStore PAL opens and installs Trackeroao.", "Download Trackeroao iOS", "Open Trackeroao from the home screen. Updates arrive through AltStore PAL.", "iPhone on the same Wi-Fi as the computer."], "pt-BR": ["Trackeroao para iOS", "Baixe e instale o AltStore PAL neste iPhone.", "Baixar AltStore PAL", "Toque no botão abaixo. O AltStore PAL abre e instala o Trackeroao.", "Baixar Trackeroao iOS", "Abra o Trackeroao pela tela de início. As atualizações chegam pelo AltStore PAL.", "iPhone no mesmo Wi-Fi do computador."], "es": ["Trackeroao para iOS", "Descarga e instala AltStore PAL en este iPhone.", "Descargar AltStore PAL", "Toca el botón de abajo. AltStore PAL se abre e instala Trackeroao.", "Descargar Trackeroao iOS", "Abre Trackeroao desde la pantalla de inicio. Las actualizaciones llegan por AltStore PAL.", "iPhone en la misma Wi-Fi que el ordenador."], "fr": ["Trackeroao pour iOS", "Téléchargez et installez AltStore PAL sur cet iPhone.", "Télécharger AltStore PAL", "Touchez le bouton ci-dessous. AltStore PAL s’ouvre et installe Trackeroao.", "Télécharger Trackeroao iOS", "Ouvrez Trackeroao depuis l’écran d’accueil. Les mises à jour arrivent par AltStore PAL.", "iPhone sur le même Wi-Fi que l’ordinateur."], "de": ["Trackeroao für iOS", "Lade AltStore PAL auf dieses iPhone und installiere es.", "AltStore PAL laden", "Tippe auf die Taste unten. AltStore PAL öffnet sich und installiert Trackeroao.", "Trackeroao iOS laden", "Öffne Trackeroao vom Home-Bildschirm. Updates kommen über AltStore PAL.", "iPhone im selben WLAN wie der Computer."], "it": ["Trackeroao per iOS", "Scarica e installa AltStore PAL su questo iPhone.", "Scarica AltStore PAL", "Tocca il pulsante qui sotto. AltStore PAL si apre e installa Trackeroao.", "Scarica Trackeroao iOS", "Apri Trackeroao dalla schermata Home. Gli aggiornamenti arrivano tramite AltStore PAL.", "iPhone sulla stessa Wi-Fi del computer."], "ru": ["Trackeroao для iOS", "Скачайте и установите AltStore PAL на этот iPhone.", "Скачать AltStore PAL", "Нажмите кнопку ниже. AltStore PAL откроется и установит Trackeroao.", "Скачать Trackeroao iOS", "Открывайте Trackeroao с экрана «Домой». Обновления приходят через AltStore PAL.", "iPhone в той же сети Wi-Fi, что и компьютер."], "pl": ["Trackeroao na iOS", "Pobierz i zainstaluj AltStore PAL na tym iPhonie.", "Pobierz AltStore PAL", "Stuknij przycisk poniżej. AltStore PAL otworzy się i zainstaluje Trackeroao.", "Pobierz Trackeroao iOS", "Otwieraj Trackeroao z ekranu początkowego. Aktualizacje przychodzą przez AltStore PAL.", "iPhone w tej samej sieci Wi-Fi co komputer."], "tr": ["iOS için Trackeroao", "Bu iPhone’a AltStore PAL’ı indirip yükleyin.", "AltStore PAL’ı indir", "Aşağıdaki düğmeye dokunun. AltStore PAL açılır ve Trackeroao’yu yükler.", "Trackeroao iOS’u indir", "Trackeroao’yu ana ekrandan açın. Güncellemeler AltStore PAL üzerinden gelir.", "Bilgisayarla aynı Wi-Fi’deki iPhone."], "ja": ["iOS版 Trackeroao", "この iPhone に AltStore PAL をダウンロードしてインストールします。", "AltStore PAL をダウンロード", "下のボタンをタップすると、AltStore PAL が開いて Trackeroao をインストールします。", "Trackeroao iOS をダウンロード", "ホーム画面から Trackeroao を開きます。アップデートは AltStore PAL から届きます。", "パソコンと同じ Wi-Fi の iPhone で。"], "ko": ["iOS용 Trackeroao", "이 iPhone에 AltStore PAL을 내려받아 설치하세요.", "AltStore PAL 다운로드", "아래 버튼을 누르면 AltStore PAL이 열리고 Trackeroao를 설치합니다.", "Trackeroao iOS 다운로드", "홈 화면에서 Trackeroao를 여세요. 업데이트는 AltStore PAL로 받습니다.", "컴퓨터와 같은 Wi-Fi의 iPhone에서."], "zh-CN": ["iOS 版 Trackeroao", "在这台 iPhone 上下载并安装 AltStore PAL。", "下载 AltStore PAL", "点按下方按钮，AltStore PAL 会打开并安装 Trackeroao。", "下载 Trackeroao iOS", "从主屏幕打开 Trackeroao。更新通过 AltStore PAL 送达。", "iPhone 与电脑连接同一 Wi-Fi。"]};
 var FONTE = "https://raw.githubusercontent.com/oaovito/trackeroao/main/altstore/fonte.json";
-var IPA = "https://github.com/oaovito/trackeroao/releases/latest/download/trackeroao.ipa";
 var pedidos = (navigator.languages || [navigator.language || "en"]).map(function (l) { return String(l); });
-var idioma = "en";
-for (var i = 0; i < pedidos.length && idioma === "en"; i++) {
-  var l = pedidos[i];
-  if (TEXTOS[l]) { idioma = l; break; }
-  var base = l.split("-")[0];
-  if (base === "pt") { idioma = "pt-BR"; break; }
-  if (base === "zh") { idioma = "zh-CN"; break; }
-  if (TEXTOS[base]) { idioma = base; break; }
+var idioma = null;
+for (var i = 0; i < pedidos.length && !idioma; i++) {
+  var l = pedidos[i], base = l.split("-")[0];
+  if (TEXTOS[l]) idioma = l;
+  else if (base === "pt") idioma = "pt-BR";
+  else if (base === "zh") idioma = "zh-CN";
+  else if (TEXTOS[base]) idioma = base;
 }
-var t = TEXTOS[idioma];
-document.documentElement.lang = idioma;
+var t = TEXTOS[idioma || "en"];
+document.documentElement.lang = idioma || "en";
 document.title = t[0];
 document.getElementById("t0").innerHTML = t[0].replace("Trackeroao", "Tracker<span>oao</span>");
-document.getElementById("t1").textContent = t[1];
-document.getElementById("t2").textContent = t[2];
-document.getElementById("t4").textContent = t[4];
-document.getElementById("t6").textContent = t[6];
-var fonte = document.getElementById("fonte");
-fonte.textContent = t[3];
-fonte.href = "altstore://source?url=" + encodeURIComponent(FONTE);
-var direto = document.getElementById("direto");
-direto.textContent = t[5];
-direto.href = "altstore://install?url=" + encodeURIComponent(IPA);
+["t1", "t2", "t3", "t4", "t5", "t6"].forEach(function (id, k) { document.getElementById(id).textContent = t[k + 1]; });
+/*
+ * O botão abre a fonte do Trackeroao no AltStore PAL. Se ele não estiver no
+ * aparelho e a página continuar à vista, tenta o AltStore comum.
+ */
+document.getElementById("baixar").addEventListener("click", function (ev) {
+  ev.preventDefault();
+  var url = encodeURIComponent(FONTE);
+  location.href = "altstore-pal://source?url=" + url;
+  setTimeout(function () { if (!document.hidden) location.href = "altstore://source?url=" + url; }, 1500);
+});
 </script>
 </body>
 </html>

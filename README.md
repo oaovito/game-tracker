@@ -21,9 +21,10 @@ precisa para funcionar — a versão mais nova do próprio programa, a arte dos
 jogos e os catálogos de nomes descritos adiante —, e nenhum desses pedidos
 leva dado do save.
 
-## Como ele se parece
+## Imagens de preview
 
-As imagens abaixo são tiradas da própria página a cada mudança nela, por
+As imagens abaixo são tiradas das próprias telas sempre que alguma mudança
+estética chega à `main` (a página, a tela de instalação do iOS, os ícones), por
 `.github/workflows/amostras.yml`, com o progresso de `docs/progress.json` e uma
 lista fixa de jogos populares, para que as telas mostrem arte de verdade.
 
@@ -35,7 +36,7 @@ lista fixa de jogos populares, para que as telas mostrem arte de verdade.
 
 ![A janela do código QR para levar o Trackeroao ao celular](docs/amostras/celular-qr.png)
 
-<img src="docs/amostras/celular.png" alt="A página de progresso do Sekiro no celular" width="320">
+<img src="docs/amostras/celular.png" alt="A página de progresso do Sekiro no celular" width="320"> <img src="docs/amostras/ios.png" alt="O passo a passo para instalar o aplicativo de iOS" width="320">
 
 ## Instalando
 
@@ -1048,9 +1049,12 @@ do telefone para ele.
 **No iPhone**, o Trackeroao é um aplicativo nativo, cujo código está em `ios/`,
 instalado pelo AltStore, e não pela App Store. O código QR do botão "iOS" abre,
 no telefone, uma página servida pelo próprio computador (`/ios`, a partir de
-`sync/ios.html`) com o passo a passo: instalar o AltStore, adicionar a fonte do
-Trackeroao (`altstore/fonte.json`, lida pelo endereço bruto do GitHub) e tocar
-em Instalar. As versões novas chegam pelo próprio AltStore, porque a fonte é
+`sync/ios.html`) com o passo a passo, que cabe inteiro na tela, sem rolagem, no
+visual do aplicativo: o primeiro passo tem o botão para baixar o AltStore PAL,
+e no meio da tela um botão verde-limão, pulsando devagar, baixa o Trackeroao
+para iOS, abrindo no AltStore PAL a fonte do Trackeroao (`altstore/fonte.json`,
+lida pelo endereço bruto do GitHub). Se o AltStore PAL não estiver no aparelho,
+o botão tenta o AltStore comum. As versões novas chegam pelo próprio AltStore, porque a fonte é
 atualizada a cada release. O aplicativo funciona como o de Android: toda a
 página passa por uma ponte (`ios/src/Ponte.swift`, no esquema `trackeroao://`)
 que busca cada arquivo no computador por `trackeroao.local`, guarda a última

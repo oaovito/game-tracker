@@ -1,4 +1,5 @@
-# As imagens de amostra do README, tiradas da página a cada mudança nela.
+# As imagens de preview do README, tiradas das telas a cada mudança estética
+# (a página, a tela de instalação do iOS e os ícones).
 #
 # O push feito aqui não dispara outra rodada (o GitHub não encadeia pushes do
 # próprio token), e só há commit quando alguma imagem mudou.
@@ -11,6 +12,9 @@ on:
     paths:
       - trackeroao.html
       - docs/progress.json
+      - sync/ios.html
+      - instalador/icone/**
+      - ios/Assets.xcassets/**
       - .github/amostras.js
       - .github/workflows/amostras.yml
   workflow_dispatch:
@@ -43,7 +47,7 @@ jobs:
         run: |
           git add docs/amostras
           if git diff --cached --quiet; then echo "nenhuma imagem mudou"; exit 0; fi
-          git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Imagens de amostra do README"
+          git -c user.name=oaovito -c user.email=oaovito@icloud.com commit -q -m "Imagens de preview do README"
           for i in 1 2 3; do
             git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
             sleep 5
