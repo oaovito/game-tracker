@@ -136,6 +136,15 @@ function createServer(options) {
      * Vazio (null) volta a seguir o idioma do sistema. GET vale de qualquer
      * lugar; mudar, só da própria máquina.
      */
+    // O IP desta maquina na rede de casa, para o passo a passo do celular.
+    if (urlPath === '/rede') {
+      const addrs = localAddresses();
+      const corpo = { ip: addrs.length ? addrs[0].address : null, porta: req.socket.localPort || null };
+      res.writeHead(200, { 'content-type': MIME['.json'], 'cache-control': 'no-store' });
+      res.end(JSON.stringify(corpo));
+      return;
+    }
+
     if (urlPath === '/idioma') {
       const idioma = require('./idioma');
       if (req.method === 'GET') {

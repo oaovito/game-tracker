@@ -2732,6 +2732,22 @@
     content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--j-anel);
   }
   .idioma-sep { height: 1px; margin: 4px 8px; background: var(--j-borda); }
+  /* A caixa do celular se ancora no canto inteiro, e não no botão: presa ao
+     botão, no celular estreito ela sairia pela esquerda da tela. */
+  .hub-canto { position: relative; }
+  .idioma.celular { position: static; }
+  .celular-caixa {
+    gap: 8px; padding: 14px 16px; width: min(20rem, calc(100vw - 32px));
+    font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; line-height: 1.45; color: var(--j-texto);
+  }
+  .celular-caixa b { font-weight: 600; font-size: 0.86rem; }
+  .celular-caixa p { margin: 0; color: var(--j-apagado); }
+  .celular-caixa code {
+    display: block; padding: 7px 10px; border-radius: 10px; background: var(--j-vidro);
+    font-size: 0.78rem; color: var(--j-texto); user-select: all; overflow-wrap: anywhere;
+  }
+  #celAndroid { display: flex; flex-direction: column; gap: 8px; }
+  #celAndroid[hidden] { display: none; }
 
   /* O palco. */
   .palco {
@@ -2978,6 +2994,21 @@
       <!-- O globo do idioma fica ao lado do relógio: discreto, e só aqui, na
            tela inicial. A lista se monta no script, a partir de IDIOMAS. -->
       <div class="hub-canto">
+        <!-- O passo a passo do celular: só na janela do computador, onde ele
+             serve. O endereço é o nome da rede de casa, que não muda. -->
+        <div class="idioma celular" id="celular" hidden>
+          <button class="idioma-bt" id="celularBt" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="celularCaixa" title="Phone" aria-label="Phone" data-i18n-title="cel.rotulo" data-i18n-aria="cel.rotulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></svg></button>
+          <div class="idioma-lista celular-caixa" id="celularCaixa" hidden>
+            <b data-i18n="cel.titulo">On your phone</b>
+            <p data-i18n="cel.rede">Connect the phone to the same Wi-Fi as this computer. You only do this once.</p>
+            <p data-i18n="cel.iphone">iPhone: open this address in Safari, tap Share, then Add to Home Screen.</p>
+            <code translate="no" id="celEndereco">http://trackeroao.local:8777</code>
+            <div id="celAndroid" hidden>
+              <p data-i18n="cel.android">Android: open this address in the phone's browser and install the app.</p>
+              <code translate="no" id="celApk"></code>
+            </div>
+          </div>
+        </div>
         <div class="idioma" id="idioma">
           <button class="idioma-bt" id="idiomaBt" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="idiomaLista" title="Language" aria-label="Language" data-i18n-title="idioma.rotulo" data-i18n-aria="idioma.rotulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>
           <div class="idioma-lista" id="idiomaLista" role="menu" hidden></div>
@@ -3602,6 +3633,11 @@ const I18N = {
     "tema.paraClaro": "Switch to light mode",
     "tema.paraEscuro": "Switch to dark mode",
     "idioma.rotulo": "Language",
+    "cel.rotulo": "Phone",
+    "cel.titulo": "On your phone",
+    "cel.rede": "Connect the phone to the same Wi-Fi as this computer. You only do this once.",
+    "cel.iphone": "iPhone: open this address in Safari, tap Share, then Add to Home Screen.",
+    "cel.android": "Android: open this address in the phone's browser and install the app.",
     "idioma.sistema": "System language",
     "sinc.procurando": "looking for the save…",
     "sinc.parado": "not syncing — the service is not responding",
@@ -3793,6 +3829,11 @@ const I18N = {
     "tema.paraClaro": "Mudar para o modo claro",
     "tema.paraEscuro": "Mudar para o modo escuro",
     "idioma.rotulo": "Idioma",
+    "cel.rotulo": "Celular",
+    "cel.titulo": "No celular",
+    "cel.rede": "Conecte o celular no mesmo Wi-Fi deste computador. Isso é feito uma vez só.",
+    "cel.iphone": "iPhone: abra este endereço no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
+    "cel.android": "Android: abra este endereço no navegador do celular e instale o aplicativo.",
     "idioma.sistema": "Idioma do sistema",
     "sinc.procurando": "procurando o save…",
     "sinc.parado": "sem sincronizar — o serviço não responde",
@@ -3984,6 +4025,11 @@ const I18N = {
     "tema.paraClaro": "Cambiar a modo claro",
     "tema.paraEscuro": "Cambiar a modo oscuro",
     "idioma.rotulo": "Idioma",
+    "cel.rotulo": "Móvil",
+    "cel.titulo": "En el móvil",
+    "cel.rede": "Conecta el móvil a la misma red Wi-Fi que este ordenador. Solo se hace una vez.",
+    "cel.iphone": "iPhone: abre esta dirección en Safari, toca Compartir y luego Añadir a pantalla de inicio.",
+    "cel.android": "Android: abre esta dirección en el navegador del móvil e instala la aplicación.",
     "idioma.sistema": "Idioma del sistema",
     "sinc.procurando": "buscando la partida guardada…",
     "sinc.parado": "sin sincronizar — el servicio no responde",
@@ -4175,6 +4221,11 @@ const I18N = {
     "tema.paraClaro": "Passer en mode clair",
     "tema.paraEscuro": "Passer en mode sombre",
     "idioma.rotulo": "Langue",
+    "cel.rotulo": "Téléphone",
+    "cel.titulo": "Sur le téléphone",
+    "cel.rede": "Connectez le téléphone au même Wi-Fi que cet ordinateur. Cela ne se fait qu’une fois.",
+    "cel.iphone": "iPhone : ouvrez cette adresse dans Safari, touchez Partager, puis Sur l’écran d’accueil.",
+    "cel.android": "Android : ouvrez cette adresse dans le navigateur du téléphone et installez l’application.",
     "idioma.sistema": "Langue du système",
     "sinc.procurando": "recherche de la sauvegarde…",
     "sinc.parado": "pas de synchronisation — le service ne répond pas",
@@ -4366,6 +4417,11 @@ const I18N = {
     "tema.paraClaro": "Zum hellen Modus wechseln",
     "tema.paraEscuro": "Zum dunklen Modus wechseln",
     "idioma.rotulo": "Sprache",
+    "cel.rotulo": "Handy",
+    "cel.titulo": "Auf dem Handy",
+    "cel.rede": "Verbinde das Handy mit demselben WLAN wie diesen Computer. Das ist nur einmal nötig.",
+    "cel.iphone": "iPhone: Öffne diese Adresse in Safari, tippe auf Teilen und dann auf Zum Home-Bildschirm.",
+    "cel.android": "Android: Öffne diese Adresse im Browser des Handys und installiere die App.",
     "idioma.sistema": "Systemsprache",
     "sinc.procurando": "Spielstand wird gesucht…",
     "sinc.parado": "keine Synchronisierung — der Dienst antwortet nicht",
@@ -4557,6 +4613,11 @@ const I18N = {
     "tema.paraClaro": "Passa alla modalità chiara",
     "tema.paraEscuro": "Passa alla modalità scura",
     "idioma.rotulo": "Lingua",
+    "cel.rotulo": "Telefono",
+    "cel.titulo": "Sul telefono",
+    "cel.rede": "Collega il telefono alla stessa rete Wi-Fi di questo computer. Si fa una volta sola.",
+    "cel.iphone": "iPhone: apri questo indirizzo in Safari, tocca Condividi e poi Aggiungi alla schermata Home.",
+    "cel.android": "Android: apri questo indirizzo nel browser del telefono e installa l’app.",
     "idioma.sistema": "Lingua di sistema",
     "sinc.procurando": "ricerca del salvataggio…",
     "sinc.parado": "nessuna sincronizzazione — il servizio non risponde",
@@ -4748,6 +4809,11 @@ const I18N = {
     "tema.paraClaro": "Включить светлую тему",
     "tema.paraEscuro": "Включить тёмную тему",
     "idioma.rotulo": "Язык",
+    "cel.rotulo": "Телефон",
+    "cel.titulo": "На телефоне",
+    "cel.rede": "Подключите телефон к той же сети Wi-Fi, что и этот компьютер. Это делается один раз.",
+    "cel.iphone": "iPhone: откройте этот адрес в Safari, нажмите «Поделиться», затем «На экран «Домой»».",
+    "cel.android": "Android: откройте этот адрес в браузере телефона и установите приложение.",
     "idioma.sistema": "Язык системы",
     "sinc.procurando": "ищем сохранение…",
     "sinc.parado": "нет синхронизации — служба не отвечает",
@@ -4939,6 +5005,11 @@ const I18N = {
     "tema.paraClaro": "Przełącz na tryb jasny",
     "tema.paraEscuro": "Przełącz na tryb ciemny",
     "idioma.rotulo": "Język",
+    "cel.rotulo": "Telefon",
+    "cel.titulo": "Na telefonie",
+    "cel.rede": "Połącz telefon z tą samą siecią Wi-Fi co ten komputer. Robi się to tylko raz.",
+    "cel.iphone": "iPhone: otwórz ten adres w Safari, stuknij Udostępnij, a potem Do ekranu początkowego.",
+    "cel.android": "Android: otwórz ten adres w przeglądarce telefonu i zainstaluj aplikację.",
     "idioma.sistema": "Język systemu",
     "sinc.procurando": "szukam zapisu gry…",
     "sinc.parado": "brak synchronizacji — usługa nie odpowiada",
@@ -5130,6 +5201,11 @@ const I18N = {
     "tema.paraClaro": "Açık moda geç",
     "tema.paraEscuro": "Koyu moda geç",
     "idioma.rotulo": "Dil",
+    "cel.rotulo": "Telefon",
+    "cel.titulo": "Telefonda",
+    "cel.rede": "Telefonu bu bilgisayarla aynı Wi-Fi ağına bağlayın. Bu yalnızca bir kez yapılır.",
+    "cel.iphone": "iPhone: Bu adresi Safari’de açın, Paylaş’a ve ardından Ana Ekrana Ekle’ye dokunun.",
+    "cel.android": "Android: Bu adresi telefonun tarayıcısında açın ve uygulamayı yükleyin.",
     "idioma.sistema": "Sistem dili",
     "sinc.procurando": "kayıt dosyası aranıyor…",
     "sinc.parado": "eşitleme yok — hizmet yanıt vermiyor",
@@ -5321,6 +5397,11 @@ const I18N = {
     "tema.paraClaro": "ライトモードに切り替え",
     "tema.paraEscuro": "ダークモードに切り替え",
     "idioma.rotulo": "言語",
+    "cel.rotulo": "スマホ",
+    "cel.titulo": "スマホで",
+    "cel.rede": "スマホをこのパソコンと同じWi-Fiにつなぎます。設定は一度だけです。",
+    "cel.iphone": "iPhone：Safariでこのアドレスを開き、共有をタップしてから「ホーム画面に追加」をタップします。",
+    "cel.android": "Android：スマホのブラウザでこのアドレスを開き、アプリをインストールします。",
     "idioma.sistema": "システムの言語",
     "sinc.procurando": "セーブデータを探しています…",
     "sinc.parado": "同期していません — サービスが応答しません",
@@ -5512,6 +5593,11 @@ const I18N = {
     "tema.paraClaro": "라이트 모드로 전환",
     "tema.paraEscuro": "다크 모드로 전환",
     "idioma.rotulo": "언어",
+    "cel.rotulo": "휴대폰",
+    "cel.titulo": "휴대폰에서",
+    "cel.rede": "휴대폰을 이 컴퓨터와 같은 Wi-Fi에 연결하세요. 한 번만 하면 됩니다.",
+    "cel.iphone": "iPhone: Safari에서 이 주소를 열고 공유를 누른 다음 홈 화면에 추가를 누르세요.",
+    "cel.android": "Android: 휴대폰 브라우저에서 이 주소를 열고 앱을 설치하세요.",
     "idioma.sistema": "시스템 언어",
     "sinc.procurando": "세이브 파일을 찾는 중…",
     "sinc.parado": "동기화 안 됨 — 서비스가 응답하지 않습니다",
@@ -5703,6 +5789,11 @@ const I18N = {
     "tema.paraClaro": "切换到浅色模式",
     "tema.paraEscuro": "切换到深色模式",
     "idioma.rotulo": "语言",
+    "cel.rotulo": "手机",
+    "cel.titulo": "在手机上",
+    "cel.rede": "让手机连接到与这台电脑相同的 Wi-Fi。只需设置一次。",
+    "cel.iphone": "iPhone：在 Safari 中打开此地址，点按“共享”，再点按“添加到主屏幕”。",
+    "cel.android": "Android：在手机浏览器中打开此地址并安装应用。",
     "idioma.sistema": "系统语言",
     "sinc.procurando": "正在查找存档…",
     "sinc.parado": "未同步 — 服务没有响应",
@@ -6048,6 +6139,38 @@ function escolherIdioma(codigo) {
 // Uma escolha feita aqui antes de o serviço responder não pode ser desfeita
 // pela resposta dele, que é mais velha que ela.
 let idiomaPerguntado = false;
+
+/*
+ * O passo a passo do celular aparece só na janela do próprio computador: no
+ * celular ele não teria para quê. O Android aparece quando o aplicativo
+ * existe nesta instalação, com o IP da rede, porque nem todo Android acha
+ * nomes .local pelo navegador; o aplicativo, depois de instalado, acha.
+ */
+function ligarCelular() {
+  if (typeof document === "undefined" || typeof location === "undefined") return;
+  if (!/^(localhost|127\.)/.test(location.hostname)) return;
+  const caixa = document.getElementById("celular");
+  const bt = document.getElementById("celularBt");
+  const lista = document.getElementById("celularCaixa");
+  if (!caixa || !bt || !lista || bt.dataset.ligado) return;
+  bt.dataset.ligado = "1";
+  caixa.hidden = false;
+  const abrir = (sim) => { lista.hidden = !sim; bt.setAttribute("aria-expanded", sim ? "true" : "false"); };
+  bt.addEventListener("click", (ev) => { ev.stopPropagation(); abrir(lista.hidden); });
+  document.addEventListener("click", (ev) => { if (!caixa.contains(ev.target)) abrir(false); });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") abrir(false); });
+  if (typeof fetch !== "function") return;
+  fetch("/android.apk", { method: "HEAD" })
+    .then((r) => {
+      if (!r.ok) return;
+      return fetch("/rede").then((x) => (x.ok ? x.json() : null)).catch(() => null).then((rede) => {
+        const base = rede && rede.ip ? "http://" + rede.ip + ":" + (rede.porta || 8777) : "http://trackeroao.local:8777";
+        document.getElementById("celApk").textContent = base + "/android.apk";
+        document.getElementById("celAndroid").hidden = false;
+      });
+    })
+    .catch(() => {});
+}
 
 function ligarIdiomas() {
   if (typeof document === "undefined") return;
@@ -8635,6 +8758,7 @@ openState.add("essentials");
 if (document.documentElement) document.documentElement.lang = idiomaAtual;
 traduzirMarcacao();
 ligarIdiomas();
+ligarCelular();
 render();
 pollProgress();
 /*
