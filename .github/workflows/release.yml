@@ -309,11 +309,15 @@ jobs:
           $t0 = Get-Date
           Start-Sleep -Seconds 20
           $cpuMs = 0; $ram = 0
+          # Memoria como a do Gerenciador de Tarefas: conjunto de trabalho privado.
+          $privada = @{}
+          Get-CimInstance Win32_PerfRawData_PerfProc_Process | ForEach-Object { $privada[[int]$_.IDProcess] = [long]$_.WorkingSetPrivate }
           foreach ($i in $ids) {
             try { $pr = Get-Process -Id $i } catch { continue }
             if ($antes.ContainsKey($i)) { $cpuMs += $pr.TotalProcessorTime.TotalMilliseconds - $antes[$i] }
-            $ram += $pr.WorkingSet64
-            Write-Host ("  consumo: {0} (pid {1}) {2:N0} MB" -f $pr.ProcessName, $i, ($pr.WorkingSet64 / 1MB))
+            $p = if ($privada.ContainsKey([int]$i)) { $privada[[int]$i] } else { $pr.WorkingSet64 }
+            $ram += $p
+            Write-Host ("  consumo: {0} (pid {1}) {2:N0} MB privados, {3:N0} MB no conjunto inteiro" -f $pr.ProcessName, $i, ($p / 1MB), ($pr.WorkingSet64 / 1MB))
           }
           $cpu = $cpuMs / ((Get-Date) - $t0).TotalMilliseconds / [Environment]::ProcessorCount * 100
           $ramMb = $ram / 1MB

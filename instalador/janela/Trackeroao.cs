@@ -592,7 +592,6 @@ class Consumo {
     foreach (int pid in nossos) {
       try {
         using (Process p = Process.GetProcessById(pid)) {
-          bytes += p.WorkingSet64;
           TimeSpan t = p.TotalProcessorTime;
           novo[pid] = t;
           TimeSpan a;
@@ -606,8 +605,30 @@ class Consumo {
     foreach (System.Collections.Generic.KeyValuePair<int, TimeSpan> kv in novo) antes[kv.Key] = kv.Value;
     quando = agora;
     if (temAntes) Cpu = (Math.Max(0, cpuMs) / passou / Environment.ProcessorCount * 100).ToString("0.0") + "%";
-    Ram = (bytes / 1048576.0).ToString("0") + " MB";
+    bytes = Privada(nossos);
+    Ram = bytes < 0 ? "-" : (bytes / 1048576.0).ToString("0") + " MB";
     Gpu = MedirGpu(nossos, temAntes);
+  }
+
+  /*
+   * A memoria e a mesma do Gerenciador de Tarefas: o conjunto de trabalho
+   * privado de cada processo. O conjunto de trabalho inteiro conta de novo,
+   * em cada processo do WebView2, as paginas que eles dividem entre si, e a
+   * soma sairia maior do que a memoria que o Trackeroao ocupa de fato.
+   */
+  static long Privada(System.Collections.Generic.HashSet<int> nossos) {
+    try {
+      InstanceDataCollectionCollection tudo = new PerformanceCounterCategory("Process").ReadCategory();
+      InstanceDataCollection ids = tudo["ID Process"], priv = tudo["Working Set - Private"];
+      if (ids == null || priv == null) return -1;
+      long soma = 0;
+      foreach (InstanceData d in ids.Values) {
+        if (!nossos.Contains((int)d.RawValue)) continue;
+        InstanceData w = priv[d.InstanceName];
+        if (w != null) soma += w.RawValue;
+      }
+      return soma;
+    } catch { return -1; }
   }
 
   string MedirGpu(System.Collections.Generic.HashSet<int> nossos, bool temAntes) {

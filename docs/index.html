@@ -2699,6 +2699,9 @@
     text-transform: none; color: var(--j-texto); margin: 0;
   }
   .hub-titulo span { color: var(--j-anel); }
+  /* O ponto de sincronia é de cada jogo: na tela inicial e na biblioteca ele
+     não aparece no topo, e sim como pino no jogo que está sincronizado. */
+  body.vista-hub .sync-line, body.vista-bibli .sync-line { visibility: hidden; }
 
   /* O título vivo: as letras sobem uma a uma ao abrir, e depois o "oao"
      respira de tempos em tempos, com a mesma cor e o mesmo brilho do anel
@@ -2871,6 +2874,7 @@
   }
   .palco .pino-instalado.on { color: #7ff0bd; }
   .palco .pino-vigiado.on { color: #8fe0ff; }
+  .palco .pino-sinc.on { color: #d8ff3c; }
   .palco-extra { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.72); }
   .palco-extra span + span::before { content: "·"; margin-right: 14px; color: rgba(255, 255, 255, 0.4); }
   .palco-abre {
@@ -2963,6 +2967,8 @@
   .pino.on { opacity: 1; }
   .pino-instalado.on { color: var(--j-verde); }
   .pino-vigiado.on { color: var(--j-ciano); }
+  .pino-sinc.on { color: var(--j-sinal); }
+  .pino-ponto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: block; margin: 0 3px; }
   button.pino { cursor: pointer; }
   button.pino:hover { opacity: 1; border-color: currentColor; }
 
@@ -3047,6 +3053,9 @@
     .vista-hub .palco-marca { min-height: 0; }
     .vista-hub .palco-logo { max-height: min(7.5rem, 11vh); }
     .vista-hub .palco-nome { font-size: clamp(1.3rem, min(3.4vw, 4.6vh), 2.6rem); }
+    /* O título ocupa a faixa que era do ponto de sincronia, sem tirar a tela
+       de dentro da janela: cresce com a largura e com a altura, o que for menor. */
+    .vista-hub .hub-titulo { font-size: clamp(2.3rem, min(4.6vw, 7.2vh), 4.2rem); }
     .vista-hub .trilho-cabeca { flex: none; margin: clamp(10px, 2vh, 30px) 0 0; }
     .vista-hub .trilho {
       flex: none; padding-block: clamp(8px, 1.6vh, 16px) clamp(8px, 1.6vh, 20px);
@@ -3779,6 +3788,8 @@ const I18N = {
     "pino.instaladoDica": "Installed on this computer.",
     "pino.naoInstaladoDica": "Not found on this computer.",
     "pino.vigiado": "watched",
+    "pino.sinc": "synced",
+    "pino.sincDica": "Progress read from this computer and up to date.",
     "pino.naoVigiado": "not watched",
     "pino.vigiadoDica": "Watched: the app lights up in the tray when this game starts.",
     "pino.naoVigiadoDica": "Not watched.",
@@ -3983,6 +3994,8 @@ const I18N = {
     "pino.instaladoDica": "Instalado neste computador.",
     "pino.naoInstaladoDica": "Não encontrado neste computador.",
     "pino.vigiado": "vigiado",
+    "pino.sinc": "sincronizado",
+    "pino.sincDica": "Progresso lido deste computador e em dia.",
     "pino.naoVigiado": "não vigiado",
     "pino.vigiadoDica": "Vigiado: o app acende na bandeja quando este jogo abre.",
     "pino.naoVigiadoDica": "Não vigiado.",
@@ -4187,6 +4200,8 @@ const I18N = {
     "pino.instaladoDica": "Instalado en este equipo.",
     "pino.naoInstaladoDica": "No se encontró en este equipo.",
     "pino.vigiado": "vigilado",
+    "pino.sinc": "sincronizado",
+    "pino.sincDica": "Progreso leído de este equipo y al día.",
     "pino.naoVigiado": "no vigilado",
     "pino.vigiadoDica": "Vigilado: la app se enciende en la bandeja cuando se inicia este juego.",
     "pino.naoVigiadoDica": "No vigilado.",
@@ -4391,6 +4406,8 @@ const I18N = {
     "pino.instaladoDica": "Installé sur cet ordinateur.",
     "pino.naoInstaladoDica": "Introuvable sur cet ordinateur.",
     "pino.vigiado": "surveillé",
+    "pino.sinc": "synchronisé",
+    "pino.sincDica": "Progression lue sur cet ordinateur et à jour.",
     "pino.naoVigiado": "non surveillé",
     "pino.vigiadoDica": "Surveillé : l’app s’allume dans la barre des tâches quand ce jeu démarre.",
     "pino.naoVigiadoDica": "Non surveillé.",
@@ -4595,6 +4612,8 @@ const I18N = {
     "pino.instaladoDica": "Auf diesem Computer installiert.",
     "pino.naoInstaladoDica": "Auf diesem Computer nicht gefunden.",
     "pino.vigiado": "beobachtet",
+    "pino.sinc": "synchronisiert",
+    "pino.sincDica": "Fortschritt von diesem Computer gelesen und aktuell.",
     "pino.naoVigiado": "nicht beobachtet",
     "pino.vigiadoDica": "Beobachtet: Die App leuchtet im Infobereich auf, wenn dieses Spiel startet.",
     "pino.naoVigiadoDica": "Nicht beobachtet.",
@@ -4799,6 +4818,8 @@ const I18N = {
     "pino.instaladoDica": "Installato su questo computer.",
     "pino.naoInstaladoDica": "Non trovato su questo computer.",
     "pino.vigiado": "osservato",
+    "pino.sinc": "sincronizzato",
+    "pino.sincDica": "Progressi letti da questo computer e aggiornati.",
     "pino.naoVigiado": "non osservato",
     "pino.vigiadoDica": "Osservato: l’app si accende nell’area di notifica quando questo gioco parte.",
     "pino.naoVigiadoDica": "Non osservato.",
@@ -5003,6 +5024,8 @@ const I18N = {
     "pino.instaladoDica": "Установлена на этом компьютере.",
     "pino.naoInstaladoDica": "Не найдена на этом компьютере.",
     "pino.vigiado": "отслеживается",
+    "pino.sinc": "синхронизировано",
+    "pino.sincDica": "Прогресс прочитан с этого компьютера и актуален.",
     "pino.naoVigiado": "не отслеживается",
     "pino.vigiadoDica": "Отслеживается: приложение загорается в трее, когда запускается эта игра.",
     "pino.naoVigiadoDica": "Не отслеживается.",
@@ -5207,6 +5230,8 @@ const I18N = {
     "pino.instaladoDica": "Zainstalowana na tym komputerze.",
     "pino.naoInstaladoDica": "Nie znaleziono na tym komputerze.",
     "pino.vigiado": "obserwowana",
+    "pino.sinc": "zsynchronizowana",
+    "pino.sincDica": "Postęp odczytany z tego komputera i aktualny.",
     "pino.naoVigiado": "nieobserwowana",
     "pino.vigiadoDica": "Obserwowana: aplikacja zapala się w zasobniku, gdy ta gra się uruchamia.",
     "pino.naoVigiadoDica": "Nieobserwowana.",
@@ -5411,6 +5436,8 @@ const I18N = {
     "pino.instaladoDica": "Bu bilgisayarda yüklü.",
     "pino.naoInstaladoDica": "Bu bilgisayarda bulunamadı.",
     "pino.vigiado": "izleniyor",
+    "pino.sinc": "senkronize",
+    "pino.sincDica": "İlerleme bu bilgisayardan okundu ve güncel.",
     "pino.naoVigiado": "izlenmiyor",
     "pino.vigiadoDica": "İzleniyor: bu oyun başladığında uygulama sistem tepsisinde yanar.",
     "pino.naoVigiadoDica": "İzlenmiyor.",
@@ -5615,6 +5642,8 @@ const I18N = {
     "pino.instaladoDica": "このコンピューターにインストール済み。",
     "pino.naoInstaladoDica": "このコンピューターに見つかりません。",
     "pino.vigiado": "監視中",
+    "pino.sinc": "同期済み",
+    "pino.sincDica": "このPCから読み取った最新の進行状況です。",
     "pino.naoVigiado": "未監視",
     "pino.vigiadoDica": "監視中：このゲームが起動するとトレイのアプリが点灯します。",
     "pino.naoVigiadoDica": "未監視。",
@@ -5819,6 +5848,8 @@ const I18N = {
     "pino.instaladoDica": "이 컴퓨터에 설치되어 있습니다.",
     "pino.naoInstaladoDica": "이 컴퓨터에서 찾을 수 없습니다.",
     "pino.vigiado": "감시 중",
+    "pino.sinc": "동기화됨",
+    "pino.sincDica": "이 컴퓨터에서 읽은 최신 진행 상황입니다.",
     "pino.naoVigiado": "감시 안 함",
     "pino.vigiadoDica": "감시 중: 이 게임이 시작되면 트레이의 앱이 켜집니다.",
     "pino.naoVigiadoDica": "감시 안 함.",
@@ -6023,6 +6054,8 @@ const I18N = {
     "pino.instaladoDica": "已安装在这台电脑上。",
     "pino.naoInstaladoDica": "在这台电脑上未找到。",
     "pino.vigiado": "已监视",
+    "pino.sinc": "已同步",
+    "pino.sincDica": "已从这台电脑读取，进度为最新。",
     "pino.naoVigiado": "未监视",
     "pino.vigiadoDica": "已监视：此游戏启动时，托盘中的应用会亮起。",
     "pino.naoVigiadoDica": "未监视。",
@@ -8019,7 +8052,21 @@ function fazerPinos(g) {
     });
   }
   caixa.appendChild(vig);
+
+  // O ponto de sincronia, só no jogo que está sendo lido de fato, e em dia.
+  if (sincronizado(g)) {
+    const sc = document.createElement("span");
+    sc.className = "pino pino-sinc on";
+    sc.innerHTML = '<i class="pino-ponto" aria-hidden="true"></i><span>' + t("pino.sinc") + "</span>";
+    sc.title = t("pino.sincDica");
+    caixa.appendChild(sc);
+  }
   return caixa;
+}
+
+/* Sincronizado de verdade: o tracker lê este jogo, a leitura deu certo e não é velha. */
+function sincronizado(g) {
+  return !!(g && g.leitura === "completa" && sync && sync.ok && !sync.stale);
 }
 
 /** Liga ou desliga a vigia de um jogo, pelo mesmo caminho da janela de jogos. */

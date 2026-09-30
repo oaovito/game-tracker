@@ -190,7 +190,9 @@ abriram, como o motor da página (`msedgewebview2`). A CPU é a fração do
 processador inteiro, calculada pela diferença do tempo de processador entre
 duas medidas; a GPU vem dos contadores "GPU Engine" do Windows, a mesma fonte
 do Gerenciador de Tarefas, e mostra o motor mais ocupado; a RAM é o conjunto de
-trabalho somado. Os números se renovam a cada segundo enquanto o menu está
+trabalho privado somado, o mesmo número da coluna "Memória" do Gerenciador de
+Tarefas. O conjunto de trabalho inteiro contaria de novo, em cada processo do
+WebView2, as páginas de memória que eles dividem entre si. Os números se renovam a cada segundo enquanto o menu está
 aberto, e nada é medido com ele fechado. O consumo do computador como um todo
 não aparece aqui: para isso existe o Gerenciador de Tarefas.
 
@@ -405,6 +407,16 @@ CPU, 28% de GPU e 350 MB de RAM. A partir da 1.7.4:
   instruído a devolver memória ao sistema (`MemoryUsageTargetLevel` baixo);
 - o WebView2 usa um único processo de página, sem processo de reserva e sem as
   tarefas de rede de fundo do navegador.
+
+Cada release agora passa por um orçamento de recursos antes de ser publicada:
+no Windows limpo da integração contínua, com a janela aberta e parada, o
+Trackeroao inteiro (serviço, janela, ícone e os processos do WebView2) é medido
+por vinte segundos, e a release não sai se passar de 2% de CPU ou de 400 MB de
+memória privada. A referência é a de um aplicativo leve de uso contínuo, como
+o Spotify no computador; subir esse orçamento é uma decisão do dono do
+projeto, tomada só quando algo realmente relevante for acrescentado. O
+`selftest` também barra, antes disso, qualquer animação da tela inicial que
+volte a redesenhar a página a cada quadro.
 
 Medido no Chromium, sobre a mesma tela inicial em três segundos de janela
 parada, o número de rasterizações caiu de 4.345 para 24, e o de pinturas de
