@@ -423,12 +423,23 @@ $janela = $null
 if ($env:TRACKEROAO_APP -and (Test-Path (Join-Path $env:TRACKEROAO_APP 'Trackeroao.exe'))) {
   Etapa 70 '#window'
   $pastaApp = Join-Path $Destino 'app'
-  Get-Process -Name 'Trackeroao' -ErrorAction SilentlyContinue |
-    Where-Object { $_.Path -and $_.Path.StartsWith($pastaApp, [StringComparison]::OrdinalIgnoreCase) } |
-    Stop-Process -Force -ErrorAction SilentlyContinue
-  if (Test-Path $pastaApp) { Remove-Item -Recurse -Force $pastaApp }
-  New-Item -ItemType Directory -Path $pastaApp -Force | Out-Null
-  Copy-Item (Join-Path $env:TRACKEROAO_APP '*') $pastaApp -Force
+  # O servico recem-religado acende o icone da bandeja, que e este mesmo
+  # .exe; se ele voltar entre o fechar e a copia, o arquivo fica preso. Entao
+  # fecha e copia de novo, algumas vezes, ate a copia passar.
+  for ($tentativa = 1; ; $tentativa++) {
+    Get-Process -Name 'Trackeroao' -ErrorAction SilentlyContinue |
+      Where-Object { $_.Path -and $_.Path.StartsWith($pastaApp, [StringComparison]::OrdinalIgnoreCase) } |
+      Stop-Process -Force -ErrorAction SilentlyContinue
+    try {
+      if (Test-Path $pastaApp) { Remove-Item -Recurse -Force $pastaApp -ErrorAction Stop }
+      New-Item -ItemType Directory -Path $pastaApp -Force | Out-Null
+      Copy-Item (Join-Path $env:TRACKEROAO_APP '*') $pastaApp -Force -ErrorAction Stop
+      break
+    } catch {
+      if ($tentativa -ge 10) { throw }
+      Start-Sleep -Milliseconds 500
+    }
+  }
   $janela = Join-Path $pastaApp 'Trackeroao.exe'
   Ok "janela em $janela"
 }
