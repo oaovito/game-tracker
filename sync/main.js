@@ -206,7 +206,8 @@ function abrirBandeja(motivo) {
   if (!comExe && !fs.existsSync(script)) return;
   try {
     bandeja = comExe
-      ? require('child_process').spawn(exe, ['/bandeja', '/porta=' + PORT, '/pai=' + process.pid],
+      ? require('child_process').spawn(exe, ['/bandeja', '/porta=' + PORT, '/pai=' + process.pid]
+        .concat(atualizandoPelaBandeja ? ['/atualizando'] : []),
         { windowsHide: false, detached: false, stdio: 'ignore' })
       : require('child_process').spawn('powershell.exe', [
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
@@ -561,7 +562,10 @@ let proximaAtualizacao = Date.now() + ATUALIZAR_PRIMEIRA_MS;
 // Pedida à mão, pelo menu da bandeja: roda na próxima folga entre rodadas,
 // mesmo com o jogo aberto, porque foi a pessoa quem pediu.
 let atualizacaoForcada = false;
-function pedirAtualizacao() { atualizacaoForcada = true; proximaAtualizacao = 0; }
+// Enquanto a atualização pedida pela bandeja não termina, o ícone da bandeja
+// mostra o anel girando, inclusive se for aceso de novo no meio dela.
+let atualizandoPelaBandeja = false;
+function pedirAtualizacao() { atualizacaoForcada = true; atualizandoPelaBandeja = true; proximaAtualizacao = 0; }
 // Abrir a janela antecipa a conferência para a próxima folga, pela regra de
 // sempre (com jogo aberto, espera): quem abre o Trackeroao vê a versão nova.
 function conferirLogo() { proximaAtualizacao = Math.min(proximaAtualizacao, Date.now()); }
@@ -591,6 +595,7 @@ async function passoDeAtualizacao() {
     reiniciar();
     return;
   }
+  atualizandoPelaBandeja = false;
   if (r.erro) console.log('  [atualizacao] não conferiu: ' + r.erro);
   else if (r.motivo) console.log('  [atualizacao] ' + r.motivo);
   proximaAtualizacao = Date.now() + (r.erro ? ATUALIZAR_ERRO_MS : ATUALIZAR_MS);
@@ -627,10 +632,12 @@ async function passoDeVarredura() {
  * num celular fica sem resposta por menos de um ciclo dela, e segue.
  */
 function reiniciar() {
+  // O ícone que estava aceso volta aceso na versão nova, já com o anel fechado.
+  const acesa = !!(bandeja && !bandeja.killed);
   fecharBandeja();
   const filho = require('child_process').spawn(process.execPath, process.argv.slice(1), {
     cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true,
-    env: Object.assign({}, process.env, { TRACKEROAO_REINICIO: '1' }),
+    env: Object.assign({}, process.env, { TRACKEROAO_REINICIO: '1' }, acesa ? { TRACKEROAO_BANDEJA: '1' } : {}),
   });
   filho.unref();
   process.exit(0);
@@ -652,7 +659,9 @@ function encerrarDeVez() {
 async function run() {
   if (fs.existsSync(FECHADO)) process.exit(0);
   const reinicio = !!process.env.TRACKEROAO_REINICIO;
+  const bandejaAcesa = !!process.env.TRACKEROAO_BANDEJA;
   delete process.env.TRACKEROAO_REINICIO;
+  delete process.env.TRACKEROAO_BANDEJA;
   hookConsole();
   console.log('');
   console.log('  Sekiro - sincronização de progresso');
@@ -734,6 +743,8 @@ async function run() {
     console.log(`      http://trackeroao.local${porta}`);
     console.log('');
   }
+
+  if (bandejaAcesa) abrirBandeja('depois da atualização');
 
   vigiarRede(null, null, (novo) => nomeador.ipMudou(novo));
   vigiarInstalacao(hibernarAgora);

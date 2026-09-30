@@ -70,12 +70,10 @@ function Desenhar-Icone {
   $escuro = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 11, 13, 18))
   $g.FillPath($escuro, $fundo)
 
-  # O anel: comeca no alto e anda tres quartos no sentido do relogio.
+  # O anel fechado, como no icone do Trackeroao.
   $limao = [System.Drawing.Color]::FromArgb(255, 216, 255, 60)
   $caneta = New-Object System.Drawing.Pen($limao, [single]3.5)
-  $caneta.StartCap = 'Round'
-  $caneta.EndCap = 'Round'
-  $g.DrawArc($caneta, [single]6.5, [single]6.5, [single]19, [single]19, [single]-90, [single]270)
+  $g.DrawEllipse($caneta, [single]6.5, [single]6.5, [single]19, [single]19)
 
   # O T: barra de cima e haste, retangulos cheios.
   $branco = [System.Drawing.Brushes]::White

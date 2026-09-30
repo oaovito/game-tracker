@@ -40,6 +40,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -643,6 +644,124 @@ class Consumo {
  * textos seguem o idioma escolhido no globo da pagina (sync\idioma.json) ou,
  * sem escolha, o do Windows.
  */
+/*
+ * O icone de "atualizando": o anel do Trackeroao aberto em arco, girando.
+ * O icone de sempre tem o anel fechado; o arco so aparece enquanto uma
+ * atualizacao pedida pela bandeja esta em andamento.
+ */
+class Girando {
+  const int Quadros = 12;
+  readonly Icon[] quadros = new Icon[Quadros];
+  readonly System.Windows.Forms.Timer relogio = new System.Windows.Forms.Timer();
+  readonly NotifyIcon icone;
+  readonly Icon parado;
+  int atual;
+  DateTime desde;
+
+  [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr h);
+
+  public Girando(NotifyIcon icone, Icon parado, Size tamanho) {
+    this.icone = icone;
+    this.parado = parado;
+    for (int i = 0; i < Quadros; i++) quadros[i] = Desenhar(tamanho.Width, i * 360f / Quadros);
+    relogio.Interval = 80;
+    relogio.Tick += delegate {
+      // Sem resposta em tres minutos, o icone volta ao normal: girar para
+      // sempre prometeria uma atualizacao que nao esta mais acontecendo.
+      if (DateTime.Now - desde > TimeSpan.FromMinutes(3)) { Parar(); return; }
+      atual = (atual + 1) % Quadros;
+      icone.Icon = quadros[atual];
+    };
+  }
+
+  public bool Ligado { get { return relogio.Enabled; } }
+
+  public void Comecar() {
+    desde = DateTime.Now;
+    if (relogio.Enabled) return;
+    atual = 0;
+    icone.Icon = quadros[0];
+    relogio.Start();
+  }
+
+  public void Parar() {
+    relogio.Stop();
+    icone.Icon = parado;
+  }
+
+  static Icon Desenhar(int n, float giro) {
+    using (Bitmap bmp = new Bitmap(n, n, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+    using (Graphics g = Graphics.FromImage(bmp)) {
+      g.SmoothingMode = SmoothingMode.AntiAlias;
+      g.Clear(Color.Transparent);
+      float r = n * 0.22f;
+      using (GraphicsPath fundo = new GraphicsPath()) {
+        fundo.AddArc(0, 0, r * 2, r * 2, 180, 90);
+        fundo.AddArc(n - r * 2, 0, r * 2, r * 2, 270, 90);
+        fundo.AddArc(n - r * 2, n - r * 2, r * 2, r * 2, 0, 90);
+        fundo.AddArc(0, n - r * 2, r * 2, r * 2, 90, 90);
+        fundo.CloseFigure();
+        using (SolidBrush b = new SolidBrush(Color.FromArgb(255, 11, 13, 18))) g.FillPath(b, fundo);
+      }
+      float raio = n * 0.335f, largura = n * 0.14f, c = n / 2f;
+      RectangleF anel = new RectangleF(c - raio, c - raio, raio * 2, raio * 2);
+      using (Pen trilho = new Pen(Color.FromArgb(48, 216, 255, 60), largura)) g.DrawEllipse(trilho, anel);
+      using (Pen arco = new Pen(Color.FromArgb(255, 216, 255, 60), largura)) {
+        arco.StartCap = arco.EndCap = LineCap.Round;
+        g.DrawArc(arco, anel, -90 + giro, 270);
+      }
+      g.SmoothingMode = SmoothingMode.None;
+      int bx = (int)Math.Round(n * 0.3125), by = bx, bw = n - 2 * bx, bh = Math.Max(2, (int)Math.Round(n * 0.13));
+      int sw = Math.Max(2, (int)Math.Round(n * 0.14)), sx = (n - sw) / 2, sb = n - by;
+      g.FillRectangle(Brushes.White, bx, by, bw, bh);
+      g.FillRectangle(Brushes.White, sx, by, sw, sb - by);
+      IntPtr h = bmp.GetHicon();
+      Icon copia = (Icon)Icon.FromHandle(h).Clone();
+      DestroyIcon(h);
+      return copia;
+    }
+  }
+}
+
+/*
+ * No Windows 11, icone novo na bandeja nasce escondido no menu da seta. Na
+ * primeira vez que o Windows registra o icone do Trackeroao, ele e posto a
+ * vista; dali em diante a escolha e de quem usa: se for escondido a mao, fica
+ * escondido. A marca "TrackeroaoVisivel", na propria entrada do Windows, e o
+ * que diz que a primeira vez ja passou.
+ */
+static class Visivel {
+  const string Chave = @"Control Panel\NotifyIconSettings";
+
+  // true quando a entrada do Trackeroao ja foi achada (acertada agora ou antes).
+  public static bool Acertar() {
+    string meu = Application.ExecutablePath;
+    string pasta = Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(meu)));
+    string fim = "\\" + pasta + "\\app\\" + Path.GetFileName(meu);
+    bool achou = false;
+    try {
+      using (RegistryKey k = Registry.CurrentUser.OpenSubKey(Chave)) {
+        if (k == null) return false;
+        foreach (string nome in k.GetSubKeyNames()) {
+          using (RegistryKey e = k.OpenSubKey(nome, true)) {
+            if (e == null) continue;
+            string exe = e.GetValue("ExecutablePath") as string;
+            if (exe == null) continue;
+            bool nosso = exe.Equals(meu, StringComparison.OrdinalIgnoreCase) ||
+              exe.EndsWith(fim, StringComparison.OrdinalIgnoreCase);
+            if (!nosso) continue;
+            achou = true;
+            if (e.GetValue("TrackeroaoVisivel") != null) continue;
+            e.SetValue("IsPromoted", 1, RegistryValueKind.DWord);
+            e.SetValue("TrackeroaoVisivel", 1, RegistryValueKind.DWord);
+          }
+        }
+      }
+    } catch { }
+    return achou;
+  }
+}
+
 static class Bandeja {
   static readonly string[][] Textos = new string[][] {
     new string[] { "en", "Force update", "Close", "You are on the latest version ({0})." },
@@ -712,6 +831,7 @@ static class Bandeja {
 
     NotifyIcon icone = new NotifyIcon();
     icone.Icon = Programa.Icone(SystemInformation.SmallIconSize) ?? SystemIcons.Application;
+    Girando girando = new Girando(icone, icone.Icon, SystemInformation.SmallIconSize);
     // O nome e a versao instalada: no texto ao passar o mouse e no topo do menu.
     Func<string> nome = delegate { string v = Versao(raiz); return v == null ? "Trackeroao" : "Trackeroao " + v; };
     icone.Text = nome();
@@ -748,15 +868,24 @@ static class Bandeja {
        * pequeno sai ao lado deste icone e some sozinho. Havendo versao nova,
        * ela e aplicada em silencio e o servico se reinicia.
        */
+      /*
+       * Enquanto isso, o anel do icone abre em arco e gira. Com versao nova, o
+       * servico se reinicia ao terminar e o icone volta com o anel fechado;
+       * sem nada novo, ou sem resposta, o anel fecha na hora.
+       */
+      girando.Comecar();
       ThreadPool.QueueUserWorkItem(delegate {
+        bool nova = false;
         try {
           string j = Postar(base_ + "atualizar");
+          nova = Regex.IsMatch(j, "\"atual\"\\s*:\\s*false");
           if (Regex.IsMatch(j, "\"atual\"\\s*:\\s*true")) {
             Match v = Regex.Match(j, "\"instalada\"\\s*:\\s*\"([^\"]*)\"");
             string texto = string.Format(t[3], v.Success ? v.Groups[1].Value : "");
-            menu.BeginInvoke((Action)delegate { icone.ShowBalloonTip(4000, "Trackeroao", texto, ToolTipIcon.None); });
+            menu.BeginInvoke((Action)delegate { girando.Parar(); icone.ShowBalloonTip(4000, "Trackeroao", texto, ToolTipIcon.None); });
           }
         } catch { }
+        if (!nova) { try { menu.BeginInvoke((Action)delegate { if (girando.Ligado) girando.Parar(); }); } catch { } }
       });
     };
     menu.Items.Add(new ToolStripSeparator());
@@ -782,6 +911,15 @@ static class Bandeja {
     // O menu precisa de identificador para o BeginInvoke do aviso.
     IntPtr h = menu.Handle;
     icone.Visible = true;
+    // Aceso de novo no meio de uma atualizacao (a troca da janela), segue girando.
+    foreach (string a in args) if (a.Equals("/atualizando", StringComparison.OrdinalIgnoreCase)) girando.Comecar();
+
+    // O Windows registra o icone alguns segundos depois de ele aparecer.
+    System.Windows.Forms.Timer vista = new System.Windows.Forms.Timer();
+    int tentativas = 0;
+    vista.Interval = 2000;
+    vista.Tick += delegate { if (Visivel.Acertar() || ++tentativas >= 30) vista.Stop(); };
+    vista.Start();
 
     // Sem o servico que o chamou, o icone sai: icone orfao prometeria uma
     // aplicacao que nao esta mais la.

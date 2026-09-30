@@ -7,8 +7,7 @@
   </defs>
   <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#f)"/>
   <rect x="10" y="10" width="492" height="492" rx="110" fill="none" stroke="#ffffff" stroke-opacity=".10" stroke-width="4"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#d8ff3c" stroke-opacity=".14" stroke-width="54"/>
-  <path d="M256 106 A150 150 0 1 1 106 256" fill="none" stroke="#d8ff3c" stroke-width="54" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#d8ff3c" stroke-width="54"/>
   <rect x="184.0" y="178.0" width="144.0" height="46.0" rx="10.0" fill="#ffffff"/>
   <rect x="233.0" y="178.0" width="46.0" height="160.0" rx="10.0" fill="#ffffff"/>
 </svg>

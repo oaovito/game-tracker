@@ -163,7 +163,21 @@ O ícone na área de notificação, com o desenho do Trackeroao, é o sinal de
 que a aplicação está aberta. Ele aparece sozinho quando um jogo vigiado
 começa, e também quando a janela é aberta; com o jogo fechado, sai depois da
 última leitura da sessão. Dois cliques nele abrem a janela. Ao passar o mouse,
-ele mostra o nome e a versão instalada ("Trackeroao 1.7.1").
+ele mostra o nome e a versão instalada ("Trackeroao 1.7.3").
+
+O desenho do ícone é um T branco dentro de um anel verde-limão fechado. O anel
+aberto em arco fica reservado para um único estado: enquanto uma atualização
+pedida pela bandeja está em andamento, o arco gira no lugar do anel, e o ícone
+volta ao normal quando ela termina (ou em até três minutos, se o serviço não
+responder).
+
+No Windows 11, um ícone novo nasce escondido no menu da seta da área de
+notificação. Na primeira vez que o Windows registra o ícone do Trackeroao, em
+`HKCU\Control Panel\NotifyIconSettings`, ele é posto à vista (`IsPromoted`), e
+a entrada recebe a marca `TrackeroaoVisivel`. Dali em diante a escolha é de
+quem usa: escondido à mão, o ícone continua escondido, inclusive depois das
+atualizações. No Windows 10 essa preferência não tem registro acessível, e
+vale a configuração da própria barra de tarefas.
 
 O clique com o botão direito abre um menu que começa pela mesma linha de nome
 e versão e, abaixo dela, pelo consumo do próprio Trackeroao naquele momento:
@@ -182,7 +196,8 @@ Abaixo do consumo vêm duas ações:
 - **Forçar atualização** pede ao serviço, pela rota `POST /atualizar`, que
   confira a release mais nova naquele instante, sem esperar a próxima rodada e
   mesmo com o jogo aberto, já que foi a pessoa quem pediu. Havendo versão nova,
-  ela é aplicada em silêncio, e o serviço se reinicia com a chama junto. Se a
+  ela é aplicada, e o serviço se reinicia e acende o ícone de novo, já com o
+  anel fechado. Durante a conferência e a aplicação, o anel do ícone gira. Se a
   instalação já está na última versão, um aviso pequeno aparece ao lado do
   ícone, dizendo qual é a versão instalada, e some sozinho.
 - **Fechar** encerra tudo de verdade: a janela, o ícone e o serviço. Antes de
