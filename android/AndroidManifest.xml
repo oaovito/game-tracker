@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  O aplicativo só lê: mostra a página que o computador serve na rede de casa.
+  Por isso nenhuma permissão além de rede, e as de Wi-Fi servem para achar o
+  computador por mDNS (a trava de multicast é o que deixa a resposta chegar).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.oaovito.trackeroao">
+
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- O computador fala http puro na rede local; não há certificado a oferecer. -->
+    <application
+        android:label="Trackeroao"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Tema"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true">
+
+        <!-- configChanges: girar a tela não recarrega a página do zero. -->
+        <activity
+            android:name=".Principal"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
