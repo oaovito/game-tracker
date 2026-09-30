@@ -1,0 +1,25 @@
+# Confere que o aplicativo de iOS compila a cada mudança nele, antes de uma
+# release depender disso. A release constrói o seu próprio .ipa (release.yml).
+
+name: ios
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir o aplicativo
+        run: VERSAO=0.0.0 bash ios/construir.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trackeroao-ipa
+          path: ios/build/trackeroao.ipa
+          retention-days: 3
